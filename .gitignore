@@ -1,0 +1,18 @@
+# Maven and compiled output
+/target/
+/bin/
+**/target/
+**/bin/
+*.class
+*.patch
+test.md
+
+# Machine-local Maven cache and working notes
+/.m2repo/
+/Problems.md
+/PROJEKTPLAN.md
+
+# IDE/tool-local configuration
+/.kilo/
+/.kilo-free-router/
+/.kilocode/

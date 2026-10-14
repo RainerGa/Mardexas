@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>de.richmarkdown</groupId>
+  <artifactId>RichMarkDownEditor</artifactId>
+  <version>1.0.0</version>
+  <name>RichMarkDownEditor</name>
+  <description>Word-ähnlicher WYSIWYG-Markdown-Editor auf Basis von rich-text-area</description>
+  <licenses>
+    <license>
+      <name>GNU General Public License, Version 3</name>
+      <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>25</maven.compiler.release>
+    <javafx.version>25.0.4</javafx.version>
+    <javafx.platform>linux</javafx.platform>
+    <richtextarea.version>3.0-RG</richtextarea.version>
+    <junit.version>5.11.3</junit.version>
+    <testfx.version>4.0.19-gluon</testfx.version>
+    <monocle.version>21.0.2</monocle.version>
+    <surefire.version>3.2.5</surefire.version>
+    <mainClass>de.richmarkdown.RichMarkDownEditorApp</mainClass>
+  </properties>
+
+  <!-- Gluon-Nexus: Quelle der "-gluon"-TestFX-Artefakte (testfx-core /
+       testfx-junit5 : 4.0.19-gluon). Diese Builds liegen NICHT auf Maven
+       Central. Ist das Repository nicht deklariert, versucht Maven/m2e die
+       Auflösung gegen Central, schlägt fehl und meldet die lokal vorhandenen
+       Artefakte fälschlich als "Missing artifact" (über .lastUpdated-Marker).
+       Die <id> muss zu _remote.repositories passen ("Gluon Releases"). -->
+  <repositories>
+    <repository>
+      <id>Gluon Releases</id>
+      <name>Gluon Releases</name>
+      <url>https://nexus.gluonhq.com/nexus/content/repositories/releases/</url>
+    </repository>
+  </repositories>
+
+  <dependencies>
+    <!-- JavaFX 25.0.4 (offline in ~/.m2; fxml wird nicht benötigt) -->
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-controls</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-graphics</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+
+    <!-- The rich-text-area dependency is supplied by the sibling Maven reactor
+         module from the pinned main-branch commit in the Git submodule. -->
+    <dependency>
+      <groupId>com.gluonhq</groupId>
+      <artifactId>rich-text-area</artifactId>
+      <version>${richtextarea.version}</version>
+    </dependency>
+
+    <!-- Test: JUnit 5 -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Test: TestFX + openjfx-monocle (headless UI-Tests) -->
+    <dependency>
+      <groupId>org.testfx</groupId>
+      <artifactId>testfx-core</artifactId>
+      <version>${testfx.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testfx</groupId>
+      <artifactId>testfx-junit5</artifactId>
+      <version>${testfx.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testfx</groupId>
+      <artifactId>openjfx-monocle</artifactId>
+      <version>${monocle.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <release>25</release>
+          <compilerArgs>
+            <!-- ViewModel-Paket der Bibliothek ist nicht exportiert; wird für die
+                 Absatz-Analyse im Enter-Handler und für Writer/Parser benötigt.
+                 m2e übernimmt das Flag automatisch in die Eclipse-Konfiguration. -->
+            <arg>--add-exports=com.gluonhq.richtextarea/com.gluonhq.richtextarea.viewmodel=RichMarkDownEditor</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire.version}</version>
+        <configuration>
+          <!-- Tests laufen auf dem Classpath (TestFX/Monocle sind Automatic-Modules) -->
+          <useModulePath>false</useModulePath>
+          <systemPropertyVariables>
+            <prism.order>sw</prism.order>
+            <prism.text>t2k</prism.text>
+            <java.awt.headless>true</java.awt.headless>
+            <testfx.robot>glass</testfx.robot>
+            <glass.platform>Monocle</glass.platform>
+            <monocle.platform>Headless</monocle.platform>
+            <!-- JavaFX-Cache in ein beschreibbares Verzeichnis lenken -->
+            <javafx.cachedir>${project.build.directory}/javafx-cache</javafx.cachedir>
+          </systemPropertyVariables>
+          <argLine>-Djava.io.tmpdir=${project.build.directory}</argLine>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-maven-plugin</artifactId>
+        <version>0.0.8</version>
+        <configuration>
+          <mainClass>${mainClass}</mainClass>
+          <options>
+            <!-- ViewModel-Paket der Bibliothek ist nicht exportiert -->
+            <option>--add-exports=com.gluonhq.richtextarea/com.gluonhq.richtextarea.viewmodel=RichMarkDownEditor</option>
+            <!-- JavaFX-Native-Cache in ein beschreibbares Verzeichnis lenken -->
+            <option>-Djavafx.cachedir=${project.build.directory}/javafx-cache</option>
+          </options>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

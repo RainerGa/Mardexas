@@ -1,0 +1,3 @@
+[submodule "rich-text-area"]
+	path = rich-text-area
+	url = https://github.com/RainerGa/rich-text-area.git

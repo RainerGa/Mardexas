@@ -1,0 +1,203 @@
+/* Anwendungs-Design des RichMarkDownEditor (PROJEKTPLAN Kap. 0 Phase 13).
+ *
+ * Orientierung am Erscheinungsbild von Word/LibreOffice Writer:
+ *   - helle Menüleiste mit feiner Trennlinie
+ *   - flache Toolbar mit Gruppen, runden Buttons und Hover/Selected-Zuständen
+ *   - weiße Editorfläche mit feinem Rahmen (wie eine Seite)
+ *   - Statusleiste mit feiner Trennlinie nach oben
+ *   - blauer Akzent (#2b579a) für aktive Toggles, wie in Word
+ *
+ * Schriftgrößen basieren auf der System-Standard-Schriftgröße (Modena Theme)
+ * und verwenden relative Einheiten für bessere Skalierbarkeit.
+ */
+
+.root {
+    -fx-base: #f0f0f0;
+    -fx-background: #f3f3f3;
+    -fx-accent: #2b579a;
+    -fx-focus-color: #2b579a;
+    -fx-faint-focus-color: rgba(43, 87, 154, 0.25);
+}
+
+/* ---------- Menüleiste ---------- */
+
+.rme-menu-bar {
+    -fx-background-color: #f9f9f9;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0 0 0 0;
+}
+
+.rme-menu-bar .menu {
+    -fx-padding: 0.3em 0.6em 0.3em 0.6em;
+}
+
+.rme-menu-bar .menu:showing {
+    -fx-background-color: #e4eefc;
+}
+
+/* ---------- Toolbar ---------- */
+
+.rme-toolbar {
+    -fx-background-color: #f9f9f9;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0.3em 0.45em 0.3em 0.45em;
+    -fx-spacing: 0.3em;
+}
+
+.rme-toolbar .rme-toolbar-separator {
+    -fx-padding: 0.15em 0.25em 0.15em 0.25em;
+}
+
+.rme-toolbar-separator .line {
+    -fx-border-color: #d6d6d6;
+    -fx-border-width: 0 1 0 0;
+    -fx-min-height: 1.3em;
+}
+
+.rme-toolbar-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 4;
+    -fx-border-color: transparent;
+    -fx-border-radius: 4;
+    -fx-padding: 0.3em 0.45em 0.3em 0.45em;
+    -fx-font-size: 0.95em;
+    -fx-text-fill: #202020;
+    -fx-cursor: hand;
+    -fx-min-width: 2em;
+    -fx-min-height: 2em;
+}
+
+.rme-toolbar-button:hover {
+    -fx-background-color: #e4eefc;
+    -fx-border-color: #b7cdf0;
+}
+
+.rme-toolbar-button:armed,
+.rme-toolbar-button:pressed {
+    -fx-background-color: #cfe0f8;
+}
+
+.rme-toolbar-button:selected {
+    -fx-background-color: #2b579a;
+    -fx-text-fill: white;
+}
+
+.rme-toolbar-button:focused {
+    -fx-border-color: #2b579a;
+}
+
+/* Icon-Elemente folgen der Textfarbe (auch im gedrückten Zustand) */
+.rme-toolbar-button .rme-icon-shape {
+    -fx-fill: #202020;
+}
+
+.rme-toolbar-button:selected .rme-icon-shape {
+    -fx-fill: white;
+}
+
+.rme-toolbar-button:hover .rme-icon-shape {
+    -fx-fill: #1b3f77;
+}
+
+/* ---------- Styles-Dropdown ---------- */
+
+.rme-toolbar .rme-style-choice {
+    -fx-background-color: white;
+    -fx-background-radius: 4;
+    -fx-border-color: #c8c8c8;
+    -fx-border-radius: 4;
+    -fx-padding: 0.15em 0.3em 0.15em 0.3em;
+    -fx-font-size: 0.95em;
+}
+
+/* ---------- Editorfläche ---------- */
+
+.rme-editor-root {
+    -fx-background-color: #f3f3f3;
+    -fx-padding: 0.75em;
+}
+
+/* Der Viewport trägt die Stil-Klasse rme-zoom-viewport (wie eine leere Seite
+   mit feinem Rahmen, wie in Word/LibreOffice). */
+.rme-zoom-viewport {
+    -fx-background-color: white;
+    -fx-border-color: #c8c8c8;
+    -fx-border-width: 1;
+}
+
+/* ---------- Typografie der Buchstaben-Toggles (F/K/U/S) ---------- */
+
+/* Schnitt (fett/kursiv), Unter- und Durchstrich werden am Text-Node gesetzt
+   (Text.setFont/Underline/Strikethrough); hier nur die Farbe passend zur
+   Button-Fläche. */
+.rme-toolbar-button .rme-toggle-letter {
+    -fx-fill: #202020;
+}
+
+.rme-toolbar-button:hover .rme-toggle-letter {
+    -fx-fill: #1b3f77;
+}
+
+.rme-toolbar-button:selected .rme-toggle-letter {
+    -fx-fill: white;
+}
+
+/* ---------- Statusleiste ---------- */
+
+.rme-status-bar {
+    -fx-background-color: #f9f9f9;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 0.25em 0.6em 0.25em 0.6em;
+    -fx-font-size: 0.9em;
+    -fx-text-fill: #404040;
+}
+
+.rme-status-bar .label {
+    -fx-text-fill: #404040;
+}
+
+/* ---------- Zoom-Steuerung in der Statusleiste ---------- */
+
+.rme-status-bar .zoom-controls .label {
+    -fx-text-fill: #404040;
+}
+
+/* ---------- Dokumentstruktur ---------- */
+
+.rme-structure-view {
+    -fx-background-color: #f9f9f9;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 0 1 0 0;
+}
+
+.rme-structure-view .structure-header {
+    -fx-font-size: 0.9em;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2b579a;
+    -fx-padding: 0.3em 0.6em 0.3em 0.6em;
+}
+
+.rme-structure-view .list-cell {
+    -fx-padding: 0.15em 0.6em 0.15em 0.6em;
+    -fx-font-size: 0.95em;
+}
+
+.rme-structure-view .list-cell:filled:hover {
+    -fx-background-color: #e4eefc;
+}
+
+/* ---------- Zeilennummern ---------- */
+
+.rme-line-number-gutter {
+    -fx-background-color: #f9f9f9;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 0 1 0 0;
+}
+
+.rme-line-number-gutter .line-number {
+    -fx-text-fill: #8a8a8a;
+    -fx-font-size: 0.9em;
+}

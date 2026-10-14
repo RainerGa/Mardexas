@@ -31,9 +31,10 @@ the toolbar and menus for common formatting instead of memorizing syntax.
   optionally show paragraph line numbers.
 - **Adjust the workspace:** Change zoom, check cursor position and paragraph
   style in the status bar, and print the document.
-- **Use your language:** The interface is available in German, English,
-  French, Spanish, Brazilian Portuguese, Japanese, Simplified Chinese, Italian,
-  Korean, and Dutch.
+- **Use your language:** The interface is available in:
+
+  🇩🇪 German · 🇬🇧 English · 🇫🇷 French · 🇪🇸 Spanish · 🇧🇷 Brazilian Portuguese
+  🇯🇵 Japanese · 🇨🇳 Simplified Chinese · 🇮🇹 Italian · 🇰🇷 Korean · 🇳🇱 Dutch
 
 The application and its UI currently use the name `RichMarkDownEditor`; the
 GitHub project is named **Mardexas**.

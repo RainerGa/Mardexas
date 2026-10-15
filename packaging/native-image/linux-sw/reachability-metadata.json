@@ -4102,6 +4102,18 @@
       "glob": "com/sun/javafx/tk/quantum/QuantumMessagesBundle_de_DE.properties"
     },
     {
+      "glob": "com/sun/prism/es2/glsl/*.frag"
+    },
+    {
+      "glob": "com/sun/prism/es2/glsl/*.vert"
+    },
+    {
+      "glob": "com/sun/scenario/effect/impl/es2/glsl/*.frag"
+    },
+    {
+      "glob": "com/sun/scenario/effect/impl/es2/glsl/*.vert"
+    },
+    {
       "module": "java.desktop",
       "glob": "com/sun/swing/internal/plaf/basic/resources/basic_de_DE.properties"
     },

@@ -52,8 +52,10 @@ def entry_id(section, entry):
     for field in ("type", "glob", "regex", "name", "bundle"):
         if field in entry:
             # "condition" (z. B. typeReached) haelt separate Eintraege auseinander.
+            module = entry.get("module") if section == "resources" else None
             return (field, json.dumps(entry[field], sort_keys=True),
-                    json.dumps(entry.get("condition"), sort_keys=True))
+                    json.dumps(entry.get("condition"), sort_keys=True),
+                    json.dumps(module, sort_keys=True))
     return None
 
 

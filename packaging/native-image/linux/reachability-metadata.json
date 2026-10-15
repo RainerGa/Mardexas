@@ -4153,8 +4153,20 @@
       "glob": "com/sun/prism/es2/glsl/*.frag"
     },
     {
+      "glob": "com/sun/prism/es2/glsl/*.frag"
+    },
+    {
+      "glob": "com/sun/prism/es2/glsl/*.vert"
+    },
+    {
       "module": "javafx.graphics",
       "glob": "com/sun/scenario/effect/impl/es2/glsl/*.frag"
+    },
+    {
+      "glob": "com/sun/scenario/effect/impl/es2/glsl/*.frag"
+    },
+    {
+      "glob": "com/sun/scenario/effect/impl/es2/glsl/*.vert"
     },
     {
       "module": "java.desktop",

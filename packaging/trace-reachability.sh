@@ -59,7 +59,7 @@ prepare_input() {
     if [[ ! -f "$INPUT_DIR/RichMarkDownEditor-1.0.0.jar" ]]; then
         echo "native-image-input fehlt – baue Modul-Input wie build-native-image.sh ..."
         (cd "$PROJECT_DIR" && mvn --batch-mode --no-transfer-progress -DskipTests \
-            -Djavafx.platform="$PLATFORM" -pl editor -am install)
+            -pl editor -am install)
         mkdir -p "$INPUT_DIR"
         cp "$PROJECT_DIR/editor/target/RichMarkDownEditor-1.0.0.jar" "$INPUT_DIR/"
         mvn --batch-mode --no-transfer-progress -f "$PROJECT_DIR/editor/pom.xml" \
@@ -252,7 +252,7 @@ run_tests_trace() {
     echo "Starte Unit-Tests mit native-image-agent (JDK_JAVA_OPTIONS) ..."
     set +e
     (cd "$PROJECT_DIR" && JDK_JAVA_OPTIONS="-agentlib:native-image-agent=config-merge-dir=$TRACE_DIR/tests" \
-        mvn --batch-mode --no-transfer-progress -Djavafx.platform="$PLATFORM" test) \
+        mvn --batch-mode --no-transfer-progress test) \
         > "$TRACE_DIR/tests-run.log" 2>&1
     rc=$?
     set -e

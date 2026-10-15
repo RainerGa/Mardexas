@@ -36,7 +36,6 @@ fi
 cd "$PROJECT_DIR"
 mvn --batch-mode --no-transfer-progress \
     -DskipTests \
-    -Djavafx.platform="$JAVAFX_PLATFORM" \
     -pl editor -am install
 
 rm -rf "$INPUT_DIR"

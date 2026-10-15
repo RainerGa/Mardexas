@@ -18,7 +18,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>25</maven.compiler.release>
     <javafx.version>25.0.4</javafx.version>
-    <javafx.platform>linux</javafx.platform>
     <richtextarea.version>3.0-RG</richtextarea.version>
     <junit.version>5.11.3</junit.version>
     <testfx.version>4.0.19-gluon</testfx.version>

@@ -55,18 +55,41 @@ if [[ "$JAVAFX_PLATFORM" == linux && ! -f "$PROJECT_DIR/packaging/native-image/l
     exit 2
 fi
 
-if [[ "${GRAALVM_HOME:-}" == /* && -x "$GRAALVM_HOME/bin/native-image" ]]; then
-    NATIVE_IMAGE="$GRAALVM_HOME/bin/native-image"
-elif [[ "${JAVA_HOME:-}" == /* && -x "$JAVA_HOME/bin/native-image" ]]; then
-    NATIVE_IMAGE="$JAVA_HOME/bin/native-image"
-elif command -v native-image >/dev/null 2>&1; then
+find_native_image_in_home() {
+    local home="$1"
+    local candidate
+
+    [[ -n "$home" ]] || return 1
+    if command -v cygpath >/dev/null 2>&1; then
+        home="$(cygpath -u "$home")"
+    fi
+
+    for candidate in \
+        "$home/bin/native-image" \
+        "$home/bin/native-image.cmd" \
+        "$home/bin/native-image.exe"; do
+        if [[ -f "$candidate" ]]; then
+            NATIVE_IMAGE="$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+if ! find_native_image_in_home "${GRAALVM_HOME:-}" \
+        && ! find_native_image_in_home "${JAVA_HOME:-}" \
+        && command -v native-image >/dev/null 2>&1; then
     NATIVE_IMAGE="$(command -v native-image)"
-else
+elif [[ -z "$NATIVE_IMAGE" ]] && command -v native-image.cmd >/dev/null 2>&1; then
+    NATIVE_IMAGE="$(command -v native-image.cmd)"
+fi
+
+if [[ -z "$NATIVE_IMAGE" ]]; then
     echo "native-image was not found. Install GraalVM 25 with Native Image support." >&2
     exit 1
 fi
 
-if ! "$NATIVE_IMAGE" --version | grep -qi "native-image"; then
+if ! "$NATIVE_IMAGE" --version 2>&1 | grep -qi "native-image"; then
     echo "The selected native-image command is not a GraalVM Native Image installation." >&2
     exit 1
 fi

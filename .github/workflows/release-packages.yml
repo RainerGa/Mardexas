@@ -325,35 +325,24 @@ jobs:
           APP_VERSION: ${{ steps.version.outputs.value }}
           JAVAFX_PLATFORM: linux
         run: |
-          # Run trace for app and tests
-          mkdir -p packaging/native-image/trace-output/linux
           packaging/trace-reachability.sh linux app
           packaging/trace-reachability.sh linux tests
-          # Merge app and tests metadata
-          python3 -c "
-import json, sys
-def load_json(filepath):
-    try:
-        with open(filepath, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-app_meta = load_json('packaging/native-image/trace-output/linux/app/reachability-metadata.json')
-tests_meta = load_json('packaging/native-image/trace-output/linux/tests/reachability-metadata.json')
-merged = sorted(set(app_meta + tests_meta))
-with open('packaging/native-image/linux/reachability-metadata.json', 'w') as f:
-    json.dump(merged, f, indent=2)
-"
-          # Copy to linux-sw directory (assume same metadata for software renderer)
-          cp packaging/native-image/linux/reachability-metadata.json packaging/native-image/linux-sw/reachability-metadata.json
+          # Merge the app and tests traces into the verified metadata file
+          python3 packaging/merge-reachability-metadata.py \
+            packaging/native-image/linux/reachability-metadata.json \
+            packaging/native-image/trace-output/linux/app/reachability-metadata.json \
+            packaging/native-image/trace-output/linux/tests/reachability-metadata.json
           # Optional: JNI scan (log only)
           packaging/trace-reachability.sh linux jni || echo "JNI scan completed (non-fatal)"
-       - name: Build native executable
-         shell: bash
-         env:
-           APP_VERSION: ${{ steps.version.outputs.value }}
-           JAVAFX_PLATFORM: linux
-         run: packaging/build-native-image.sh
+          # The software renderer uses the same metadata as the default renderer
+          cp packaging/native-image/linux/reachability-metadata.json \
+            packaging/native-image/linux-sw/reachability-metadata.json
+      - name: Build native executable
+        shell: bash
+        env:
+          APP_VERSION: ${{ steps.version.outputs.value }}
+          JAVAFX_PLATFORM: linux
+        run: packaging/build-native-image.sh
 
 
 
@@ -409,33 +398,21 @@ with open('packaging/native-image/linux/reachability-metadata.json', 'w') as f:
             exit 1
           fi
           echo "value=$version" >> "$GITHUB_OUTPUT"
-       - name: Generate reachability metadata for Windows
-         shell: bash
-         env:
-           APP_VERSION: ${{ steps.version.outputs.value }}
-           JAVAFX_PLATFORM: win
-         run: |
-           # Run trace for app and tests
-           mkdir -p packaging/native-image/trace-output/win
-           packaging/trace-reachability.sh win app
-           packaging/trace-reachability.sh win tests
-           # Merge app and tests metadata
-           python3 -c "
-import json, sys
-def load_json(filepath):
-    try:
-        with open(filepath, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-app_meta = load_json('packaging/native-image/trace-output/win/app/reachability-metadata.json')
-tests_meta = load_json('packaging/native-image/trace-output/win/tests/reachability-metadata.json')
-merged = sorted(set(app_meta + tests_meta))
-with open('packaging/native-image/win/reachability-metadata.json', 'w') as f:
-    json.dump(merged, f, indent=2)
-"
-           # Optional: JNI scan (log only)
-           packaging/trace-reachability.sh win jni || echo "JNI scan completed (non-fatal)"
+      - name: Generate reachability metadata for Windows
+        shell: bash
+        env:
+          APP_VERSION: ${{ steps.version.outputs.value }}
+          JAVAFX_PLATFORM: win
+        run: |
+          packaging/trace-reachability.sh win app
+          packaging/trace-reachability.sh win tests
+          # Merge the app and tests traces into the verified metadata file
+          python3 packaging/merge-reachability-metadata.py \
+            packaging/native-image/win/reachability-metadata.json \
+            packaging/native-image/trace-output/win/app/reachability-metadata.json \
+            packaging/native-image/trace-output/win/tests/reachability-metadata.json
+          # Optional: JNI scan (log only)
+          packaging/trace-reachability.sh win jni || echo "JNI scan completed (non-fatal)"
       - name: Build native executable
         shell: bash
         env:
@@ -496,36 +473,38 @@ with open('packaging/native-image/win/reachability-metadata.json', 'w') as f:
             echo "Release tag version ($version) must match editor/pom.xml version ($pom_version)." >&2
             exit 1
           fi
+          case "${{ matrix.architecture }}" in
+            arm64|aarch64)
+              platform="mac-aarch64"
+              architecture="aarch64"
+              ;;
+            x86_64)
+              platform="mac"
+              architecture="x86_64"
+              ;;
+            *)
+              echo "Unsupported macOS architecture: ${{ matrix.architecture }}" >&2
+              exit 1
+              ;;
+          esac
           echo "value=$version" >> "$GITHUB_OUTPUT"
           echo "platform=$platform" >> "$GITHUB_OUTPUT"
           echo "architecture=$architecture" >> "$GITHUB_OUTPUT"
-       - name: Generate reachability metadata for macOS
-         shell: bash
-         env:
-           APP_VERSION: ${{ steps.version.outputs.value }}
-           JAVAFX_PLATFORM: mac
-         run: |
-           # Run trace for app and tests
-           mkdir -p packaging/native-image/trace-output/mac
-           packaging/trace-reachability.sh mac app
-           packaging/trace-reachability.sh mac tests
-           # Merge app and tests metadata
-           python3 -c "
-import json, sys
-def load_json(filepath):
-    try:
-        with open(filepath, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-app_meta = load_json('packaging/native-image/trace-output/mac/app/reachability-metadata.json')
-tests_meta = load_json('packaging/native-image/trace-output/mac/tests/reachability-metadata.json')
-merged = sorted(set(app_meta + tests_meta))
-with open('packaging/native-image/mac/reachability-metadata.json', 'w') as f:
-    json.dump(merged, f, indent=2)
-"
-           # Optional: JNI scan (log only)
-           packaging/trace-reachability.sh mac jni || echo "JNI scan completed (non-fatal)"
+      - name: Generate reachability metadata for macOS
+        shell: bash
+        env:
+          APP_VERSION: ${{ steps.version.outputs.value }}
+          JAVAFX_PLATFORM: mac
+        run: |
+          packaging/trace-reachability.sh mac app
+          packaging/trace-reachability.sh mac tests
+          # Merge the app and tests traces into the verified metadata file
+          python3 packaging/merge-reachability-metadata.py \
+            packaging/native-image/mac/reachability-metadata.json \
+            packaging/native-image/trace-output/mac/app/reachability-metadata.json \
+            packaging/native-image/trace-output/mac/tests/reachability-metadata.json
+          # Optional: JNI scan (log only)
+          packaging/trace-reachability.sh mac jni || echo "JNI scan completed (non-fatal)"
       - name: Build native executable
         shell: bash
         env:

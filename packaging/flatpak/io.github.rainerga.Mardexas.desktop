@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Mardexas
+Comment=Visual Markdown editor
+Exec=mardexas %F
+Icon=io.github.rainerga.Mardexas
+Terminal=false
+Type=Application
+Categories=Office;TextEditor;
+MimeType=text/markdown;text/x-markdown;
+StartupNotify=true

@@ -4,6 +4,8 @@ import com.gluonhq.richtextarea.RichTextArea;
 import de.richmarkdown.editor.MarkdownEditor;
 import de.richmarkdown.i18n.I18n;
 import de.richmarkdown.ui.dialogs.DialogButtons;
+import de.richmarkdown.ui.dialogs.PrintDialog;
+import de.richmarkdown.ui.dialogs.PrintDialogResult;
 import de.richmarkdown.io.MarkdownFileHandler;
 import javafx.application.Platform;
 import javafx.print.JobSettings;
@@ -12,6 +14,7 @@ import javafx.print.Printer;
 import javafx.print.PrinterJob;
 import javafx.scene.Scene;
 import javafx.geometry.Bounds;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
@@ -26,6 +29,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.PopupWindow;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
@@ -124,7 +128,10 @@ public class EditorWindow extends Stage {
         root.setLeft(this.structureView);
 
         setTitle(I18n.text("app.title"));
-        Scene scene = new Scene(root, 1000, 700);
+        Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+        double sceneWidth = Math.min(1000, Math.max(1, screenBounds.getWidth() - 40));
+        double sceneHeight = Math.min(700, Math.max(1, screenBounds.getHeight() - 80));
+        Scene scene = new Scene(root, sceneWidth, sceneHeight);
         // Anwendungs-Design im Stil von Word/LibreOffice (Phase 13)
         scene.getStylesheets().add(
                 getClass().getResource("/de/richmarkdown/ui/app.css").toExternalForm());
@@ -359,25 +366,38 @@ public class EditorWindow extends Stage {
 
     /**
      * Druckt das Dokument (Datei → Drucken...), wie in Word/LibreOffice:
-     * System-Druckdialog, dann seitenweiser Ausdruck der Druckfassung.
-     * Ist kein Drucker verfügbar, erscheint ein Hinweis.
+     * JavaFX-nativer Druckdialog, dann seitenweiser Ausdruck der
+     * Druckfassung. Ist kein Drucker verfügbar, erscheint ein Hinweis.
      *
-     * <p>Vorbereitung (CUPS-Druckersuche) und Systemdialog laufen auf einem
+     * <p>Die Vorbereitung (CUPS-Druckersuche) läuft auf einem
      * Hintergrund-Thread – die Oberfläche bleibt bedienbar. Das ist die
      * ausdrückliche Empfehlung der {@code PrinterJob}-Dokumentation
-     * („perform printing on a new thread"). Der Dialog darf keinesfalls auf
-     * dem FX-Thread laufen: JavaFX betriebe ihn dort in einer verschachtelten
-     * Ereignisschleife, nach deren Ende (Abbrechen) die Menüs der Anwendung
-     * nicht mehr bedienbar waren. Nur das Rendern der Druckfassung muss auf
-     * dem FX-Thread erfolgen (neue Szene/Stage).
+     * („perform printing on a new thread"). Der modale JavaFX-Dialog läuft
+     * per {@code showAndWait} auf dem FX-Thread (verschachtelte
+     * Ereignisschleife); er hat bewusst kein Owner-Fenster, damit das
+     * Hauptfenster unter X11/GTK nach Abbruch bedienbar bleibt. Nur das
+     * Rendern der Druckfassung muss auf dem FX-Thread erfolgen
+     * (neue Szene/Stage).
      */
     public void print() {
         printStart = System.currentTimeMillis();
         trace("print gestartet", true);
         Thread thread = new Thread(() -> {
-            PrinterJob job = createPrinterJob();
-            trace("createPrinterJob", job != null);
-            if (job == null) {
+            List<Printer> printers;
+            try {
+                printers = listPrinters();
+            } catch (Throwable t) {
+                // Native-Image (GraalVM): Ohne java.home stürzt bereits die
+                // AWT-Font-Initialisierung ab, die JavaFX für CUPS nutzt.
+                trace("Druckerliste Fehler: " + t, false);
+                Platform.runLater(() -> {
+                    showPrintUnavailableMessage();
+                    trace("showPrintUnavailableMessage", true);
+                });
+                return;
+            }
+            trace("Druckerliste", !printers.isEmpty());
+            if (printers.isEmpty()) {
                 Platform.runLater(() -> {
                     showNoPrinterMessage();
                     trace("showNoPrinterMessage", true);
@@ -385,27 +405,149 @@ public class EditorWindow extends Stage {
                 return;
             }
             trace("showPrintDialog beginnt", true);
-            if (showPrintDialog(job)) {
-                trace("showPrintDialog bestaetigt", true);
-                Platform.runLater(() -> printDocument(job));
-            } else {
-                trace("showPrintDialog abgebrochen", false);
-                cancelJob(job);
+            PrintDialogResult choice;
+            try {
+                choice = showPrintDialog(printers);
+            } catch (Throwable t) {
+                trace("showPrintDialog Fehler: " + t, false);
+                Platform.runLater(() -> {
+                    showPrintUnavailableMessage();
+                    trace("showPrintUnavailableMessage", true);
+                });
+                return;
             }
+            if (choice == null) {
+                trace("showPrintDialog abgebrochen", false);
+                return;
+            }
+            trace("showPrintDialog bestaetigt", true);
+            PrinterJob job;
+            try {
+                job = createPrinterJob(choice.printer());
+            } catch (Throwable t) {
+                trace("createPrinterJob Fehler: " + t, false);
+                Platform.runLater(() -> {
+                    showPrintUnavailableMessage();
+                    trace("showPrintUnavailableMessage", true);
+                });
+                return;
+            }
+            if (job == null) {
+                Platform.runLater(() -> {
+                    showNoPrinterMessage();
+                    trace("showNoPrinterMessage", true);
+                });
+                return;
+            }
+            applyPrintChoice(job, choice);
+            Platform.runLater(() -> printDocument(job));
         }, "rme-print");
         thread.setDaemon(true);
+        // Ein Error (z. B. AWT-FontConfig im Native-Image) darf den
+        // Hintergrund-Thread nicht still beenden – stattdessen Hinweis.
+        thread.setUncaughtExceptionHandler((t, e) -> {
+            trace("rme-print Fehler: " + e, false);
+            Platform.runLater(() -> {
+                showPrintUnavailableMessage();
+                trace("showPrintUnavailableMessage", true);
+            });
+        });
         thread.start();
     }
 
     /**
-     * Systemdialog wurde abgebrochen – der Auftrag wird verworfen. Auch das
-     * darf auf dem Hintergrund-Thread geschehen ({@code PrinterJob}-Doku:
-     * ein abgebrochener Job „should simply be discarded").
+     * Druckeraufzählung für den Hintergrund-Thread (überschreibbar für
+     * Tests). Sortiert ist nichts – {@link PrintDialog} sortiert selbst.
      *
-     * @param job abzubrechender Druckauftrag
+     * @return verfügbare Drucker, ggf. leer
      */
-    protected void cancelJob(PrinterJob job) {
-        job.cancelJob();
+    protected List<Printer> listPrinters() {
+        return new ArrayList<>(Printer.getAllPrinters());
+    }
+
+    /**
+     * Rein JavaFX-nativer Druckdialog. Ersetzt
+     * {@code PrinterJob.showPrintDialog()} (Swing-{@code ServiceDialog}),
+     * der im GraalVM-Native-Image mit
+     * {@code Error: java.home property not set} abstürzt.
+     *
+     * <p>Die CUPS-Aufzählung lief bereits auf dem Hintergrund-Thread; der
+     * modale JavaFX-Dialog muss auf dem FX-Thread in einer verschachtelten
+     * Ereignisschleife laufen ({@code showAndWait}). Der Aufrufer
+     * ({@code rme-print}) wartet per Latch – der FX-Thread bleibt dabei
+     * frei, die Menüs bleiben nach Abbruch bedienbar: Der Dialog hat bewusst
+     * <b>kein</b> Owner-Fenster (kein {@code setEnabled(false)} auf dem
+     * Hauptfenster, das unter X11/GTK nicht zuverlässig zurückgenommen
+     * wurde).
+     *
+     * @param printers verfügbare Drucker vom Hintergrund-Thread
+     * @return Dialogergebnis oder {@code null} bei Abbruch
+     */
+    protected PrintDialogResult showPrintDialog(List<Printer> printers) {
+        if (Platform.isFxApplicationThread()) {
+            PrintDialog dialog = new PrintDialog(printers, cachedPrinter);
+            return dialog.showAndWait().orElse(null);
+        }
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicReference<PrintDialogResult> result =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        java.util.concurrent.atomic.AtomicReference<Throwable> error =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        Platform.runLater(() -> {
+            try {
+                PrintDialog dialog = new PrintDialog(printers, cachedPrinter);
+                result.set(dialog.showAndWait().orElse(null));
+            } catch (Throwable t) {
+                error.set(t);
+            } finally {
+                latch.countDown();
+            }
+        });
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        }
+        Throwable failure = error.get();
+        if (failure instanceof RuntimeException runtime) {
+            throw runtime;
+        }
+        if (failure instanceof Error err) {
+            throw err;
+        }
+        if (failure != null) {
+            throw new IllegalStateException(failure);
+        }
+        return result.get();
+    }
+
+    /**
+     * Übernimmt die Dialogauswahl in den Druckauftrag: Drucker, Kopienzahl,
+     * Seitenlayout (Papier + Ausrichtung) sowie Duplex und Farbe, soweit der
+     * Drucker sie meldet.
+     *
+     * @param job bestätigter Druckauftrag
+     * @param choice Dialogergebnis
+     */
+    protected void applyPrintChoice(PrinterJob job, PrintDialogResult choice) {
+        job.setPrinter(choice.printer());
+        cachedPrinter = choice.printer();
+        JobSettings settings = job.getJobSettings();
+        settings.setCopies(Math.max(1, choice.copies()));
+        Printer printer = choice.printer();
+        PageLayout layout = printer.createPageLayout(
+                choice.paper(), choice.orientation(),
+                Printer.MarginType.DEFAULT);
+        settings.setPageLayout(layout);
+        if (printer.getPrinterAttributes().getSupportedPrintSides()
+                .contains(choice.sides())) {
+            settings.setPrintSides(choice.sides());
+        }
+        if (printer.getPrinterAttributes().getSupportedPrintColors()
+                .contains(choice.color())) {
+            settings.setPrintColor(choice.color());
+        }
     }
 
     /** Hinweis gegenüber dem Anwender, wenn kein Drucker verfügbar ist. */
@@ -418,27 +560,39 @@ public class EditorWindow extends Stage {
     }
 
     /**
-     * Factory für den Druckauftrag (überschreibbar für Tests). Nutzt den
-     * ermittelten Drucker ({@link #selectPrinter()}); der gewählte Drucker
-     * wird gemerkt – die CUPS-Abfrage kostet pro Aufruf rund eine Sekunde,
-     * das Job-Bauen dagegen nur ~20 ms. Fällt der gemerkte Drucker aus,
-     * wird neu ermittelt.
-     *
-     * @return Druckauftrag für den ausgewählten Drucker oder {@code null}, wenn
-     *         kein Auftrag erstellt werden kann
+     * Hinweis, wenn das Drucksystem im Native-Image nicht nutzbar ist
+     * (z. B. AWT-FontConfig ohne {@code java.home}). Der JVM-/jpackage-Build
+     * druckt normal; nur das GraalVM-Binary kann den Swing-basierten
+     * Systemdialog nicht aufbauen.
      */
-    protected PrinterJob createPrinterJob() {
-        Printer printer = cachedPrinter;
-        if (printer != null) {
+    protected void showPrintUnavailableMessage() {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(I18n.text("error.print.title"));
+        alert.setHeaderText(null);
+        alert.setContentText(I18n.text("error.printUnavailable"));
+        alert.show();
+    }
+
+    /**
+     * Factory für den Druckauftrag auf dem gewählten Drucker (überschreibbar
+     * für Tests). Der gewählte Drucker wird gemerkt – die CUPS-Abfrage kostet
+     * pro Aufruf rund eine Sekunde, das Job-Bauen dagegen nur ~20 ms.
+     *
+     * @param printer im Dialog gewählter Drucker
+     * @return Druckauftrag für den Drucker oder {@code null}, wenn keiner
+     *         erstellt werden kann
+     */
+    protected PrinterJob createPrinterJob(Printer printer) {
+        if (printer == null) {
+            return null;
+        }
+        if (printer.equals(cachedPrinter)) {
             PrinterJob job = PrinterJob.createPrinterJob(printer);
             if (job != null) {
                 trace("createPrinterJob aus Cache", true);
                 return job;
             }
             cachedPrinter = null; // Drucker nicht mehr verfügbar -> neu wählen
-        }
-        printer = selectPrinter();
-        if (printer == null) {
             return null;
         }
         cachedPrinter = printer;
@@ -464,19 +618,51 @@ public class EditorWindow extends Stage {
     }
 
     /**
+     * Ältere auftragsbasierte Factory (nur für Abwärtskompatibilität der
+     * Tests): baut den Auftrag auf dem gemerkten bzw. ermittelten Drucker.
+     *
+     * @return Druckauftrag oder {@code null}, wenn kein Drucker verfügbar ist
+     */
+    protected PrinterJob createPrinterJob() {
+        Printer printer = cachedPrinter;
+        if (printer != null) {
+            PrinterJob job = PrinterJob.createPrinterJob(printer);
+            if (job != null) {
+                trace("createPrinterJob aus Cache", true);
+                return job;
+            }
+            cachedPrinter = null; // Drucker nicht mehr verfügbar -> neu wählen
+        }
+        printer = selectPrinter();
+        if (printer == null) {
+            return null;
+        }
+        cachedPrinter = printer;
+        return PrinterJob.createPrinterJob(printer);
+    }
+
+    /**
      * Bereitet das Druckersystem schon beim Fensteraufbau im Hintergrund
      * vor (CUPS-Aufzählung + Job-Bauen ~2 s): Der erste Klick auf
      * „Drucken..." öffnet den Dialog dann ohne Wartezeit.
      */
     private void warmUpPrintSystem() {
         Thread thread = new Thread(() -> {
-            Printer printer = selectPrinter();
-            if (printer != null) {
-                cachedPrinter = printer;
-                trace("Warm-up Druckersystem", PrinterJob.createPrinterJob(printer) != null);
+            try {
+                Printer printer = selectPrinter();
+                if (printer != null) {
+                    cachedPrinter = printer;
+                    trace("Warm-up Druckersystem", PrinterJob.createPrinterJob(printer) != null);
+                }
+            } catch (Throwable t) {
+                // Native-Image ohne java.home: AWT-Font-Init schlägt fehl –
+                // kein Warm-up, Drucken meldet später gezielt den Hinweis.
+                trace("Warm-up Druckersystem Fehler: " + t, false);
             }
         }, "rme-print-warmup");
         thread.setDaemon(true);
+        thread.setUncaughtExceptionHandler((t, e) ->
+                trace("Warm-up Druckersystem Fehler: " + e, false));
         thread.start();
     }
 
@@ -571,20 +757,6 @@ public class EditorWindow extends Stage {
             }
         }
         return sb.toString().trim();
-    }
-
-    /**
-     * System-Druckdialog. Bewusst <b>ohne</b> Owner-Fenster: JavaFX sperrt
-     * das Owner-Fenster für die Dauer des Dialogs (intern
-     * {@code setEnabled(false)}) und gibt es unter Linux (X11/GTK) nicht
-     * zuverlässig wieder frei – danach waren die Menüs der Anwendung nicht
-     * mehr bedienbar. Ohne Owner entfällt das Sperren.
-     *
-     * @param job Druckauftrag für den Systemdialog
-     * @return {@code true}, wenn der Benutzer den Druckauftrag bestätigt hat
-     */
-    protected boolean showPrintDialog(PrinterJob job) {
-        return job.showPrintDialog(null);
     }
 
     /**

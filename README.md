@@ -8,13 +8,14 @@ in a text editor, review in Git, or use with other Markdown tools.
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 ![Java 25](https://img.shields.io/badge/Java-25-orange.svg)
 ![JavaFX 25.0.4](https://img.shields.io/badge/JavaFX-25.0.4-royalblue.svg)
-![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
+![Linux packages](https://img.shields.io/badge/Linux-Flatpak%20%7C%20portable-lightgrey.svg)
+![Windows packages](https://img.shields.io/badge/Windows-MSI%20%7C%20portable-lightgrey.svg)
+![macOS package](https://img.shields.io/badge/macOS-portable-lightgrey.svg)
 [![GitHub repository](https://img.shields.io/badge/GitHub-Private-lightgrey?logo=github)](https://github.com/RainerGa/Mardexas)
 
 > **Availability:** The repository is currently private and does not yet provide
-> a downloadable installer or packaged application. Until a release is
-> published, the application must be built from source (see
-> [Build and run](#build-and-run-from-source)).
+> a published download. Release packages are prepared as a draft for review;
+> they become downloadable only after the release is explicitly published.
 
 ## Why use Mardexas?
 
@@ -41,8 +42,8 @@ GitHub project is named **Mardexas**.
 
 ## Get started
 
-There is not yet a ready-to-install application package. If you are comfortable
-building Java projects, you can try the current source version:
+If you are comfortable building Java projects, you can try the current source
+version:
 
 1. Install [JDK 25](https://adoptium.net/) and [Maven](https://maven.apache.org/).
 2. Clone the repository and its RichTextArea submodule:
@@ -60,6 +61,44 @@ building Java projects, you can try the current source version:
 
 The script builds the project before launching the editor. The repository is
 private at present, so GitHub access is required to clone it.
+
+## Release packages
+
+The release workflow is configured to build packages with a bundled Java
+runtime, so end users do not need to install Java:
+
+| Platform | Release files | How to use |
+| --- | --- | --- |
+| Linux x86-64 | Flatpak (`.flatpak`), portable runtime `.tar.gz`, and GraalVM native `.tar.gz` | Install the Flatpak with `flatpak install --user ./Mardexas-<version>-linux-x86_64.flatpak`; run it with `flatpak run io.github.rainerga.Mardexas`. The runtime archive includes Java; the native archive contains `Mardexas`, which can be run after extraction. |
+| Windows x86-64 | MSI installer and portable runtime `.zip` | Run the MSI, or extract the ZIP. The portable package starts with `Mardexas\bin\Mardexas.exe`. |
+| macOS | Portable `.zip` containing `Mardexas.app` | Extract the archive and move the app to Applications if desired. The filename identifies the build architecture. |
+
+The Linux GraalVM native executable is built on a Linux GitHub Actions runner
+and smoke-tested with a virtual display before it is attached to a draft
+release. It is dynamically linked and needs compatible system graphics
+libraries and glibc; it is not a fully static Linux binary. A Windows GraalVM
+native executable is not included yet: it needs its own Windows-specific
+JavaFX reachability metadata and runtime verification. The MSI and portable
+Windows runtime ZIP remain available independently.
+
+When a version tag matching the editor Maven version (currently `v1.0.0`) is
+pushed, GitHub Actions builds the platform packages, the Linux native
+executable, and the source archive, then creates a **draft** GitHub Release.
+Review the files and release notes, then publish the draft when it is ready.
+Running the workflow manually creates downloadable Actions artifacts instead;
+it does not create a release. The repository can remain private while these
+steps are tested, but only users with repository access can download its
+packages.
+
+The source archive includes the pinned `rich-text-area` submodule source, as
+required when redistributing GPL-licensed binaries. Windows MSI packages and
+macOS applications are currently unsigned; Windows may display a SmartScreen
+warning, and macOS may block the first launch. Code signing and macOS
+notarization are not configured. The application packages include the
+Mardexas and RichTextArea GPL-3.0 license texts and the third-party notice
+inventory; the bundled Java runtime includes its own legal notices. GraalVM
+The native executable does not bundle Java, but includes the project license
+and third-party notice files.
 
 ## What Markdown does it support?
 
@@ -86,13 +125,14 @@ when editing documents that rely on unsupported Markdown features.
 
 ### Requirements
 
-- JDK 25 or newer.
+- JDK 25 or newer (including `jpackage`).
 - Maven 3.8 or newer.
-- Linux is the configured JavaFX Maven platform in the current editor POM.
-  Other operating systems are not currently configured or verified.
+- The source build helper currently targets Linux. Release packaging is
+  configured separately for Linux x86-64, Windows x86-64, and the architecture
+  of the macOS runner.
 
-The application is a modular JavaFX project. The project does not include a JDK
-or redistribute a packaged application/runtime image.
+The application is a modular JavaFX project. The source tree does not include
+a JDK; release packages bundle their own runtime image.
 
 ### Clone and RichTextArea submodule
 
@@ -175,8 +215,8 @@ and license references identified from the current Maven dependency tree.
 License metadata and notices are informational; the actual license texts,
 copyright notices, selected artifacts, and distribution method govern. Anyone
 redistributing binaries must comply with the applicable licenses, including
-source-code and notice requirements. This repository currently documents and
-builds source; it does not provide a binary release.
+source-code and notice requirements. The automated release workflow provides
+a corresponding source archive that includes the RichTextArea submodule.
 
 ## Current validation status
 

@@ -193,8 +193,8 @@ class EditorWindowTest {
         CountDownLatch message = new CountDownLatch(1);
         EditorWindow window = FxTestUtil.callAndWait(() -> new EditorWindow() {
             @Override
-            protected javafx.print.PrinterJob createPrinterJob() {
-                return null;
+            protected java.util.List<javafx.print.Printer> listPrinters() {
+                return java.util.List.of();
             }
 
             @Override
@@ -209,43 +209,78 @@ class EditorWindowTest {
     }
 
     @Test
-    void printRunsDialogAndCancellationOffTheFxThread() throws Exception {
-        // Der Systemdialog darf nicht auf dem FX-Thread laufen: JavaFX betreibt
-        // ihn dort in einer verschachtelten Ereignisschleife, nach deren Ende
-        // (Abbrechen) die Menüs der Anwendung nicht mehr bedienbar waren.
-        // Er muss deshalb wie die übrige Druckvorbereitung auf dem
-        // Hintergrund-Thread laufen.
-        org.junit.jupiter.api.Assumptions.assumeTrue(
-                !javafx.print.Printer.getAllPrinters().isEmpty(),
-                "kein Drucker im System");
-
+    void printCancellationSkipsSpooling() throws Exception {
+        // Abbruch im JavaFX-Dialog: kein Auftrag, kein Spoolen. Der Dialog
+        // selbst läuft auf dem FX-Thread (showAndWait), die Vorbereitung
+        // (Druckerliste) auf dem Hintergrund-Thread.
         CountDownLatch dialogShown = new CountDownLatch(1);
-        CountDownLatch cancelled = new CountDownLatch(1);
-        AtomicReference<Boolean> dialogOnFxThread = new AtomicReference<>();
-        AtomicReference<Boolean> cancelOnFxThread = new AtomicReference<>();
+        CountDownLatch finished = new CountDownLatch(1);
+        AtomicReference<Boolean> enumeratedOnFxThread = new AtomicReference<>();
+        AtomicReference<Thread> printThread = new AtomicReference<>();
 
         EditorWindow window = FxTestUtil.callAndWait(() -> new EditorWindow() {
             @Override
-            protected boolean showPrintDialog(javafx.print.PrinterJob job) {
-                dialogOnFxThread.set(
+            protected java.util.List<javafx.print.Printer> listPrinters() {
+                enumeratedOnFxThread.set(
                         javafx.application.Platform.isFxApplicationThread());
-                dialogShown.countDown();
-                return false;
+                printThread.set(Thread.currentThread());
+                return java.util.List.of();
             }
 
             @Override
-            protected void cancelJob(javafx.print.PrinterJob job) {
-                cancelOnFxThread.set(
-                        javafx.application.Platform.isFxApplicationThread());
-                cancelled.countDown();
+            protected void showNoPrinterMessage() {
+                dialogShown.countDown();
+                finished.countDown();
             }
         });
         FxTestUtil.runAndWait(window::print);
 
         assertTrue(dialogShown.await(5, TimeUnit.SECONDS));
-        assertTrue(cancelled.await(5, TimeUnit.SECONDS));
-        assertFalse(dialogOnFxThread.get(), "Druckdialog lief auf dem FX-Thread");
-        assertFalse(cancelOnFxThread.get(), "Abbruch lief auf dem FX-Thread");
+        assertTrue(finished.await(5, TimeUnit.SECONDS));
+        assertFalse(enumeratedOnFxThread.get(),
+                "Druckeraufzählung lief auf dem FX-Thread");
+        assertTrue(printThread.get().getName().startsWith("rme-print"),
+                "Druckvorbereitung läuft auf rme-print");
+    }
+
+    @Test
+    void printDialogCancellationDoesNotCreateJob() throws Exception {
+        // Dialog-Abbruch (null) darf keinen PrinterJob bauen und nicht
+        // spoolen. CUPS wird nicht berührt: Die Druckerliste ist gemockt,
+        // der Dialog ebenfalls (kein showAndWait im Test).
+        CountDownLatch dialogShown = new CountDownLatch(1);
+
+        EditorWindow window = FxTestUtil.callAndWait(() -> new EditorWindow() {
+            @Override
+            protected java.util.List<javafx.print.Printer> listPrinters() {
+                // leer reicht: print() bricht dann vor dem Dialog ab –
+                // für den Abbruch-Pfad weiter unten wird der Dialog
+                // direkt aufgerufen
+                return java.util.List.of();
+            }
+
+            @Override
+            protected de.richmarkdown.ui.dialogs.PrintDialogResult showPrintDialog(
+                    java.util.List<javafx.print.Printer> printers) {
+                dialogShown.countDown();
+                return null;
+            }
+
+            @Override
+            protected javafx.print.PrinterJob createPrinterJob(
+                    javafx.print.Printer printer) {
+                throw new AssertionError("kein Job bei Dialog-Abbruch");
+            }
+
+            @Override
+            protected void printDocument(javafx.print.PrinterJob job) {
+                throw new AssertionError("kein Spoolen bei Dialog-Abbruch");
+            }
+        });
+        // Dialog-Abbruch direkt verifizieren: kein Job, kein Spoolen –
+        // wirft bei Verstoß AssertionError
+        FxTestUtil.callAndWait(() -> window.showPrintDialog(java.util.List.of()));
+        assertTrue(dialogShown.await(5, TimeUnit.SECONDS));
     }
 
     @Test

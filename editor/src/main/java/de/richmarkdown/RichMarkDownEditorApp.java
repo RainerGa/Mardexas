@@ -97,6 +97,44 @@ public class RichMarkDownEditorApp extends Application {
      * @param args Startargumente der Anwendung
      */
     public static void main(String[] args) {
-        launch(args);
+        ensureJavaHomeForNativeImage();
+        launch(RichMarkDownEditorApp.class, args);
+    }
+
+    /**
+     * Stellt {@code java.home} im GraalVM-Native-Image sicher. Dort ist die
+     * Eigenschaft zur Laufzeit nicht gesetzt ({@code null}); sobald JavaFX
+     * den Swing-basierten Druckdialog öffnet, verlangt
+     * {@code sun.awt.FontConfiguration} jedoch {@code java.home} und wirft
+     * sonst {@code Error: java.home property not set} auf dem
+     * {@code rme-print}-Thread.
+     *
+     * <p>Ist bereits ein Wert gesetzt (JVM-/jpackage-Start), bleibt er
+     * unverändert. Im Native-Image wird auf das Verzeichnis der
+     * Programmdatei zurückgegriffen – dort liegt keine {@code lib/fonts}-
+     * Struktur, aber {@code FontConfiguration} findet dann schlicht keine
+     * Datei (statt mit {@code Error} abzubrechen) und AWT fällt auf die
+     * System-Fonts (fontconfig) zurück. Zusätzlich fängt
+     * {@code EditorWindow#print()} verbleibende Druck-Fehler ab und zeigt
+     * einen Hinweis statt den Thread sterben zu lassen.
+     */
+    private static void ensureJavaHomeForNativeImage() {
+        if (System.getProperty("java.home") != null) {
+            return;
+        }
+        try {
+            String exePath = ProcessHandle.current().info().command().orElse(null);
+            if (exePath != null) {
+                java.nio.file.Path exe = java.nio.file.Path.of(exePath);
+                java.nio.file.Path dir = exe.toAbsolutePath().getParent();
+                if (dir != null && java.nio.file.Files.isDirectory(dir)) {
+                    System.setProperty("java.home", dir.toString());
+                    return;
+                }
+            }
+        } catch (RuntimeException | java.io.IOError e) {
+            // fällt unten auf user.dir zurück
+        }
+        System.setProperty("java.home", System.getProperty("user.dir", "."));
     }
 }

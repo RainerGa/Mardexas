@@ -18,6 +18,9 @@ public final class DialogButtons {
     /** Bestätigungsaktion mit OK-Semantik. */
     public static final ButtonType OK =
             new ButtonType(I18n.text("dialog.ok"), ButtonBar.ButtonData.OK_DONE);
+    /** Druckaktion mit OK-Semantik für den Druckdialog. */
+    public static final ButtonType PRINT =
+            new ButtonType(I18n.text("dialog.print.print"), ButtonBar.ButtonData.OK_DONE);
     /** Abbruchaktion mit Cancel-Semantik. */
     public static final ButtonType CANCEL =
             new ButtonType(I18n.text("dialog.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);

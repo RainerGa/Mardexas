@@ -1,0 +1,24 @@
+app-id: io.github.rainerga.Mardexas
+runtime: org.freedesktop.Platform
+runtime-version: "25.08"
+sdk: org.freedesktop.Sdk
+command: mardexas
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --filesystem=home
+  - --talk-name=org.freedesktop.portal.Desktop
+modules:
+  - name: mardexas
+    buildsystem: simple
+    build-commands:
+      - install -d /app/opt/mardexas
+      - cp -a bin lib /app/opt/mardexas/
+      - install -Dm755 flatpak/mardexas /app/bin/mardexas
+      - install -Dm644 flatpak/io.github.rainerga.Mardexas.desktop /app/share/applications/io.github.rainerga.Mardexas.desktop
+      - install -Dm644 flatpak/io.github.rainerga.Mardexas.svg /app/share/icons/hicolor/scalable/apps/io.github.rainerga.Mardexas.svg
+    sources:
+      - type: dir
+        path: ../../dist/flatpak-source

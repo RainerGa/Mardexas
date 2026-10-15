@@ -6,6 +6,7 @@
 *.class
 *.patch
 test.md
+/dist/
 
 # Machine-local Maven cache and working notes
 /.m2repo/
@@ -16,3 +17,6 @@ test.md
 /.kilo/
 /.kilo-free-router/
 /.kilocode/
+
+# Native-Image-Metadaten-Traces (Lauf-Output von packaging/trace-reachability.sh)
+/packaging/native-image/trace-output/

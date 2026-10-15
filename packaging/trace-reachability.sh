@@ -175,12 +175,19 @@ run_app_trace() {
     else
         # For win/mac: launch app without GUI automation, just let it initialize briefly
         echo "Starte App-Tracing-Lauf (ohne GUI-Automation für $PLATFORM) ..."
-        INPUT_DIR="'"$INPUT_DIR"'"
-        TRACE_DIR="'"$TRACE_DIR"'"
-        JAVA="'"$GRAALVM_JAVA"'"
-        "$JAVA" \
-            -agentlib:native-image-agent=config-output-dir="$TRACE_DIR/app" \
-            --module-path "$INPUT_DIR" \
+        JAVA_INPUT_DIR="$INPUT_DIR"
+        JAVA_TRACE_DIR="$TRACE_DIR/app"
+        if [[ "$PLATFORM" == "win" ]]; then
+            if ! command -v cygpath >/dev/null 2>&1; then
+                echo "cygpath ist fuer den Windows-Trace-Lauf erforderlich." >&2
+                return 1
+            fi
+            JAVA_INPUT_DIR="$(cygpath -m "$INPUT_DIR")"
+            JAVA_TRACE_DIR="$(cygpath -m "$TRACE_DIR/app")"
+        fi
+        "$GRAALVM_JAVA" \
+            -agentlib:native-image-agent=config-output-dir="$JAVA_TRACE_DIR" \
+            --module-path "$JAVA_INPUT_DIR" \
             --add-exports=com.gluonhq.richtextarea/com.gluonhq.richtextarea.viewmodel=RichMarkDownEditor \
             --module RichMarkDownEditor/de.richmarkdown.RichMarkDownEditorApp \
             >"$TRACE_DIR/app-run.log" 2>&1 &
@@ -197,8 +204,15 @@ run_app_trace() {
         wait $PID 2>/dev/null || true
         echo APP_TRACE_DONE
     fi
+    if [[ ! -f "$TRACE_DIR/app/reachability-metadata.json" ]]; then
+        echo "App-Tracing fuer $PLATFORM hat keine reachability-metadata.json erzeugt." >&2
+        if [[ -f "$TRACE_DIR/app-run.log" ]]; then
+            cat "$TRACE_DIR/app-run.log" >&2
+        fi
+        return 1
+    fi
     echo "App-Tracing abgeschlossen: $TRACE_DIR/app"
-    ls "$TRACE_DIR/app" || true
+    ls "$TRACE_DIR/app"
 }
 
 run_jni_scan() {

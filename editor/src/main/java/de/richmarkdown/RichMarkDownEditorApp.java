@@ -2,6 +2,7 @@ package de.richmarkdown;
 
 import de.richmarkdown.ui.EditorWindow;
 import de.richmarkdown.i18n.I18n;
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -12,6 +13,7 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 /**
  * JavaFX-Anwendungseinstieg und Orchestrator des initialen Programmstarts.
@@ -49,6 +51,11 @@ public class RichMarkDownEditorApp extends Application {
 
         EditorWindow window = new EditorWindow();
         window.show();
+        if (Boolean.getBoolean("mardexas.trace.exit-after-start")) {
+            PauseTransition traceDuration = new PauseTransition(Duration.seconds(3));
+            traceDuration.setOnFinished(event -> Platform.exit());
+            traceDuration.play();
+        }
     }
 
     private boolean showInitialLanguageDialog() {

@@ -186,22 +186,28 @@ run_app_trace() {
             JAVA_TRACE_DIR="$(cygpath -m "$TRACE_DIR/app")"
         fi
         "$GRAALVM_JAVA" \
+            -Dmardexas.trace.exit-after-start=true \
             -agentlib:native-image-agent=config-output-dir="$JAVA_TRACE_DIR" \
             --module-path "$JAVA_INPUT_DIR" \
             --add-exports=com.gluonhq.richtextarea/com.gluonhq.richtextarea.viewmodel=RichMarkDownEditor \
             --module RichMarkDownEditor/de.richmarkdown.RichMarkDownEditorApp \
             >"$TRACE_DIR/app-run.log" 2>&1 &
         PID=$!
-        # Wait a few seconds for initialization
-        sleep 5
-        # Check if process still alive
-        if kill -0 $PID 2>/dev/null; then
-            echo "App läuft, werde sie beenden..."
-            kill -TERM $PID
-            for i in $(seq 1 10); do kill -0 $PID 2>/dev/null || break; sleep 1; done
-            kill -0 $PID 2>/dev/null && kill -9 $PID
+        for _ in $(seq 1 30); do
+            kill -0 "$PID" 2>/dev/null || break
+            sleep 1
+        done
+        if kill -0 "$PID" 2>/dev/null; then
+            echo "App-Tracing-Prozess wurde nach 30 Sekunden nicht regulär beendet." >&2
+            kill "$PID" 2>/dev/null || true
+            wait "$PID" 2>/dev/null || true
+            return 1
         fi
-        wait $PID 2>/dev/null || true
+        if ! wait "$PID"; then
+            echo "App-Tracing-Prozess wurde mit Fehler beendet:" >&2
+            cat "$TRACE_DIR/app-run.log" >&2
+            return 1
+        fi
         echo APP_TRACE_DONE
     fi
     if [[ ! -f "$TRACE_DIR/app/reachability-metadata.json" ]]; then

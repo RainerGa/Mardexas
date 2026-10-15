@@ -345,9 +345,11 @@ jobs:
             packaging/native-image/trace-output/linux/tests/reachability-metadata.json
           # Optional: JNI scan (log only)
           packaging/trace-reachability.sh linux jni || echo "JNI scan completed (non-fatal)"
-          # The software renderer uses the same metadata as the default renderer
-          cp packaging/native-image/linux/reachability-metadata.json \
-            packaging/native-image/linux-sw/reachability-metadata.json
+          # Keep software-renderer-specific entries and add the traced common entries.
+          python3 packaging/merge-reachability-metadata.py \
+            packaging/native-image/linux-sw/reachability-metadata.json \
+            packaging/native-image/linux-sw/reachability-metadata.json \
+            packaging/native-image/linux/reachability-metadata.json
       - name: Build native executable
         shell: bash
         env:

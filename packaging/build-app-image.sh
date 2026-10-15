@@ -52,15 +52,34 @@ mvn --batch-mode --no-transfer-progress \
     dependency:copy-dependencies
 
 rm -rf "$OUTPUT_DIR/Mardexas"
-"$JPACKAGE" \
-    --type app-image \
-    --name Mardexas \
-    --app-version "$APP_VERSION" \
-    --vendor RainerGa \
-    --description "Visual Markdown editor" \
-    --module-path "$INPUT_DIR" \
-    --dest "$OUTPUT_DIR" \
-    --app-content "$LICENSE_DIR" \
-    --app-content "$PROJECT_DIR/THIRD-PARTY-NOTICES.md" \
-    --module RichMarkDownEditor/de.richmarkdown.RichMarkDownEditorApp \
+JPACKAGE_ARGS=(
+    --type app-image
+    --name Mardexas
+    --app-version "$APP_VERSION"
+    --vendor RainerGa
+    --description "Visual Markdown editor"
+    --module-path "$INPUT_DIR"
+    --dest "$OUTPUT_DIR"
+    --module RichMarkDownEditor/de.richmarkdown.RichMarkDownEditorApp
     --java-options "--add-exports=com.gluonhq.richtextarea/com.gluonhq.richtextarea.viewmodel=RichMarkDownEditor"
+)
+
+case "$JAVAFX_PLATFORM" in
+    mac|mac-aarch64)
+        # Keep extra files outside the app bundle so jpackage can sign it.
+        ;;
+    *)
+        JPACKAGE_ARGS+=(--app-content "$LICENSE_DIR")
+        JPACKAGE_ARGS+=(--app-content "$PROJECT_DIR/THIRD-PARTY-NOTICES.md")
+        ;;
+esac
+
+"$JPACKAGE" \
+    "${JPACKAGE_ARGS[@]}"
+
+case "$JAVAFX_PLATFORM" in
+    mac|mac-aarch64)
+        cp "$LICENSE_DIR/"* "$OUTPUT_DIR/"
+        cp "$PROJECT_DIR/THIRD-PARTY-NOTICES.md" "$OUTPUT_DIR/"
+        ;;
+esac

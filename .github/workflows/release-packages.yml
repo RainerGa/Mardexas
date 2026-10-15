@@ -268,9 +268,14 @@ jobs:
           APP_VERSION: ${{ steps.version.outputs.value }}
           ARCHITECTURE: ${{ steps.version.outputs.architecture }}
         run: |
+          archive="dist/Mardexas-${APP_VERSION}-macos-${ARCHITECTURE}-portable.zip"
+          app_dir="dist/${{ steps.version.outputs.platform }}"
           ditto -c -k --sequesterRsrc --keepParent \
-            dist/${{ steps.version.outputs.platform }}/Mardexas.app \
-            "dist/Mardexas-${APP_VERSION}-macos-${ARCHITECTURE}-portable.zip"
+            "$app_dir/Mardexas.app" "$archive"
+          zip -q -j "$archive" \
+            "$app_dir/Mardexas-GPL-3.0.txt" \
+            "$app_dir/RichTextArea-GPL-3.0.txt" \
+            "$app_dir/THIRD-PARTY-NOTICES.md"
 
       - name: Upload macOS release asset
         uses: actions/upload-artifact@v4

@@ -310,7 +310,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          pom_version="$(sed -n 's/^[[:space:]]*<version>\\([^<]*\\)<\\/version>[[:space:]]*$/\\1/p' editor/pom.xml | head -n1)"
+          pom_version="$(sed -n 's/^[[:space:]]*<version>\([^<]*\)<\/version>[[:space:]]*$/\1/p' editor/pom.xml | head -n1)"
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             version="${GITHUB_REF_NAME#v}"
           else

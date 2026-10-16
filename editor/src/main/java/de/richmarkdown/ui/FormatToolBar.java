@@ -39,6 +39,11 @@ import javafx.scene.text.Text;
  *       {@link ParagraphDecorateAction}</li>
  *   <li>Einzug verkleinern/vergrößern mit Vektor-Icons über die Editor-Fassade</li>
  * </ul>
+ *
+ * <p>Zusätzlich enthält die Leiste am Anfang die Datei-Aktionen „Neu“, „Öffnen“
+ * und „Speichern“ (im Stil von LibreOffice Writer). Die zugehörigen Handler
+ * werden von {@link EditorWindow} über {@link #setNewDocumentHandler},
+ * {@link #setOpenFileHandler} und {@link #setSaveHandler} gesetzt.
  */
 public class FormatToolBar extends ToolBar {
 
@@ -112,6 +117,53 @@ public class FormatToolBar extends ToolBar {
 
     private boolean applyingStyle;
 
+    /** Schaltfläche für „Neu“ (leeres Dokument). */
+    private final Button newButton = createIconButton(
+            ToolbarIcons.newDocumentIcon(), I18n.text("menu.new"));
+    /** Schaltfläche für „Öffnen“ (Dateiauswahldialog). */
+    private final Button openButton = createIconButton(
+            ToolbarIcons.openFileIcon(), I18n.text("menu.open"));
+    /** Schaltfläche für „Speichern“ (aktuelle Datei oder „Speichern unter“). */
+    private final Button saveButton = createIconButton(
+            ToolbarIcons.saveFileIcon(), I18n.text("menu.save"));
+
+    /** Handler für „Neu“ (von {@link EditorWindow} gesetzt). */
+    private Runnable newDocumentHandler;
+    /** Handler für „Öffnen“ (von {@link EditorWindow} gesetzt). */
+    private Runnable openFileHandler;
+    /** Handler für „Speichern“ (von {@link EditorWindow} gesetzt). */
+    private Runnable saveHandler;
+
+    /**
+     * Setzt den Handler für die „Neu“-Schaltfläche.
+     *
+     * @param handler Aktion, die beim Klick ausgeführt wird
+     */
+    public void setNewDocumentHandler(Runnable handler) {
+        this.newDocumentHandler = handler;
+        newButton.setOnAction(event -> handler.run());
+    }
+
+    /**
+     * Setzt den Handler für die „Öffnen“-Schaltfläche.
+     *
+     * @param handler Aktion, die beim Klick ausgeführt wird
+     */
+    public void setOpenFileHandler(Runnable handler) {
+        this.openFileHandler = handler;
+        openButton.setOnAction(event -> handler.run());
+    }
+
+    /**
+     * Setzt den Handler für die „Speichern“-Schaltfläche.
+     *
+     * @param handler Aktion, die beim Klick ausgeführt wird
+     */
+    public void setSaveHandler(Runnable handler) {
+        this.saveHandler = handler;
+        saveButton.setOnAction(event -> handler.run());
+    }
+
     /**
      * Erstellt eine Formatierungsleiste für den angegebenen Editor.
      *
@@ -144,6 +196,10 @@ public class FormatToolBar extends ToolBar {
         bindCaretState();
 
         getItems().addAll(
+                newButton,
+                openButton,
+                saveButton,
+                separator(),
                 styleChoice,
                 boldToggle,
                 italicToggle,

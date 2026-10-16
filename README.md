@@ -20,6 +20,7 @@ available.
 ![Windows packages](https://img.shields.io/badge/Windows-MSI%20%7C%20portable-lightgrey.svg)
 ![macOS package](https://img.shields.io/badge/macOS-portable-lightgrey.svg)
 [![GitHub repository](https://img.shields.io/badge/GitHub-Public-lightgrey?logo=github)](https://github.com/RainerGa/Mardexas)
+[![README Deutsch](https://img.shields.io/badge/README-Deutsch-lightgrey)](README-de.md)
 
 ## Table of Contents
 

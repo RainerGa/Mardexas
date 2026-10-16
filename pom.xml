@@ -10,7 +10,24 @@
   <name>Mardexas</name>
 
   <modules>
-    <module>rich-text-area/rta</module>
     <module>editor</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <id>include-rich-text-area-module</id>
+      <activation>
+        <file>
+          <!-- The rich-text-area Maven module lives in a git submodule.
+               Only include it in the reactor when the submodule has been
+               checked out, so `mvn validate` (e.g. dependency submission)
+               succeeds even when the submodule is not initialized. -->
+          <exists>rich-text-area/rta/pom.xml</exists>
+        </file>
+      </activation>
+      <modules>
+        <module>rich-text-area/rta</module>
+      </modules>
+    </profile>
+  </profiles>
 </project>

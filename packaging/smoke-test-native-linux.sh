@@ -17,7 +17,7 @@ xvfb-run -a --server-args="-screen 0 800x600x24" bash -euo pipefail -c '
 
     attempt=0
     while (( attempt < 20 )); do
-        window_id="$(xdotool search --onlyvisible --name "^RichMarkDownEditor$" 2>/dev/null | head -n 1 || true)"
+        window_id="$(xdotool search --onlyvisible --name "Mardexas$" 2>/dev/null | head -n 1 || true)"
         if [[ -n "$window_id" ]]; then
             break
         fi

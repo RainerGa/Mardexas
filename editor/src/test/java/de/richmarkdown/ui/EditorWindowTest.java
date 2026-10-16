@@ -49,7 +49,7 @@ class EditorWindowTest {
     @Test
     void windowHasTitleAndScene() {
         EditorWindow window = FxTestUtil.callAndWait(EditorWindow::new);
-        assertEquals("RichMarkDownEditor", FxTestUtil.callAndWait(window::getTitle));
+        assertEquals("Unbenannt - Mardexas", FxTestUtil.callAndWait(window::getTitle));
         assertNotNull(FxTestUtil.callAndWait(window::getScene));
     }
 
@@ -124,7 +124,7 @@ class EditorWindowTest {
                     .toList();
         });
 
-        assertEquals(List.of("Hilfe anzeigen", "Über RichMarkDownEditor", "Lizenzierung",
+        assertEquals(List.of("Hilfe anzeigen", "Über Mardexas", "Lizenzierung",
                 "Sprache"), helpItems);
     }
 

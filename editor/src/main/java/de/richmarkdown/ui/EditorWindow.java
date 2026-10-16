@@ -132,7 +132,7 @@ public class EditorWindow extends Stage {
         root.setBottom(statusBar);
         root.setLeft(this.structureView);
 
-        setTitle(I18n.text("app.title"));
+        updateTitle();
         Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
         double sceneWidth = Math.min(1000, Math.max(1, screenBounds.getWidth() - 40));
         double sceneHeight = Math.min(700, Math.max(1, screenBounds.getHeight() - 80));

@@ -529,8 +529,13 @@ jobs:
         run: packaging/build-native-image.sh
       - name: Smoke-test macOS native executable
         run: |
-          # Run the native executable briefly to ensure it starts
-          timeout 30 dist/native/mac/Mardexas
+          # Run the native executable briefly to ensure it starts.
+          # macOS does not provide the GNU 'timeout' command, so use
+          # a background process + kill instead.
+          dist/native/mac/Mardexas &
+          pid=$!
+          sleep 30
+          kill "$pid" 2>/dev/null || true
       - name: Archive macOS native executable and notices
         shell: bash
         env:

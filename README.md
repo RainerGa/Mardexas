@@ -1,5 +1,7 @@
 # Mardexas
 
+![Mardexas screenshot](screenshot.png)
+
 **Write Markdown without having to write every formatting marker by hand.**
 Mardexas is a desktop Markdown editor with a rich-text, WYSIWYG interface. Edit
 your document visually, then save it as a UTF-8 Markdown file that you can open
@@ -16,6 +18,18 @@ in a text editor, review in Git, or use with other Markdown tools.
 > **Availability:** The repository is currently private and does not yet provide
 > a published download. Release packages are prepared as a draft for review;
 > they become downloadable only after the release is explicitly published.
+
+## Table of Contents
+
+- [Why use Mardexas?](#why-use-mardexas)
+- [Get started](#get-started)
+- [Release packages](#release-packages)
+- [What Markdown does it support?](#what-markdown-does-it-support)
+- [Build and run from source](#build-and-run-from-source)
+- [Project layout](#project-layout)
+- [License and third-party software](#license-and-third-party-software)
+- [Current validation status](#current-validation-status)
+- [Deutsch](#deutsch)
 
 ## Why use Mardexas?
 
@@ -227,3 +241,8 @@ failures were in `EditorWindowTest`, one in `LineNumberGutterTest`, and one in
 areas. Earlier output also logged `Invalid URL` exceptions while RichTextArea
 laid out images. These issues are relevant to release readiness; the editor is
 not yet represented as a validated release.
+
+## Deutsch
+
+Eine deutsche Version dieser README ist verfügbar unter
+[README-de.md](README-de.md).

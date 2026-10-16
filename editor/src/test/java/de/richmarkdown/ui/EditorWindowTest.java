@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2026 Rainer Garbotz
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package de.richmarkdown.ui;
 
 import de.richmarkdown.FxTestUtil;
@@ -30,6 +47,10 @@ class EditorWindowTest {
     @BeforeAll
     static void initToolkit() throws Exception {
         FxTestUtil.startToolkit();
+        // Tests müssen unabhängig von gespeicherten Benutzereinstellungen laufen
+        I18n.setCurrentLanguage("de");
+        I18n.setDocumentStructureEnabled(false);
+        I18n.setLineNumbersEnabled(false);
     }
 
     @AfterAll
@@ -370,10 +391,10 @@ class EditorWindowTest {
                 .filter(item -> !(item instanceof javafx.scene.control.SeparatorMenuItem))
                 .map(item -> item.getText())
                 .toList();
-        assertTrue(labels.contains("Link..."));
-        assertTrue(labels.contains("Horizontal Rule"));
-        assertTrue(labels.contains("Bild..."));
-        assertTrue(labels.contains("Code-Block..."));
+        assertTrue(labels.contains(I18n.text("menu.link")));
+        assertTrue(labels.contains(I18n.text("menu.horizontalRule")));
+        assertTrue(labels.contains(I18n.text("menu.image")));
+        assertTrue(labels.contains(I18n.text("menu.codeBlock")));
     }
 
     @Test

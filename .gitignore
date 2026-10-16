@@ -20,3 +20,6 @@ test.md
 
 # Native-Image-Metadaten-Traces (Lauf-Output von packaging/trace-reachability.sh)
 /packaging/native-image/trace-output/
+
+# Build documentation / one-off analysis (not part of release)
+/fixGraalVMGithubActions.md

@@ -1,11 +1,26 @@
+/*
+ * Copyright (C) 2026 Rainer Garbotz
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package de.richmarkdown.ui;
 
 import com.gluonhq.richtextarea.RichTextArea;
 import javafx.scene.Node;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-
-import java.util.List;
 
 /**
  * Aufbau des Ausdrucks (PROJEKTPLAN 14): Seitenzahl, Schichtversatz und
@@ -45,43 +60,36 @@ final class PrintSupport {
         }
         double height = 0d;
         int items = listView.getItems().size();
-        // Die Zellen des VirtualFlow werden wiederverwendet – einmal einsammeln
-        // und dann nur noch Index/Höhe lesen spart den Szenen-Scan pro Absatz
-        List<ListCell<?>> cells = List.of();
-        boolean cssApplied = false;
-        for (int index = 0; index < items; index++) {
-            listView.scrollTo(index);
-            if (cssApplied) {
-                listView.requestLayout();
-            } else {
-                listView.applyCss();
-                cssApplied = true;
-            }
+        // Der VirtualFlow der Bibliothek erzeugt Zellen nur lazy für den
+        // sichtbaren Bereich und behält einen begrenzten Zell-Vorrat. Damit
+        // jeder Absatz mit seiner natürlichen Höhe gemessen wird, wird
+        // nacheinander zu jedem Index gescrollt, ein Layout erzwungen und die
+        // Höhe der gerade dargestellten Zelle aufsummiert.
+        listView.applyCss();
+        for (int i = 0; i < items; i++) {
+            listView.scrollTo(i);
             listView.layout();
-            double cellHeight = heightOfCell(cells, index);
-            if (cellHeight < 0d) {
-                cells = listView.lookupAll(".list-cell").stream()
-                        .filter(ListCell.class::isInstance)
-                        .<ListCell<?>>map(ListCell.class::cast)
-                        .toList();
-                cellHeight = heightOfCell(cells, index);
-            }
-            if (cellHeight > 0d) {
-                height += cellHeight;
+            ListCell<?> cell = cellAtIndex(listView, i);
+            if (cell != null && cell.getIndex() >= 0) {
+                height += cell.getHeight();
             }
         }
+        // Scroll zurück an den Anfang, sodass spätere Aufrufer (z. B. eine
+        // Konsistenz-Prüfung mit vollem Viewport) nicht von der letzten
+        // Scroll-Position abhängen.
         listView.scrollTo(0);
+        listView.applyCss();
+        listView.layout();
         return height;
     }
 
-    /** Höhe der Zelle mit dem gegebenen Index, oder -1 wenn nicht vorhanden. */
-    private static double heightOfCell(List<ListCell<?>> cells, int index) {
-        for (ListCell<?> cell : cells) {
-            if (cell.getIndex() == index) {
-                return cell.getHeight();
+    private static ListCell<?> cellAtIndex(ListView<?> listView, int index) {
+        for (Node node : listView.lookupAll(".list-cell")) {
+            if (node instanceof ListCell<?> cell && cell.getIndex() == index) {
+                return cell;
             }
         }
-        return -1d;
+        return null;
     }
 
     /** Seitenzahl für die gegebene Dokumenthöhe (mindestens eine Seite). */

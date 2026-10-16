@@ -15,11 +15,7 @@ in a text editor, review in Git, or use with other Markdown tools.
 ![Linux packages](https://img.shields.io/badge/Linux-Flatpak%20%7C%20portable-lightgrey.svg)
 ![Windows packages](https://img.shields.io/badge/Windows-MSI%20%7C%20portable-lightgrey.svg)
 ![macOS package](https://img.shields.io/badge/macOS-portable-lightgrey.svg)
-[![GitHub repository](https://img.shields.io/badge/GitHub-Private-lightgrey?logo=github)](https://github.com/RainerGa/Mardexas)
-
-> **Availability:** The repository is currently private and does not yet provide
-> a published download. Release packages are prepared as a draft for review;
-> they become downloadable only after the release is explicitly published.
+[![GitHub repository](https://img.shields.io/badge/GitHub-Public-lightgrey?logo=github)](https://github.com/RainerGa/Mardexas)
 
 ## Table of Contents
 
@@ -75,8 +71,7 @@ version:
    ./editor/start.sh
    ```
 
-The script builds the project before launching the editor. The repository is
-private at present, so GitHub access is required to clone it.
+The script builds the project before launching the editor.
 
 ## Release packages
 
@@ -102,9 +97,7 @@ pushed, GitHub Actions builds the platform packages, the Linux native
 executable, and the source archive, then creates a **draft** GitHub Release.
 Review the files and release notes, then publish the draft when it is ready.
 Running the workflow manually creates downloadable Actions artifacts instead;
-it does not create a release. The repository can remain private while these
-steps are tested, but only users with repository access can download its
-packages.
+it does not create a release.
 
 The source archive includes the pinned `rich-text-area` submodule source, as
 required when redistributing GPL-licensed binaries. Windows MSI packages and

@@ -1,0 +1,32 @@
+RichMarkDownEditor / Mardexas
+Copyright (C) 2026 Rainer Garbotz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+------------------------------
+Third-party software notices
+------------------------------
+
+The application bundles or depends on the following third-party components.
+See THIRD-PARTY-NOTICES.md for the versions, roles, and license references
+identified from the Maven dependency tree.
+
+- RichTextArea fork (Git submodule rich-text-area, commit e3796be5) — GPL-3.0
+- OpenJFX / JavaFX 25.0.4 — GPL-2.0 with Classpath Exception
+- Gluon Emoji — GPL-3.0 (runtime components)
+- JUnit 5 (test-only) — Eclipse Public License 2.0
+- TestFX (test-only) — Apache License 2.0
+- Monocle (test-only, headless JavaFX) — various (see dependency POMs)
+
+The complete GPL-3.0 license text for the application is provided in LICENSE.

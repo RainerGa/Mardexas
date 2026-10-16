@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2026 Rainer Garbotz
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package de.richmarkdown.ui;
 
 import com.gluonhq.richtextarea.RichTextArea;
@@ -168,14 +185,24 @@ class LineNumberGutterTest {
         List<String> before = numbers();
         assertFalse(before.isEmpty());
 
-        // Mausrad über dem Editor – wie ein Anwender scrollt. Die Richtung wird
-        // anhand der Scrollposition gewählt, damit in beiden Ausgangslagen
-        // (Ansprung oben oder unten) Bewegung entsteht.
-        Point2D overEditor = FxTestUtil.callAndWait(() ->
-                rta.localToScreen(rta.getWidth() / 2, rta.getHeight() / 2));
-        robot.moveTo(overEditor.getX(), overEditor.getY());
-        // Scrollen mit Mausrad (FxRobot.scroll(int) ist deprecated, aber funktioniert zuverlässig)
-        robot.scroll(20); // Nach unten scrollen
+        // Vertikalen Scrollbalken der Editor-Liste direkt bewegen (statt über
+        // robot.scroll(), das den ScrollBar-Wert in headless-Umgebungen nicht
+        // zuverlässig ändert). Die Richtung wird anhand der Scrollposition
+        // gewählt, damit in beiden Ausgangslagen (Ansprung oben oder unten)
+        // Bewegung entsteht.
+        FxTestUtil.runAndWait(() -> {
+            for (Node node : rta.lookupAll(".scroll-bar")) {
+                if (node instanceof ScrollBar bar
+                        && bar.getOrientation() == Orientation.VERTICAL) {
+                    double target = bar.getValue() < bar.getMax() / 2
+                            ? bar.getMax() : bar.getMin();
+                    bar.setValue(target);
+                }
+            }
+        });
+        flushFully();
+        // Sicherstellen, dass die Gutter-Positionen nach dem Scroll neu berechnet werden
+        gutter.requestSync();
         flushFully();
 
         List<String> after = numbers();

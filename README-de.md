@@ -16,12 +16,7 @@ Markdown-Tools verwenden können.
 ![Linux packages](https://img.shields.io/badge/Linux-Flatpak%20%7C%20portable-lightgrey.svg)
 ![Windows packages](https://img.shields.io/badge/Windows-MSI%20%7C%20portable-lightgrey.svg)
 ![macOS package](https://img.shields.io/badge/macOS-portable-lightgrey.svg)
-[![GitHub repository](https://img.shields.io/badge/GitHub-Private-lightgrey?logo=github)](https://github.com/RainerGa/Mardexas)
-
-> **Verfügbarkeit:** Das Repository ist derzeit privat und bietet noch keinen
-> veröffentlichten Download. Release-Pakete werden als Entwurf zur Überprüfung
-> vorbereitet; sie werden erst nach der expliziten Veröffentlichung des Releases
-> zum Download verfügbar.
+[![GitHub repository](https://img.shields.io/badge/GitHub-Public-lightgrey?logo=github)](https://github.com/RainerGa/Mardexas)
 
 ## Inhaltsverzeichnis
 
@@ -80,8 +75,7 @@ aktuelle Quellversion ausprobieren:
    ./editor/start.sh
    ```
 
-Das Skript baut das Projekt, bevor es den Editor startet. Das Repository ist
-derzeit privat, sodass ein GitHub-Zugriff zum Klonen erforderlich ist.
+Das Skript baut das Projekt, bevor es den Editor startet.
 
 ## Release-Pakete
 
@@ -106,9 +100,7 @@ gepusht wird, baut GitHub Actions die Plattformpakete, den Linux Native-
 Executable und das Source-Archiv, und erstellt einen **Draft** GitHub Release.
 Überprüfen Sie die Dateien und die Release-Notes und veröffentlichen Sie den
 Draft, wenn er fertig ist. Das manuelle Ausführen des Workflows erstellt
-herunterladbare Actions-Artefakte; es erstellt kein Release. Das Repository kann
-während dieser Tests privat bleiben, aber nur Benutzer mit Repository-Zugriff
-können die Pakete herunterladen.
+herunterladbare Actions-Artefakte; es erstellt kein Release.
 
 Das Source-Archiv enthält den gepinnten `rich-text-area`-Untermodul-Quellcode,
 wie es bei der Weitergabe von GPL-lizenzierten Binaries erforderlich ist.

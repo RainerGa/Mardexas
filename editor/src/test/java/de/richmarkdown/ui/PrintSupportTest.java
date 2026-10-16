@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2026 Rainer Garbotz
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package de.richmarkdown.ui;
 
 import com.gluonhq.richtextarea.RichTextArea;
@@ -7,7 +24,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -91,10 +108,43 @@ class PrintSupportTest {
                 "expected less than 2000px, measured " + contentHeight);
 
         // Nach dem Setzen auf die gemessene Höhe muss der gesamte Inhalt
-        // gerendert sein – sonst würde Paginierung Inhalt unterschlagen
+        // gerendert sein – sonst würde Paginierung Inhalt unterschlagen.
+        // Der VirtualFlow der Bibliothek erzeugt Zellen nur lazy für den
+        // sichtbaren Bereich. Daher wird zu jedem Index gescrollt, damit alle
+        // Absatz-Zellen mit natürlicher Höhe vorliegen, bevor das
+        // Dokumentende (maximale Zell-Unterkante) vermessen wird.
         FxTestUtil.runAndWait(() -> {
             area.setPrefHeight(contentHeight);
             area.resize(area.getWidth(), contentHeight);
+            area.applyCss();
+            area.layout();
+        });
+        FxTestUtil.flushFxEvents();
+        // Scroll-Offset auf den Anfang zurücksetzen, damit die Zellen bei
+        // absoluter Position null beginnen und die maximale
+        // boundsInParent.maxY das wahre Dokumentende widerspiegelt.
+        FxTestUtil.runAndWait(() -> {
+            ListView<?> lv = (ListView<?>) area.lookup(".paragraph-list-view");
+            lv.scrollTo(0);
+            lv.applyCss();
+            lv.layout();
+        });
+        FxTestUtil.flushFxEvents();
+        // Alle Zellen erzwingen: Der VirtualFlow der Bibliothek erzeugt Zellen
+        // nur lazy für den sichtbaren Bereich. Daher wird zu jedem Index
+        // gescrollt, damit alle Absatz-Zellen mit natürlicher Höhe vorliegen,
+        // bevor das Dokumentende (maximale Zell-Unterkante) vermessen wird.
+        FxTestUtil.runAndWait(() -> {
+            ListView<?> lv = (ListView<?>) area.lookup(".paragraph-list-view");
+            int items = lv.getItems().size();
+            for (int i = 0; i < items; i++) {
+                lv.scrollTo(i);
+                lv.applyCss();
+                lv.layout();
+            }
+            lv.scrollTo(0);
+            lv.applyCss();
+            lv.layout();
         });
         FxTestUtil.flushFxEvents();
         Double maxY = FxTestUtil.callAndWait(() -> {
@@ -138,14 +188,14 @@ class PrintSupportTest {
         FxTestUtil.runAndWait(() -> {
             editor.setMarkdown(markdown);
             Stage editorStage = new Stage();
-            editorStage.setScene(new Scene(new StackPane(editor.getControl()), 500, 400));
+            editorStage.setScene(new Scene(new Pane(editor.getControl()), 500, 400));
             editorStage.show();
         });
         FxTestUtil.flushFxEvents();
         RichTextArea copy = FxTestUtil.callAndWait(editor::createPrintCopy);
         FxTestUtil.runAndWait(() -> {
             Stage stage = new Stage();
-            stage.setScene(new Scene(new StackPane(copy), 500, 400));
+            stage.setScene(new Scene(new Pane(copy), 500, 400));
             stage.show();
             copy.setPrefWidth(500);
         });

@@ -1,6 +1,6 @@
-# Contributing to RichMarkDownEditor (Mardexas)
+# Contributing to Mardexas (RichMarkDownEditor)
 
-Thank you for considering a contribution to RichMarkDownEditor! This project is
+Thank you for considering a contribution to Mardexas! This project is
 licensed under the GNU General Public License v3.0 (GPL-3.0).
 
 ## Getting started

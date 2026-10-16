@@ -9,6 +9,10 @@ Mardexas is a desktop Markdown editor with a rich-text, WYSIWYG interface. Edit
 your document visually, then save it as a UTF-8 Markdown file that you can open
 in a text editor, review in Git, or use with other Markdown tools.
 
+This project is based on the rich-text-area library provided by
+[Gluon](https://gluonhq.com/). We thank Gluon for making this foundation
+available.
+
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 ![Java 25](https://img.shields.io/badge/Java-25-orange.svg)
 ![JavaFX 25.0.4](https://img.shields.io/badge/JavaFX-25.0.4-royalblue.svg)

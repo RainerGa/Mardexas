@@ -10,6 +10,10 @@ Bearbeiten Sie Ihr Dokument visuell und speichern Sie es dann als UTF-8-Markdown
 Datei, die Sie in einem Texteditor öffnen, in Git überprüfen oder mit anderen
 Markdown-Tools verwenden können.
 
+Dieses Projekt basiert auf der rich-text-area-Bibliothek, die von
+[Gluon](https://gluonhq.com/) bereitgestellt wird. Wir danken Gluon für die
+Bereitstellung dieser Grundlage.
+
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 ![Java 25](https://img.shields.io/badge/Java-25-orange.svg)
 ![JavaFX 25.0.4](https://img.shields.io/badge/JavaFX-25.0.4-royalblue.svg)

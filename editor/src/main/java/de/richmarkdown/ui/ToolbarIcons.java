@@ -1,7 +1,10 @@
 package de.richmarkdown.ui;
 
-import javafx.scene.Group;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
@@ -10,22 +13,26 @@ import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 /**
  * Vektor-Icons für die Format-Toolbar im Stil von Word/LibreOffice
  * (PROJEKTPLAN Kap. 0 Phase 13).
  *
- * <p>Die Icons werden bewusst ohne externe Bilddateien aus JavaFX-Shapes
- * aufgebaut – sie sind damit auflösungsunabhängig, skalieren mit der
- * Schriftgröße und lassen sich über CSS einfärben (Style-Klasse
- * {@value #SHAPE_STYLE_CLASS}). Alle Icons liegen auf einem
- * {@value #ICON_SIZE}×{@value #ICON_SIZE}-Raster.
+ * <p>Die Listen-, Einzugs- und Inline-Code-Icons werden bewusst ohne externe
+ * Bilddateien aus JavaFX-Shapes aufgebaut – sie sind damit auflösungsunabhängig,
+ * skalieren mit der Schriftgröße und lassen sich über CSS einfärben
+ * (Style-Klasse {@value #SHAPE_STYLE_CLASS}). Die Datei-Icons („Neu“, „Öffnen“,
+ * „Speichern“) werden aus der PNG-Ressource {@code file-icons.png} geladen.
+ *
+ * <p>Alle Icons liegen auf einem {@value #ICON_SIZE}×{@value #ICON_SIZE}-Raster.
  */
 public final class ToolbarIcons {
 
     /** Kantenlänge des Icon-Rasters (übliche Toolbar-Icon-Größe). */
-    public static final double ICON_SIZE = 16.0;
+    public static final double ICON_SIZE = 22.0;
 
     /** Gemeinsame Style-Klasse aller Icons. */
     public static final String ICON_STYLE_CLASS = "rme-icon";
@@ -35,10 +42,33 @@ public final class ToolbarIcons {
 
     /** Spezifische Style-Klassen der einzelnen Icons (CSS-Selektoren). */
     public static final List<String> ICON_STYLE_CLASSES = List.of(
+            "rme-icon-new-document", "rme-icon-open-file", "rme-icon-save-file",
             "rme-icon-bullet-list", "rme-icon-numbered-list",
             "rme-icon-indent", "rme-icon-outdent", "rme-icon-inline-code");
 
+    /** Geladenes Sprite-Bild mit den drei Datei-Icons nebeneinander. */
+    private static final Image FILE_ICONS_IMAGE = loadFileIconsImage();
+
     private ToolbarIcons() {
+    }
+
+    /**
+     * Lädt das Sprite-Bild mit den Datei-Icons aus den Klassenressourcen.
+     *
+     * @return das geladene Bild oder wirft eine Ausnahme, wenn es fehlt
+     */
+    private static Image loadFileIconsImage() {
+        try (InputStream is = ToolbarIcons.class.getResourceAsStream(
+                "/de/richmarkdown/ui/icons/file-icons.png")) {
+            if (is == null) {
+                throw new IllegalStateException(
+                        "Icon-Ressource nicht gefunden: /de/richmarkdown/ui/icons/file-icons.png");
+            }
+            return new Image(is);
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Icon-Ressource konnte nicht geladen werden: /de/richmarkdown/ui/icons/file-icons.png", e);
+        }
     }
 
     /**
@@ -47,10 +77,13 @@ public final class ToolbarIcons {
      * @return JavaFX-Knotengruppe im Icon-Raster
      */
     public static Node bulletListIcon() {
-        Group icon = new Group();
+        Pane icon = new Pane();
         icon.getStyleClass().addAll(ICON_STYLE_CLASS, "rme-icon-bullet-list");
-        for (double y : new double[]{4.0, 8.0, 12.0}) {
-            icon.getChildren().addAll(bullet(3.0, y), line(6.5, y, 8.0));
+        icon.setMinSize(ICON_SIZE, ICON_SIZE);
+        icon.setPrefSize(ICON_SIZE, ICON_SIZE);
+        icon.setMaxSize(ICON_SIZE, ICON_SIZE);
+        for (double y : new double[]{5.0, 9.5, 14.0}) {
+            icon.getChildren().addAll(bullet(3.5, y), line(7.0, y, 9.0));
         }
         return icon;
     }
@@ -61,15 +94,18 @@ public final class ToolbarIcons {
      * @return JavaFX-Knotengruppe im Icon-Raster
      */
     public static Node numberedListIcon() {
-        Group icon = new Group();
+        Pane icon = new Pane();
         icon.getStyleClass().addAll(ICON_STYLE_CLASS, "rme-icon-numbered-list");
+        icon.setMinSize(ICON_SIZE, ICON_SIZE);
+        icon.setPrefSize(ICON_SIZE, ICON_SIZE);
+        icon.setMaxSize(ICON_SIZE, ICON_SIZE);
         String[] numbers = {"1", "2", "3"};
-        double[] rows = {4.0, 7.5, 11.0};
+        double[] rows = {5.0, 9.5, 14.0};
         for (int i = 0; i < rows.length; i++) {
             Text number = new Text(0, rows[i], numbers[i]);
             number.getStyleClass().add(SHAPE_STYLE_CLASS);
-            number.setFont(Font.font(6.0));
-            icon.getChildren().addAll(number, line(5.5, rows[i] - 1.5, 9.0));
+            number.setFont(Font.font(7.0));
+            icon.getChildren().addAll(number, line(6.0, rows[i] - 1.5, 10.0));
         }
         return icon;
     }
@@ -81,7 +117,7 @@ public final class ToolbarIcons {
      */
     public static Node indentIcon() {
         return indentLikeIcon("rme-icon-indent",
-                new double[]{6.5, 8.0, 2.0, 4.8, 3.8, 8.0, 2.0, 11.2});
+                new double[]{7.0, 9.5, 2.5, 6.0, 4.5, 9.5, 2.5, 13.0});
     }
 
     /**
@@ -91,7 +127,7 @@ public final class ToolbarIcons {
      */
     public static Node outdentIcon() {
         return indentLikeIcon("rme-icon-outdent",
-                new double[]{2.0, 8.0, 6.5, 4.8, 4.7, 8.0, 6.5, 11.2});
+                new double[]{2.5, 9.5, 7.0, 6.0, 5.0, 9.5, 7.0, 13.0});
     }
 
     /**
@@ -100,8 +136,11 @@ public final class ToolbarIcons {
      * @return JavaFX-Knotengruppe im Icon-Raster
      */
     public static Node inlineCodeIcon() {
-        Group icon = new Group();
+        Pane icon = new Pane();
         icon.getStyleClass().addAll(ICON_STYLE_CLASS, "rme-icon-inline-code");
+        icon.setMinSize(ICON_SIZE, ICON_SIZE);
+        icon.setPrefSize(ICON_SIZE, ICON_SIZE);
+        icon.setMaxSize(ICON_SIZE, ICON_SIZE);
         icon.getChildren().addAll(
                 chevron(false),
                 slash(),
@@ -132,13 +171,16 @@ public final class ToolbarIcons {
     // ---------- Interna ----------
 
     private static Node indentLikeIcon(String styleClass, double[] arrowPoints) {
-        Group icon = new Group();
+        Pane icon = new Pane();
         icon.getStyleClass().addAll(ICON_STYLE_CLASS, styleClass);
+        icon.setMinSize(ICON_SIZE, ICON_SIZE);
+        icon.setPrefSize(ICON_SIZE, ICON_SIZE);
+        icon.setMaxSize(ICON_SIZE, ICON_SIZE);
         Polygon arrow = new Polygon(arrowPoints);
         arrow.getStyleClass().add(SHAPE_STYLE_CLASS);
         icon.getChildren().add(arrow);
-        for (double y : new double[]{4.0, 8.0, 12.0}) {
-            icon.getChildren().add(line(7.5, y, 7.0));
+        for (double y : new double[]{5.0, 9.5, 14.0}) {
+            icon.getChildren().add(line(8.0, y, 8.0));
         }
         return icon;
     }
@@ -154,6 +196,51 @@ public final class ToolbarIcons {
         rectangle.setFill(Color.BLACK);
         rectangle.getStyleClass().add(SHAPE_STYLE_CLASS);
         return rectangle;
+    }
+
+    /**
+     * Erstellt das Symbol für „Neu“ – ein leeres Dokument mit Falsschlinge.
+     *
+     * @return JavaFX-Knotengruppe im Icon-Raster
+     */
+    public static Node newDocumentIcon() {
+        ImageView icon = new ImageView(FILE_ICONS_IMAGE);
+        icon.getStyleClass().addAll(ICON_STYLE_CLASS, "rme-icon-new-document");
+        double third = FILE_ICONS_IMAGE.getWidth() / 3.0;
+        icon.setViewport(new Rectangle2D(0, 0, third, FILE_ICONS_IMAGE.getHeight()));
+        icon.setFitWidth(ICON_SIZE);
+        icon.setFitHeight(ICON_SIZE);
+        return icon;
+    }
+
+    /**
+     * Erstellt das Symbol für „Öffnen“ – einen Ordner.
+     *
+     * @return JavaFX-Knotengruppe im Icon-Raster
+     */
+    public static Node openFileIcon() {
+        ImageView icon = new ImageView(FILE_ICONS_IMAGE);
+        icon.getStyleClass().addAll(ICON_STYLE_CLASS, "rme-icon-open-file");
+        double third = FILE_ICONS_IMAGE.getWidth() / 3.0;
+        icon.setViewport(new Rectangle2D(third, 0, third, FILE_ICONS_IMAGE.getHeight()));
+        icon.setFitWidth(ICON_SIZE);
+        icon.setFitHeight(ICON_SIZE);
+        return icon;
+    }
+
+    /**
+     * Erstellt das Symbol für „Speichern“ – eine Diskette.
+     *
+     * @return JavaFX-Knotengruppe im Icon-Raster
+     */
+    public static Node saveFileIcon() {
+        ImageView icon = new ImageView(FILE_ICONS_IMAGE);
+        icon.getStyleClass().addAll(ICON_STYLE_CLASS, "rme-icon-save-file");
+        double third = FILE_ICONS_IMAGE.getWidth() / 3.0;
+        icon.setViewport(new Rectangle2D(2 * third, 0, third, FILE_ICONS_IMAGE.getHeight()));
+        icon.setFitWidth(ICON_SIZE);
+        icon.setFitHeight(ICON_SIZE);
+        return icon;
     }
 
     /** Chevron „&lt;" bzw. „&gt;" – rechts heißt: Spitze zeigt nach rechts. */

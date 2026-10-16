@@ -76,6 +76,7 @@ public final class MenuBarFactory {
                 menuBar.getMenus().add(buildInsertMenu());
                 menuBar.getMenus().add(buildFormatMenu());
                 menuBar.getMenus().add(buildTableMenu());
+                menuBar.getMenus().add(buildExtrasMenu());
                 menuBar.getMenus().add(buildWindowMenu());
                 menuBar.getMenus().add(buildHelpMenu());
             } else {
@@ -171,7 +172,14 @@ public final class MenuBarFactory {
         return menu;
     }
 
-        private Menu buildWindowMenu() {
+    private Menu buildExtrasMenu() {
+        Menu menu = new Menu(I18n.text("menu.extras"));
+        menu.getItems().addAll(
+                menuItem("extras.settings", () -> showMessage(I18n.text("extras.settings"))));
+        return menu;
+    }
+
+    private Menu buildWindowMenu() {
             Menu menu = new Menu(I18n.text("menu.window"));
             menu.getItems().addAll(
                     menuItem("menu.minimize", () -> window.setIconified(true)),

@@ -25,11 +25,11 @@
     -fx-background-color: #f9f9f9;
     -fx-border-color: #d0d0d0;
     -fx-border-width: 0 0 1 0;
-    -fx-padding: 0 0 0 0;
+    -fx-padding: 0.2em 0.4em 0.2em 0.4em;
 }
 
 .rme-menu-bar .menu {
-    -fx-padding: 0.3em 0.6em 0.3em 0.6em;
+    -fx-padding: 0.35em 0.75em 0.35em 0.75em;
 }
 
 .rme-menu-bar .menu:showing {
@@ -42,31 +42,31 @@
     -fx-background-color: #f9f9f9;
     -fx-border-color: #d0d0d0;
     -fx-border-width: 0 0 1 0;
-    -fx-padding: 0.3em 0.45em 0.3em 0.45em;
-    -fx-spacing: 0.3em;
+    -fx-padding: 0.35em 0.5em 0.35em 0.5em;
+    -fx-spacing: 0.5em;
 }
 
 .rme-toolbar .rme-toolbar-separator {
-    -fx-padding: 0.15em 0.25em 0.15em 0.25em;
+    -fx-padding: 0.2em 0.35em 0.2em 0.35em;
 }
 
 .rme-toolbar-separator .line {
     -fx-border-color: #d6d6d6;
     -fx-border-width: 0 1 0 0;
-    -fx-min-height: 1.3em;
+    -fx-min-height: 1.6em;
 }
 
 .rme-toolbar-button {
     -fx-background-color: transparent;
-    -fx-background-radius: 4;
+    -fx-background-radius: 5;
     -fx-border-color: transparent;
-    -fx-border-radius: 4;
-    -fx-padding: 0.3em 0.45em 0.3em 0.45em;
+    -fx-border-radius: 5;
+    -fx-padding: 0.35em 0.55em 0.35em 0.55em;
     -fx-font-size: 0.95em;
     -fx-text-fill: #202020;
     -fx-cursor: hand;
-    -fx-min-width: 2em;
-    -fx-min-height: 2em;
+    -fx-min-width: 2.4em;
+    -fx-min-height: 2.4em;
 }
 
 .rme-toolbar-button:hover {

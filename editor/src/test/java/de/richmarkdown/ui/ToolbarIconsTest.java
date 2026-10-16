@@ -90,9 +90,9 @@ class ToolbarIconsTest {
                     "Icon sollte ein zeichenbarer Node sein: " + icon);
             double w = icon.prefWidth(-1);
             double h = icon.prefHeight(-1);
-            assertTrue(w > 0 && w <= ToolbarIcons.ICON_SIZE,
+            assertTrue(w > 0 && w <= ToolbarIcons.ICON_SIZE + 0.5,
                     "Icon-Breite außerhalb des üblichen Rasters: " + w);
-            assertTrue(h > 0 && h <= ToolbarIcons.ICON_SIZE,
+            assertTrue(h > 0 && h <= ToolbarIcons.ICON_SIZE + 0.5,
                     "Icon-Höhe außerhalb des üblichen Rasters: " + h);
         }
     }

@@ -96,6 +96,9 @@ public class EditorWindow extends Stage {
     public EditorWindow() {
         this.editor = new MarkdownEditor();
         this.toolBar = new FormatToolBar(editor);
+        toolBar.setNewDocumentHandler(this::newDocument);
+        toolBar.setOpenFileHandler(this::showOpenDialog);
+        toolBar.setSaveHandler(this::save);
         this.statusBar = new StatusBar(editor);
 
         MenuBar menuBar = MenuBarFactory.create(this);
@@ -122,7 +125,9 @@ public class EditorWindow extends Stage {
 
         BorderPane root = new BorderPane();
         root.getStyleClass().add("rme-editor-root");
-        root.setTop(new VBox(menuBar, toolBar));
+        VBox topBar = new VBox(menuBar, toolBar);
+        topBar.setSpacing(4.0);
+        root.setTop(topBar);
         root.setCenter(editorRow);
         root.setBottom(statusBar);
         root.setLeft(this.structureView);

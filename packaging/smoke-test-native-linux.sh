@@ -8,6 +8,20 @@ if [[ ! -x "$APP_PATH" ]]; then
     exit 1
 fi
 
+find_app_window() {
+    local id name
+    for id in $(xdotool search --onlyvisible --name '.*' 2>/dev/null || true); do
+        name="$(xdotool getwindowname "$id" 2>/dev/null || true)"
+        case "$name" in
+            Mardexas|*Mardexas*|RichMarkDownEditor|*RichMarkDownEditor*)
+                echo "$id"
+                return 0
+                ;;
+        esac
+    done
+    return 1
+}
+
 xvfb-run -a --server-args="-screen 0 800x600x24" bash -euo pipefail -c '
     app_path="$1"
     log_file="$(mktemp)"
@@ -17,7 +31,15 @@ xvfb-run -a --server-args="-screen 0 800x600x24" bash -euo pipefail -c '
 
     attempt=0
     while (( attempt < 20 )); do
-        window_id="$(xdotool search --onlyvisible --name "^RichMarkDownEditor$" 2>/dev/null | head -n 1 || true)"
+        window_id="$(xdotool search --onlyvisible --name ".*" 2>/dev/null | while read -r id; do
+            title="$(xdotool getwindowname "$id" 2>/dev/null || true)"
+            case "$title" in
+                Mardexas|*Mardexas*|RichMarkDownEditor|*RichMarkDownEditor*)
+                    echo "$id"
+                    break
+                    ;;
+            esac
+        done || true)"
         if [[ -n "$window_id" ]]; then
             break
         fi

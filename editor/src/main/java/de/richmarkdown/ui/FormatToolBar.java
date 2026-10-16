@@ -25,7 +25,6 @@ import com.gluonhq.richtextarea.action.TextDecorateAction;
 import de.richmarkdown.editor.MarkdownEditor;
 import de.richmarkdown.i18n.I18n;
 import de.richmarkdown.markdown.MarkdownStyles;
-import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Node;
@@ -204,8 +203,7 @@ public class FormatToolBar extends ToolBar {
             }
             applyingStyle = true;
             applyStyle(newValue);
-            // Guard nach der asynchronen Anwendung zurücksetzen
-            Platform.runLater(() -> applyingStyle = false);
+            applyingStyle = false;
         });
 
         bindTextToggles();

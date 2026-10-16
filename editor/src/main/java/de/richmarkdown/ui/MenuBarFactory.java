@@ -245,48 +245,6 @@ public final class MenuBarFactory {
         }
 
 
-        private static final String HELP_TEXT = """
-                MARKDOWN-UNTERSTÜTZUNG
-
-                Der Editor orientiert sich an GitHub Flavored Markdown (GFM), das auf
-                CommonMark aufbaut. Er implementiert eine unterstützte Teilmenge und
-                ist kein vollständiger CommonMark- oder GFM-Konformitätsprüfer.
-                GFM-Spezifikation: https://github.github.com/gfm/
-                CommonMark-Spezifikation: https://spec.commonmark.org/
-
-                Unterstützt werden unter anderem Absätze und Leerzeilen, Überschriften
-                (# bis ######), Fett, Kursiv, Durchgestrichen, Inline-Code, Links,
-                Bilder, Aufzählungs- und Nummernlisten, verschachtelte Listen, Zitate,
-                eingezäunte Codeblöcke, horizontale Trennlinien und GFM-Tabellen.
-                Unterstreichung wird als HTML <u>-Element geschrieben und ist eine
-                Erweiterung, kein Bestandteil des GFM-Kernumfangs.
-
-                ZEILEN- UND LEERZEILEN
-
-                Ein einzelner Zeilenumbruch zwischen normalen Textzeilen bleibt im
-                Editor sichtbar und wird beim Speichern als einzelner Zeilenumbruch
-                ausgegeben. Der Editor behandelt solche Zeilen intern als getrennte
-                Absätze; andere Markdown-Renderer können einen einzelnen Umbruch
-                gemäß GFM als weichen Umbruch darstellen.
-
-                Eine Leerzeile trennt Markdown-Blöcke. Mehrere aufeinanderfolgende
-                leere Editorzeilen werden beim Speichern auf eine Markdown-Leerzeile
-                zwischen den Blöcken normalisiert. Noch mehr Leerzeilen erzeugen in
-                Markdown üblicherweise keinen größeren Abstand und werden deshalb
-                nicht als zusätzliche vertikale Abstände bewahrt. Für größeren
-                sichtbaren Abstand gibt es im Markdown-Format keine portable,
-                standardisierte Absatzabstands-Notation.
-
-                DATEIEN UND FORMATIERUNG
-
-                Markdown-Dateien werden als UTF-8 gelesen und geschrieben. Beim Lesen
-                werden Windows- und klassische Mac-Zeilenenden normalisiert. Der
-                Editor speichert unterstützte Formatierungen in Markdown; nicht
-                unterstützte Syntax oder Quelltextformatierung kann beim Bearbeiten
-                normalisiert werden. Für die bestmögliche Kompatibilität sollten
-                Dateien mit den oben aufgeführten Elementen erstellt werden.
-                """;
-
         private static final String ABOUT_TEXT = """
                 RichMarkDownEditor 1.0.0
 

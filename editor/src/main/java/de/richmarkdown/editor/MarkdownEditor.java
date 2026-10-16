@@ -112,7 +112,7 @@ public class MarkdownEditor {
         }
         try {
             Desktop.getDesktop().browse(URI.create(url.trim()));
-        } catch (Exception e) {
+        } catch (Throwable t) {
             // Kein Handler verfügbar oder Öffnen fehlgeschlagen – ein Klick auf
             // einen Link ist keine Bestätigung für einen Systemdialog.
         }

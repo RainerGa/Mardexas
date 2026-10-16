@@ -45,18 +45,12 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
-import javafx.stage.PopupWindow;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import javafx.stage.Window;
 import javafx.util.Duration;
-import javafx.animation.PauseTransition;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -160,13 +154,6 @@ public class EditorWindow extends Stage {
         setScene(scene);
         // Druckersystem schon beim ersten Anzeigen vorbereiten
         setOnShowing(event -> warmUpPrintSystem());
-        if (System.getenv("RME_DEBUG_LAYOUT") != null) {
-            setOnShown(event -> {
-                PauseTransition wait = new PauseTransition(Duration.millis(400));
-                wait.setOnFinished(e2 -> debugLayout());
-                wait.play();
-            });
-        }
     }
 
     /** Liefert die Editor-Fassade, die Dokumentfunktionen dieses Fensters steuert.
@@ -381,9 +368,6 @@ public class EditorWindow extends Stage {
 
     // ---------- Drucken ----------
 
-    /** Diagnose-Log der Druckphasen (nur im Build-Verzeichnis). */
-    private static final Path TRACE_LOG = Path.of("target", "print-timing.log");
-    private static volatile long printStart;
     private Printer cachedPrinter;
 
     /**
@@ -402,62 +386,46 @@ public class EditorWindow extends Stage {
      * (neue Szene/Stage).
      */
     public void print() {
-        printStart = System.currentTimeMillis();
-        trace("print gestartet", true);
         Thread thread = new Thread(() -> {
             List<Printer> printers;
             try {
                 printers = listPrinters();
             } catch (Throwable t) {
-                // Native-Image (GraalVM): Ohne java.home stürzt bereits die
-                // AWT-Font-Initialisierung ab, die JavaFX für CUPS nutzt.
-                trace("Druckerliste Fehler: " + t, false);
                 Platform.runLater(() -> {
                     showPrintUnavailableMessage();
-                    trace("showPrintUnavailableMessage", true);
                 });
                 return;
             }
-            trace("Druckerliste", !printers.isEmpty());
             if (printers.isEmpty()) {
                 Platform.runLater(() -> {
                     showNoPrinterMessage();
-                    trace("showNoPrinterMessage", true);
                 });
                 return;
             }
-            trace("showPrintDialog beginnt", true);
             PrintDialogResult choice;
             try {
                 choice = showPrintDialog(printers);
             } catch (Throwable t) {
-                trace("showPrintDialog Fehler: " + t, false);
                 Platform.runLater(() -> {
                     showPrintUnavailableMessage();
-                    trace("showPrintUnavailableMessage", true);
                 });
                 return;
             }
             if (choice == null) {
-                trace("showPrintDialog abgebrochen", false);
                 return;
             }
-            trace("showPrintDialog bestaetigt", true);
             PrinterJob job;
             try {
                 job = createPrinterJob(choice.printer());
             } catch (Throwable t) {
-                trace("createPrinterJob Fehler: " + t, false);
                 Platform.runLater(() -> {
                     showPrintUnavailableMessage();
-                    trace("showPrintUnavailableMessage", true);
                 });
                 return;
             }
             if (job == null) {
                 Platform.runLater(() -> {
                     showNoPrinterMessage();
-                    trace("showNoPrinterMessage", true);
                 });
                 return;
             }
@@ -465,13 +433,9 @@ public class EditorWindow extends Stage {
             Platform.runLater(() -> printDocument(job));
         }, "rme-print");
         thread.setDaemon(true);
-        // Ein Error (z. B. AWT-FontConfig im Native-Image) darf den
-        // Hintergrund-Thread nicht still beenden – stattdessen Hinweis.
         thread.setUncaughtExceptionHandler((t, e) -> {
-            trace("rme-print Fehler: " + e, false);
             Platform.runLater(() -> {
                 showPrintUnavailableMessage();
-                trace("showPrintUnavailableMessage", true);
             });
         });
         thread.start();
@@ -611,7 +575,6 @@ public class EditorWindow extends Stage {
         if (printer.equals(cachedPrinter)) {
             PrinterJob job = PrinterJob.createPrinterJob(printer);
             if (job != null) {
-                trace("createPrinterJob aus Cache", true);
                 return job;
             }
             cachedPrinter = null; // Drucker nicht mehr verfügbar -> neu wählen
@@ -650,7 +613,6 @@ public class EditorWindow extends Stage {
         if (printer != null) {
             PrinterJob job = PrinterJob.createPrinterJob(printer);
             if (job != null) {
-                trace("createPrinterJob aus Cache", true);
                 return job;
             }
             cachedPrinter = null; // Drucker nicht mehr verfügbar -> neu wählen
@@ -674,87 +636,16 @@ public class EditorWindow extends Stage {
                 Printer printer = selectPrinter();
                 if (printer != null) {
                     cachedPrinter = printer;
-                    trace("Warm-up Druckersystem", PrinterJob.createPrinterJob(printer) != null);
                 }
             } catch (Throwable t) {
                 // Native-Image ohne java.home: AWT-Font-Init schlägt fehl –
                 // kein Warm-up, Drucken meldet später gezielt den Hinweis.
-                trace("Warm-up Druckersystem Fehler: " + t, false);
             }
         }, "rme-print-warmup");
         thread.setDaemon(true);
-        thread.setUncaughtExceptionHandler((t, e) ->
-                trace("Warm-up Druckersystem Fehler: " + e, false));
+        thread.setUncaughtExceptionHandler((t, e) -> {
+        });
         thread.start();
-    }
-
-    private static synchronized void trace(String phase, boolean ok) {
-        try {
-            Files.writeString(TRACE_LOG, String.format(
-                    "%s (%b) +%d ms%n", phase, ok,
-                    System.currentTimeMillis() - printStart),
-                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            // reine Diagnose – kein Funktionsverlust
-        }
-    }
-
-    /**
-     * TEMPORAER (Laufzeitdiagnose): schreibt die Bildschirmkoordinaten der
-     * Menüleisten-Schalter und des geöffneten Datei-Menüs nach
-     * /tmp/kilo/layout.txt, damit Klicks exakt gesetzt werden können.
-     */
-    private void debugLayout() {
-        try {
-            StringBuilder sb = new StringBuilder();
-            sb.append(String.format("window %.0f,%.0f %.0fx%.0f%n",
-                    getX(), getY(), getWidth(), getHeight()));
-            javafx.scene.layout.BorderPane bp =
-                    (javafx.scene.layout.BorderPane) getScene().getRoot();
-            MenuBar bar = (MenuBar) ((VBox) bp.getTop()).getChildren().get(0);
-            Bounds bb = bar.localToScreen(bar.getBoundsInLocal());
-            sb.append(String.format("menubar %.0f,%.0f %.0fx%.0f%n",
-                    bb.getMinX(), bb.getMinY(), bb.getWidth(), bb.getHeight()));
-            for (Node n : bar.lookupAll(".menu-button")) {
-                if (n instanceof MenuButton mb) {
-                    Bounds b = n.localToScreen(n.getBoundsInLocal());
-                    sb.append(String.format("menubutton '%s' %.0f,%.0f %.0fx%.0f%n",
-                            mb.getText(), b.getMinX(), b.getMinY(), b.getWidth(), b.getHeight()));
-                }
-            }
-            Menu datei = bar.getMenus().get(0);
-            datei.show();
-            PauseTransition wait = new PauseTransition(Duration.millis(400));
-            wait.setOnFinished(ev -> {
-                try {
-                    for (Window w : Window.getWindows()) {
-                        if (w instanceof PopupWindow pw && pw.getScene() != null) {
-                            for (Node n : collectNodes(pw.getScene().getRoot())) {
-                                if (n.getStyleClass().contains("menu-item")) {
-                                    Bounds b = n.localToScreen(n.getBoundsInLocal());
-                                    sb.append(String.format("popupitem '%s' %.0f,%.0f %.0fx%.0f%n",
-                                            textOf(n), b.getMinX(), b.getMinY(),
-                                            b.getWidth(), b.getHeight()));
-                                }
-                            }
-                        }
-                    }
-                    datei.hide();
-                    Files.writeString(Path.of("/tmp/kilo/layout.txt"), sb.toString());
-                } catch (IOException ignored) {
-                    // Diagnose only
-                }
-            });
-            wait.play();
-        } catch (RuntimeException ex) {
-            try (var sw = new java.io.StringWriter();
-                 var pw = new java.io.PrintWriter(sw)) {
-                ex.printStackTrace(pw);
-                Files.writeString(Path.of("/tmp/kilo/layout.txt"), sw.toString());
-            } catch (IOException ignored) {
-                // Diagnose only
-            }
-        }
     }
 
     private static List<Node> collectNodes(Node root) {
@@ -790,7 +681,6 @@ public class EditorWindow extends Stage {
      * @param job bestätigter Druckauftrag
      */
     protected void printDocument(PrinterJob job) {
-        trace("printDocument", true);
         JobSettings settings = job.getJobSettings();
         settings.setJobName(currentFile != null ? currentFile.getName() : "RichMarkDownEditor");
         PageLayout layout = settings.getPageLayout();
@@ -819,16 +709,13 @@ public class EditorWindow extends Stage {
             printCopy.requestLayout();
             printCopy.layout();
             int pages = PrintSupport.pageCount(contentHeight, layout.getPrintableHeight());
-            trace("Paginierung", pages > 0);
             for (int page = 0; page < pages; page++) {
                 printCopy.setTranslateY(PrintSupport.sliceOffset(page, layout.getPrintableHeight()));
                 if (!job.printPage(printCopy)) {
-                    trace("Seite " + (page + 1), false);
                     break;
                 }
             }
             job.endJob();
-            trace("endJob", true);
         } finally {
             printStage.close();
         }

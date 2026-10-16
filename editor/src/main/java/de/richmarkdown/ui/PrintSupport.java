@@ -53,8 +53,8 @@ final class PrintSupport {
         if (area.getTextLength() == 0) {
             return 0d;
         }
-        @SuppressWarnings("unchecked")
-        ListView<Node> listView = (ListView<Node>) area.lookup(".paragraph-list-view");
+        Object lookup = area.lookup(".paragraph-list-view");
+        ListView<Node> listView = lookup instanceof ListView<?> lv ? (ListView<Node>) lv : null;
         if (listView == null) {
             return Math.max(area.getHeight(), 0d);
         }

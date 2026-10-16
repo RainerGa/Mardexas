@@ -8,8 +8,12 @@ finish-args:
   - --socket=wayland
   - --socket=fallback-x11
   - --device=dri
+  # --filesystem=home ist notwendig, damit der Editor beliebige Markdown-Dateien
+  # im Home-Verzeichnis öffnen und speichern kann. Der FileChooser-Portal
+  # ermöglicht zudem portal-basierte Dateiauswahl (eingeschränkter Zugriff).
   - --filesystem=home
   - --talk-name=org.freedesktop.portal.Desktop
+  - --talk-name=org.freedesktop.portal.FileChooser
 modules:
   - name: mardexas
     buildsystem: simple

@@ -299,7 +299,7 @@ public final class I18n {
         }
     }
 
-    public static void setCurrentLanguage(String language) {
+    public static synchronized void setCurrentLanguage(String language) {
         requireSupportedLanguage(language);
         locale = localeForLanguage(language);
         bundle = loadBundle(locale);

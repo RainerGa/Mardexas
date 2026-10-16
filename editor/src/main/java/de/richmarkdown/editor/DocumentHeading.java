@@ -26,4 +26,16 @@ package de.richmarkdown.editor;
  * @param position Caret-Position des Absatzanfangs
  */
 public record DocumentHeading(int level, String text, int position) {
+
+    public DocumentHeading {
+        if (level < 1 || level > 6) {
+            throw new IllegalArgumentException("Überschriften-Ebene muss 1..6 sein, war: " + level);
+        }
+        if (text == null) {
+            throw new NullPointerException("Überschriftentext darf nicht null sein");
+        }
+        if (position < 0) {
+            throw new IllegalArgumentException("Position darf nicht negativ sein, war: " + position);
+        }
+    }
 }

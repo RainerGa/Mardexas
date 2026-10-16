@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -130,7 +131,7 @@ public final class ApplicationSettings {
         if (!Files.exists(settingsFile)) {
             return properties;
         }
-        try (Reader reader = Files.newBufferedReader(settingsFile)) {
+        try (Reader reader = Files.newBufferedReader(settingsFile, StandardCharsets.UTF_8)) {
             properties.load(reader);
             return properties;
         } catch (IOException e) {
@@ -141,7 +142,7 @@ public final class ApplicationSettings {
     private void writeProperties(Properties properties) {
         try {
             Files.createDirectories(settingsFile.getParent());
-            try (Writer writer = Files.newBufferedWriter(settingsFile)) {
+            try (Writer writer = Files.newBufferedWriter(settingsFile, StandardCharsets.UTF_8)) {
                 properties.store(writer, "RichMarkDownEditor settings");
             }
         } catch (IOException e) {

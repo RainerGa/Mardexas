@@ -41,7 +41,15 @@ final class CaretStyle {
         if (control.getDecorationAtCaret() instanceof TextDecoration td) {
             int level = MarkdownStyles.headingLevel(td.getFontSize());
             if (level > 0 && td.getFontWeight() == FontWeight.BOLD) {
-                return FormatToolBar.ParagraphStyle.values()[level]; // H1..H6
+                return switch (level) {
+                    case 1 -> FormatToolBar.ParagraphStyle.H1;
+                    case 2 -> FormatToolBar.ParagraphStyle.H2;
+                    case 3 -> FormatToolBar.ParagraphStyle.H3;
+                    case 4 -> FormatToolBar.ParagraphStyle.H4;
+                    case 5 -> FormatToolBar.ParagraphStyle.H5;
+                    case 6 -> FormatToolBar.ParagraphStyle.H6;
+                    default -> FormatToolBar.ParagraphStyle.BODY;
+                };
             }
         }
         ParagraphDecoration pd = control.getDecorationAtParagraph();

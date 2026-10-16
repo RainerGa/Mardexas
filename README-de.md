@@ -2,6 +2,8 @@
 
 ![Mardexas Screenshot](screenshot.png)
 
+![Mardexas Screenshot – Tabellen](screenshot_tables.png)
+
 **Markdown schreiben, ohne jedes Formatierungszeichen von Hand setzen zu müssen.**
 Mardexas ist ein Desktop-Markdown-Editor mit einer Rich-Text-WYSIWYG-Oberfläche.
 Bearbeiten Sie Ihr Dokument visuell und speichern Sie es dann als UTF-8-Markdown-

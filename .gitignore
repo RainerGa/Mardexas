@@ -23,3 +23,15 @@ test.md
 
 # Build documentation / one-off analysis (not part of release)
 /fixGraalVMGithubActions.md
+
+# Backup files
+*.bak
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+
+# Eclipse IDE metadata (machine-local)
+*.classpath
+*.project
+*.settings/

@@ -26,7 +26,7 @@ case "$JAVAFX_PLATFORM" in
             echo "A Windows Native Image must be built on a Windows host." >&2
             exit 2
         fi
-        OUTPUT_NAME="Mardexas.exe"
+        OUTPUT_NAME="Mardexas"
         ;;
     mac)
         if [[ "$(uname -s)" != Darwin ]]; then

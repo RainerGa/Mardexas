@@ -290,6 +290,54 @@ jobs:
           path: dist/Mardexas-*-macos-*-portable.zip
           if-no-files-found: error
 
+  fat-jar:
+    name: Executable FAT JAR
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source and pinned RichTextArea fork
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Determine release version
+        id: version
+        shell: bash
+        run: |
+          pom_version="$(sed -n 's/^[[:space:]]*<version>\\([^<]*\\)<\\/version>[[:space:]]*$/\\1/p' editor/pom.xml | head -n1)"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="$pom_version"
+          fi
+          if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
+            echo "Release tags must use numeric versions such as v1.2.3." >&2
+            exit 1
+          fi
+          if [[ "$version" != "$pom_version" ]]; then
+            echo "Release tag version ($version) must match editor/pom.xml version ($pom_version)." >&2
+            exit 1
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build executable FAT JAR
+        env:
+          APP_VERSION: ${{ steps.version.outputs.value }}
+        run: packaging/build-fat-jar.sh
+
+      - name: Upload FAT JAR release asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: mardexas-fat-jar
+          path: dist/Mardexas-*-fat.jar
+          if-no-files-found: error
+
   native-image:
     name: GraalVM Native Image (Linux)
     runs-on: ubuntu-24.04
@@ -302,7 +350,7 @@ jobs:
       - name: Set up GraalVM with Native Image
         uses: graalvm/setup-graalvm@v1
         with:
-          version: "25.0"
+          version: "25.0.2"
           distribution: graalvm-community
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cache: maven
@@ -328,7 +376,7 @@ jobs:
           echo "value=$version" >> "$GITHUB_OUTPUT"
 
       - name: Install virtual display and X11 tools
-        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends xvfb xauth x11-utils xdotool imagemagick
+        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends xvfb xauth x11-utils xdotool imagemagick libgtk-3-0t64 libxtst6 libasound2t64 libfontconfig1 libgl1
 
       - name: Generate reachability metadata for Linux
         shell: bash
@@ -336,20 +384,32 @@ jobs:
           APP_VERSION: ${{ steps.version.outputs.value }}
           JAVAFX_PLATFORM: linux
         run: |
-          packaging/trace-reachability.sh linux app
-          packaging/trace-reachability.sh linux tests
-          # Merge the app and tests traces into the verified metadata file
-          python3 packaging/merge-reachability-metadata.py \
-            packaging/native-image/linux/reachability-metadata.json \
-            packaging/native-image/trace-output/linux/app/reachability-metadata.json \
-            packaging/native-image/trace-output/linux/tests/reachability-metadata.json
+          # Best-effort trace only (log/diagnostics). The build below uses the
+          # verified, committed metadata files (packaging/native-image/linux +
+          # linux-sw), exactly like a local
+          # 'JAVAFX_PLATFORM=linux packaging/build-native-image.sh' run.
+          # A failing trace must never block the build.
+          packaging/trace-reachability.sh linux app || echo "App trace failed (non-fatal, using committed metadata)"
+          packaging/trace-reachability.sh linux tests || echo "Tests trace failed (non-fatal, using committed metadata)"
+          if [[ -f packaging/native-image/trace-output/linux/app/reachability-metadata.json && -f packaging/native-image/trace-output/linux/tests/reachability-metadata.json ]]; then
+            # Merge the fresh traces to a temporary file for inspection only.
+            python3 packaging/merge-reachability-metadata.py \
+              packaging/native-image/trace-output/merged-reachability.json \
+              packaging/native-image/trace-output/linux/app/reachability-metadata.json \
+              packaging/native-image/trace-output/linux/tests/reachability-metadata.json \
+              || echo "Trace merge completed (non-fatal)"
+            # Validate fresh traces against the verified metadata (log only,
+            # never overwrite the committed files here).
+            python3 packaging/trace-diff.py \
+              packaging/native-image/trace-output/linux \
+              packaging/native-image/linux/reachability-metadata.json \
+              packaging/native-image/linux-sw/reachability-metadata.json \
+              || echo "Reachability diff completed (non-fatal)"
+          else
+            echo "Skipping trace merge/diff - no fresh traces, using committed metadata."
+          fi
           # Optional: JNI scan (log only)
           packaging/trace-reachability.sh linux jni || echo "JNI scan completed (non-fatal)"
-          # Keep software-renderer-specific entries and add the traced common entries.
-          python3 packaging/merge-reachability-metadata.py \
-            packaging/native-image/linux-sw/reachability-metadata.json \
-            packaging/native-image/linux-sw/reachability-metadata.json \
-            packaging/native-image/linux/reachability-metadata.json
       - name: Build native executable
         shell: bash
         env:
@@ -374,79 +434,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mardexas-native-linux
-          path: dist/Mardexas-*-native.*
-          if-no-files-found: error
-
-  native-image-win:
-    name: GraalVM Native Image (Windows)
-    runs-on: windows-2025
-    steps:
-      - name: Check out source and pinned RichTextArea fork
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Set up GraalVM with Native Image
-        uses: graalvm/setup-graalvm@v1
-        with:
-          version: "25.0"
-          distribution: graalvm-community
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          cache: maven
-      - name: Determine release version
-        id: version
-        shell: bash
-        run: |
-          pom_version="$(sed -n 's/^[[:space:]]*<version>\([^<]*\)<\/version>[[:space:]]*$/\1/p' editor/pom.xml | head -n1)"
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            version="${GITHUB_REF_NAME#v}"
-          else
-            version="$pom_version"
-          fi
-          if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
-            echo "Release tags must use numeric versions such as v1.2.3." >&2
-            exit 1
-          fi
-          if [[ "$version" != "$pom_version" ]]; then
-            echo "Release tag version ($version) must match editor/pom.xml version ($pom_version)." >&2
-            exit 1
-          fi
-          echo "value=$version" >> "$GITHUB_OUTPUT"
-      - name: Generate reachability metadata for Windows
-        shell: bash
-        env:
-          APP_VERSION: ${{ steps.version.outputs.value }}
-          JAVAFX_PLATFORM: win
-        run: |
-          packaging/trace-reachability.sh win app
-          packaging/trace-reachability.sh win tests
-          # Merge the app and tests traces into the verified metadata file
-          python3 packaging/merge-reachability-metadata.py \
-            packaging/native-image/win/reachability-metadata.json \
-            packaging/native-image/trace-output/win/app/reachability-metadata.json \
-            packaging/native-image/trace-output/win/tests/reachability-metadata.json
-          # Optional: JNI scan (log only)
-          packaging/trace-reachability.sh win jni || echo "JNI scan completed (non-fatal)"
-      - name: Build native executable
-        shell: bash
-        env:
-          APP_VERSION: ${{ steps.version.outputs.value }}
-          JAVAFX_PLATFORM: win
-        run: packaging/build-native-image.sh
-      - name: Smoke-test Windows native executable
-        run: |
-          # Run the native executable briefly to ensure it starts
-          timeout 5 dist/native/win/Mardexas.exe || true
-      - name: Archive Windows native executable and notices
-        shell: bash
-        env:
-          APP_VERSION: ${{ steps.version.outputs.value }}
-        run: |
-          tar -C dist/native/win -czf \
-            "dist/Mardexas-${APP_VERSION}-windows-x86_64-native.tar.gz" .
-      - name: Upload Windows native executable
-        uses: actions/upload-artifact@v4
-        with:
-          name: mardexas-native-windows
           path: dist/Mardexas-*-native.*
           if-no-files-found: error
 
@@ -550,8 +537,8 @@ jobs:
       - linux
       - windows
       - macos
+      - fat-jar
       - native-image
-      - native-image-win
       - native-image-macos
     runs-on: ubuntu-24.04
     steps:

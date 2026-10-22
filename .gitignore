@@ -13,6 +13,13 @@ test.md
 /Problems.md
 /PROJEKTPLAN.md
 
+# Working notes, scratch docs and one-off analysis (not part of release)
+/AddFeatures.md
+/Mardexas_as_API.md
+/demo.md
+/work_on_problems.md
+/IMPLEMENTATION_PLAN.md
+
 # IDE/tool-local configuration
 /.kilo/
 /.kilo-free-router/
@@ -27,6 +34,7 @@ test.md
 # Testlauf-Artefakte (Surefire-Fork-Output, Logs, temporäre Testverzeichnisse)
 /testhome/
 **/surefire-rainer/
+/tmp/
 **/stderr-*
 **/stdout-*
 **/surefire-reports/

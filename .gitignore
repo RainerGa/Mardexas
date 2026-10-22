@@ -24,8 +24,20 @@ test.md
 # Build documentation / one-off analysis (not part of release)
 /fixGraalVMGithubActions.md
 
+# Testlauf-Artefakte (Surefire-Fork-Output, Logs, temporäre Testverzeichnisse)
+/testhome/
+**/surefire-rainer/
+**/stderr-*
+**/stdout-*
+**/surefire-reports/
+*.log
+test_output.txt
+
 # Backup files
 *.bak
+
+# IDE (VS Code) – nicht ins Repository einchecken, sofern das Team nicht auf VS Code standardisiert
+*.code-workspace
 
 # Python bytecode cache
 __pycache__/

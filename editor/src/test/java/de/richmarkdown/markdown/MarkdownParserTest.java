@@ -345,9 +345,25 @@ class MarkdownParserTest {
     }
 
     @Test
+    void roundTrip_listsWithStartNumber() {
+        // Test numbered list with custom start number
+        assertRoundTrip("3. First\n4. Second\n5. Third");
+        // Test nested list with start number (indentation is 3 spaces for numbered lists)
+        assertRoundTrip("1. Level 1\n   5. Nested start at 5\n   6. Next nested");
+    }
+
+    @Test
     void roundTrip_quote() {
         assertRoundTrip("> quoted");
         assertRoundTrip("> > deep");
+    }
+
+    @Test
+    void roundTrip_nestedQuotes() {
+        // Test multiple levels of nested quotes
+        assertRoundTrip("> Level 1\n> > Level 2\n> > > Level 3");
+        // Test quote with content at each level
+        assertRoundTrip("> Quote 1\n> > Nested quote\n> Back to level 1");
     }
 
     @Test

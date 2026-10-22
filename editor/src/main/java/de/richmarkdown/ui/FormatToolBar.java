@@ -142,6 +142,12 @@ public class FormatToolBar extends ToolBar {
     /** Schaltfläche für „Speichern“ (aktuelle Datei oder „Speichern unter“). */
     private final Button saveButton = createIconButton(
             ToolbarIcons.saveFileIcon(), I18n.text("menu.save"));
+    /** Schaltfläche für „Zurück“ (Zurück-/Vorwärts-Navigation, AddFeatures #4). */
+    private final Button backButton = createIconButton(
+            ToolbarIcons.backIcon(), I18n.text("menu.navigateBack"));
+    /** Schaltfläche für „Vorwärts“ (Zurück-/Vorwärts-Navigation, AddFeatures #4). */
+    private final Button forwardButton = createIconButton(
+            ToolbarIcons.forwardIcon(), I18n.text("menu.navigateForward"));
 
     /** Handler für „Neu“ (von {@link EditorWindow} gesetzt). */
     private Runnable newDocumentHandler;
@@ -181,6 +187,24 @@ public class FormatToolBar extends ToolBar {
     }
 
     /**
+     * Setzt den Handler für die „Zurück“-Schaltfläche (AddFeatures #4).
+     *
+     * @param handler Aktion, die beim Klick ausgeführt wird
+     */
+    public void setBackHandler(Runnable handler) {
+        backButton.setOnAction(event -> handler.run());
+    }
+
+    /**
+     * Setzt den Handler für die „Vorwärts“-Schaltfläche (AddFeatures #4).
+     *
+     * @param handler Aktion, die beim Klick ausgeführt wird
+     */
+    public void setForwardHandler(Runnable handler) {
+        forwardButton.setOnAction(event -> handler.run());
+    }
+
+    /**
      * Erstellt eine Formatierungsleiste für den angegebenen Editor.
      *
      * @param editor Editor-Fassade, deren Control beobachtet und bearbeitet wird
@@ -214,6 +238,9 @@ public class FormatToolBar extends ToolBar {
                 newButton,
                 openButton,
                 saveButton,
+                separator(),
+                backButton,
+                forwardButton,
                 separator(),
                 styleChoice,
                 boldToggle,
@@ -309,6 +336,43 @@ public class FormatToolBar extends ToolBar {
      */
     public Button getOutdentButton() {
         return outdentButton;
+    }
+
+    /** Liefert die Schaltfläche „Zurück“ der Navigation (AddFeatures #4).
+     *
+     * @return Schaltfläche für den Zurück-Sprung
+     */
+    public Button getBackButton() {
+        return backButton;
+    }
+
+    /** Liefert die Schaltfläche „Vorwärts“ der Navigation (AddFeatures #4).
+     *
+     * @return Schaltfläche für den Vorwärts-Sprung
+     */
+    public Button getForwardButton() {
+        return forwardButton;
+    }
+
+    /**
+     * Schaltet die Bearbeitungs-Schaltflächen für den schreibgeschützten
+     * Modus (AddFeatures #5, Vorbild LO „Öffnen (schreibgeschützt)“:
+     * Formatieraktionen sind nicht mehr aktiv).
+     *
+     * @param readOnly {@code true}, um Bearbeitungsaktionen zu deaktivieren
+     */
+    public void setReadOnly(boolean readOnly) {
+        boldToggle.setDisable(readOnly);
+        italicToggle.setDisable(readOnly);
+        underlineToggle.setDisable(readOnly);
+        strikethroughToggle.setDisable(readOnly);
+        inlineCodeToggle.setDisable(readOnly);
+        bulletListToggle.setDisable(readOnly);
+        numberedListToggle.setDisable(readOnly);
+        styleChoice.setDisable(readOnly);
+        indentButton.setDisable(readOnly);
+        outdentButton.setDisable(readOnly);
+        saveButton.setDisable(readOnly);
     }
 
     // ---------- Interna ----------

@@ -204,7 +204,8 @@ public class MarkdownWriter {
         // Liste
         if (pd != null && pd.getGraphicType() != ParagraphDecoration.GraphicType.NONE) {
             boolean numbered = pd.getGraphicType() == ParagraphDecoration.GraphicType.NUMBERED_LIST;
-            return new ListItemBlock(Math.max(1, pd.getIndentationLevel()), numbered,
+            int startNumber = numbered ? pd.getStartNumber() : 1;
+            return new ListItemBlock(Math.max(1, pd.getIndentationLevel()), numbered, startNumber,
                     inlineRuns(document, start, end));
         }
 
@@ -489,7 +490,7 @@ public class MarkdownWriter {
         if (item.isNumbered()) {
             int level = item.getLevel();
             if (counters[level] == 0) {
-                counters[level] = 1;
+                counters[level] = item.getStartNumber();
             } else {
                 counters[level]++;
             }

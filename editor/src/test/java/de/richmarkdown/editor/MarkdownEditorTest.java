@@ -18,6 +18,7 @@
 package de.richmarkdown.editor;
 
 import com.gluonhq.richtextarea.RichTextArea;
+import com.gluonhq.richtextarea.Selection;
 import com.gluonhq.richtextarea.model.DecorationModel;
 import com.gluonhq.richtextarea.model.Document;
 import com.gluonhq.richtextarea.model.ParagraphDecoration;
@@ -345,6 +346,73 @@ class MarkdownEditorTest {
         ParagraphDecoration pd = paragraphDecorationAt(0);
         assertEquals(ParagraphDecoration.GraphicType.NUMBERED_LIST, pd.getGraphicType());
         assertEquals(1, pd.getIndentationLevel());
+    }
+
+    @Test
+    void setListStartNumber_changesStartNumberForSelectedParagraphs() {
+        // Create a numbered list with multiple items
+        type("first");
+        editor.toggleNumberedList();
+        flush();
+        enter();
+        type("second");
+        flush();
+        enter();
+        type("third");
+        flush();
+
+        // Verify initial numbering starts at 1
+        ParagraphDecoration pd1 = paragraphDecorationAt(0);
+        assertEquals(1, pd1.getStartNumber());
+
+        // Select all three paragraphs
+        selectAll();
+        flush();
+
+        // Change start number to 10
+        editor.setListStartNumber(10);
+        flush();
+
+        // Verify all selected paragraphs now have start number 10
+        ParagraphDecoration pdFirst = paragraphDecorationAt(0);
+        assertEquals(10, pdFirst.getStartNumber(), "First paragraph should have start number 10");
+
+        // Find second paragraph decoration (after "first\n")
+        ParagraphDecoration pdSecond = paragraphDecorationAt(6);
+        assertEquals(10, pdSecond.getStartNumber(), "Second paragraph should have start number 10");
+
+        // Find third paragraph decoration (after "first\nsecond\n")
+        ParagraphDecoration pdThird = paragraphDecorationAt(13);
+        assertEquals(10, pdThird.getStartNumber(), "Third paragraph should have start number 10");
+    }
+
+    @Test
+    void setListStartNumber_withoutSelection_changesCurrentParagraph() {
+        // Create a numbered list with multiple items
+        type("first");
+        editor.toggleNumberedList();
+        flush();
+        enter();
+        type("second");
+        flush();
+
+        // Don't select anything - caret is at end of "second"
+        // Move caret to first paragraph by selecting it temporarily and then clearing selection
+        // Actually, for this test we just verify that without selection, only the paragraph
+        // where the caret is gets the start number changed. Since caret is at end of "second",
+        // it should affect the second paragraph.
+        
+        // Change start number to 5
+        editor.setListStartNumber(5);
+        flush();
+
+        // First paragraph should still have default start number 1
+        ParagraphDecoration pdFirst = paragraphDecorationAt(0);
+        assertEquals(1, pdFirst.getStartNumber(), "First paragraph should still have start number 1");
+
+        // Second paragraph (where caret is) should have start number 5
+        ParagraphDecoration pdSecond = paragraphDecorationAt(6);
+        assertEquals(5, pdSecond.getStartNumber(), "Second paragraph should have start number 5");
     }
 
     @Test
@@ -1034,6 +1102,92 @@ class MarkdownEditorTest {
         assertTrue(FxTestUtil.callAndWait(rta::isFocused),
                 "Der Fokus muss wie in Word zurück ins Dokument wandern, sonst ist der Caret unsichtbar");
     }
+
+    @Test
+    void revealPosition_scrollsParagraphIntoViewWithoutTouchingSelection() {
+        FxTestUtil.runAndWait(() -> editor.setMarkdown(longDocument(60)));
+        flush();
+        flush();
+
+        int deep = FxTestUtil.callAndWait(
+                () -> editor.getHeadings().get(editor.getHeadings().size() - 1).position());
+        int targetIndex = paragraphIndexOfPosition(deep);
+        FxTestUtil.runAndWait(() -> paragraphListView().scrollTo(0));
+        flush();
+        flush();
+        assertFalse(isParagraphVisible(targetIndex),
+                "Ziel liegt vor dem Reveal unterhalb des Sichtbereichs");
+
+        // Markierung weit unten setzen (reine Selection, ohne Caret/Fokus).
+        FxTestUtil.runAndWait(() -> {
+            var vm = ((com.gluonhq.richtextarea.RichTextAreaSkin) rta.getSkin()).getViewModel();
+            vm.setSelection(new Selection(deep, deep + 5));
+        });
+        flush();
+        flush();
+
+        FxTestUtil.runAndWait(() -> editor.revealPosition(deep));
+        flush();
+        flush();
+
+        assertTrue(isParagraphVisible(targetIndex),
+                "Zielabsatz muss nach revealPosition sichtbar sein");
+        Selection selection = FxTestUtil.callAndWait(() -> rta.getSelection());
+        assertNotNull(selection);
+        assertTrue(selection.isDefined(),
+                "revealPosition darf die Markierung nicht loeschen");
+        assertEquals(deep, selection.getStart());
+    }
+
+    @Test
+    void findEngine_selectMatchRevealsOffscreenHit() {
+        FxTestUtil.runAndWait(() -> editor.setMarkdown(longDocumentWithTarget(60)));
+        flush();
+        flush();
+
+        de.richmarkdown.findreplace.FindReplaceEngine engine =
+                FxTestUtil.callAndWait(() -> new de.richmarkdown.findreplace.FindReplaceEngine(
+                        rta, ((com.gluonhq.richtextarea.RichTextAreaSkin) rta.getSkin()).getViewModel()));
+        engine.setRevealHandler(FxTestUtil.callAndWait(() -> editor::revealPosition));
+        de.richmarkdown.findreplace.FindReplaceEngine.Match target = FxTestUtil.callAndWait(
+                () -> engine.findAll("ZIELWORT",
+                        new de.richmarkdown.findreplace.FindReplaceEngine.FindOptions()).get(0));
+
+        FxTestUtil.runAndWait(() -> paragraphListView().scrollTo(0));
+        flush();
+        flush();
+        int targetIndex = paragraphIndexOfPosition(
+                FxTestUtil.callAndWait(() -> target.getEnd()));
+        assertFalse(isParagraphVisible(targetIndex),
+                "Treffer liegt vor der Markierung unterhalb des Sichtbereichs");
+
+        FxTestUtil.runAndWait(() -> engine.selectMatch(target, false));
+        flush();
+        flush();
+
+        assertTrue(isParagraphVisible(targetIndex),
+                "Markierter Treffer muss nach selectMatch sichtbar sein");
+        Selection selection = FxTestUtil.callAndWait(() -> rta.getSelection());
+        assertNotNull(selection);
+        assertTrue(selection.isDefined(),
+                "selectMatch muss die Treffer-Markierung behalten");
+    }
+
+    /** Langes Dokument mit eindeutigem Trefferwort im letzten Drittel. */
+    private static String longDocumentWithTarget(int paragraphs) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i <= paragraphs; i++) {
+            if (i == paragraphs - 5) {
+                sb.append("Absatz mit ZIELWORT mitten im Text");
+            } else {
+                sb.append(i % 10 == 1 ? "# Heading " + i : "Zeile " + i);
+            }
+            sb.append("\n\n");
+        }
+        return sb.toString();
+    }
+
+    /** Langes Dokument: alle 10 Absätze eine Überschrift. */
 
     /** Langes Dokument: alle 10 Absätze eine Überschrift. */
     private static String longDocument(int paragraphs) {

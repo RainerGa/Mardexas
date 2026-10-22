@@ -26,6 +26,7 @@ Bereitstellung dieser Grundlage.
 
 - [Warum Mardexas?](#warum-mardexas)
 - [Erste Schritte](#erste-schritte)
+- [Als Bibliothek nutzen](#als-bibliothek-nutzen)
 - [Release-Pakete](#release-pakete)
 - [Welches Markdown wird unterstützt?](#welches-markdown-wird-unterstützt)
 - [Aus dem Quellcode bauen und ausführen](#aus-dem-quellcode-bauen-und-ausführen)
@@ -80,6 +81,78 @@ aktuelle Quellversion ausprobieren:
    ```
 
 Das Skript baut das Projekt, bevor es den Editor startet.
+
+## Als Bibliothek nutzen
+
+Mardexas bleibt ein eigenständiger Editor und kann zusätzlich als
+JavaFX-Bibliothek eingebettet werden (`MarkdownEditor` + `getControl()`,
+Datei-API ohne Dialoge, austauschbarer `I18n`-Settings-Store). Die folgenden
+Schritte führen von einem vollständigen Checkout bis zum Editor in Ihrer
+eigenen Anwendung.
+
+1. **Bibliothek installieren** — aus einem vollständigen Checkout mit
+   Untermodulen (die RichTextArea-Abhängigkeit liegt nicht auf Maven Central):
+
+   ```sh
+   git clone --recurse-submodules https://github.com/RainerGa/Mardexas.git
+   cd Mardexas
+   mvn -pl editor -am install
+   ```
+
+2. **Abhängigkeit ergänzen** — in Ihrer `pom.xml`:
+
+   ```xml
+   <dependency>
+     <groupId>de.richmarkdown</groupId>
+     <artifactId>RichMarkDownEditor</artifactId>
+     <version>1.0.0</version>
+   </dependency>
+   ```
+
+   Das Artefakt bringt auch JavaFX und den RichTextArea-Fork
+   `com.gluonhq:richtextarea:3.0-RG` mit; nutzen Sie bei Bedarf eigene
+   JavaFX-Platform-Varianten.
+
+3. **Editor einbetten** — auf dem JavaFX Application Thread (keine
+   `Application`-Subklasse, kein `EditorWindow`, keine Dialoge):
+
+   ```java
+   import de.richmarkdown.editor.MarkdownEditor;
+   import javafx.scene.layout.StackPane;
+
+   MarkdownEditor editor = new MarkdownEditor();
+   myPane.getChildren().add(editor.getControl()); // RichTextArea
+
+   // Datei-API ohne Dialoge — Fehler als Ausnahmen:
+   editor.open(new File("dokument.md")); // IOException
+   editor.save(new File("dokument.md")); // IOException
+   editor.save();                        // IllegalStateException ohne Datei
+   editor.clear();                       // leeres Dokument, Datei zurückgesetzt
+   String md = editor.getMarkdown();
+   ```
+
+4. **Globale Konfiguration (optional)** — einmalig beim Start, prozessweit:
+
+   ```java
+   I18n.setCurrentLanguage("de");
+   I18n.setSettingsStore(ApplicationSettings.inMemory()); // keine Persistenz
+   ```
+
+5. **Modul-Setup:** bei `module-info.java` `requires RichMarkDownEditor;`
+   ergänzen (exportiert u. a. `de.richmarkdown.editor`, `de.richmarkdown.io`,
+   `de.richmarkdown.ui`, `de.richmarkdown.i18n`, `de.richmarkdown.settings`;
+   kein `opens` nötig). Ohne Modulsystem genügt eine normale
+   Klassenpfad-Abhängigkeit.
+
+Alle Aufrufe gehören auf den JavaFX Application Thread; Datei-I/O blockiert —
+bei großen Dateien in einem `Task` auslagern. Für ein fertiges Fenster
+(Symbolleiste, Statusleiste, Dialoge) konstruieren Sie stattdessen
+`new EditorWindow()` und nutzen `window.getEditor()` — die eigenständige
+Anwendung nutzt denselben Codepfad. Die vollständige API-Referenz steht in
+[docs/API.md](docs/API.md).
+
+> Lizenz-Hinweis: Die Bibliothek steht unter GPL-3.0. Anwendungen, die sie
+> einbetten, müssen GPL-3.0 einhalten (Quellcode- und Hinweispflichten).
 
 ## Release-Pakete
 
@@ -210,6 +283,9 @@ mvn -f editor/pom.xml javafx:run
 
 Das Hilfsskript prüft auf Java und Maven, baut den Reaktor und startet dann den
 Editor. Es erwartet, dass das Git-Untermodul initialisiert wurde.
+
+## Projektstruktur
+
 - `pom.xml` — Maven-Reaktor-Elternprojekt.
 - `editor/` — Mardexas / RichMarkDownEditor-Anwendung und -Tests.
 - `rich-text-area/` — Git-Untermodul mit dem upstream-abgeleiteten Fork.
@@ -236,14 +312,13 @@ das den RichTextArea-Untermodul enthält.
 
 ## Aktueller Validierungsstatus
 
-Der Maven-Reaktor baut aus dem gepinnten Untermodul, aber der letzte vollständige
-Testlauf ist nicht grün: 451 Tests wurden ausgeführt, mit fünf Fehlern und
-keinen Testfehlern. Drei Fehler waren in `EditorWindowTest`, einer in
-`LineNumberGutterTest` und einer in `PrintSupportTest`. Ein separater fokussierter
-Lauf reproduzierte vier Fehler in diesen Bereichen. Ein früherer Output
-protokollierte auch `Invalid URL`-Ausnahmen während des Layouts von Bildern durch
-RichTextArea. Diese Probleme sind für die Release-Bereitschaft relevant; der
-Editor ist noch nicht als validiertes Release dargestellt.
+Der Maven-Reaktor baut aus dem gepinnten Untermodul. Der letzte vollständige
+Testlauf (`mvn -pl editor -am test`) ist grün: 473 Tests, null Fehler und null
+Testfehler — einschließlich der JavaFX-UI-Tests und der Bibliothek-API-Tests.
+Frühere Läufe meldeten fünf Fehler (`EditorWindowTest`,
+`LineNumberGutterTest`, `PrintSupportTest`) und `Invalid URL`-Logausgaben beim
+Bildlayout von RichTextArea; diese sind behoben bzw. treten nicht mehr auf.
+Das Projekt wird noch nicht als validiertes Release dargestellt.
 
 ## English
 

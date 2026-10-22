@@ -202,8 +202,8 @@ class EditorWindowTest {
                     .toList();
         });
         // Datei-Reihenfolge wie in LibreOffice Writer: … Speichern unter…, Drucken…, Beenden
-        assertEquals(List.of("Neu", "Öffnen...", "Speichern", "Speichern unter...",
-                "Drucken...", "Beenden"), labels);
+        assertEquals(List.of("Neu", "Öffnen...", "Öffnen (schreibgeschützt)...",
+                "Zuletzt geöffnet", "Speichern", "Speichern unter...", "Drucken...", "Beenden"), labels);
     }
 
     @Test

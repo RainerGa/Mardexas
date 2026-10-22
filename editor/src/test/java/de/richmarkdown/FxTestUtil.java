@@ -46,6 +46,12 @@ public final class FxTestUtil {
             if (!latch.await(5, TimeUnit.SECONDS)) {
                 throw new IllegalStateException("JavaFX toolkit did not start headless");
             }
+            // Ohne diese Einstellung beendet JavaFX die Application Thread,
+            // sobald das letzte Fenster versteckt wird (impliziter Exit).
+            // In Tests wuerde der Toolkit dadurch zwischen zwei Testmethoden
+            // sterben: alle folgenden Platform.runLater(...)-Aufrufe blieben
+            // in der Warteschlange haengen und die Tests liefen in Timeouts.
+            Platform.setImplicitExit(false);
             toolkitStarted = true;
         }
     }

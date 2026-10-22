@@ -24,6 +24,7 @@ import java.util.MissingResourceException;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
+import java.util.ArrayList;
 
 /**
  * Zentraler Zugriffspunkt für Übersetzungen, Gebietsschema und dauerhaft
@@ -43,6 +44,14 @@ import java.util.prefs.Preferences;
  * der frühere Preferences-Knoten wird ausschließlich zur Migration der
  * bisherigen Spracheinstellung gelesen.
  *
+ * <p><b>Prozessglobal (Nicht-Ziel, bewusst kein Instanz-I18n):</b> Ein
+ * Integrator setzt die Sprache einmalig beim Start
+ * ({@link #setCurrentLanguage(String)}); parallele Locales pro Fenster werden
+ * nicht unterstützt. Der Settings-Store ist global umschaltbar
+ * ({@link #setSettingsStore(ApplicationSettings)}/
+ * {@link #resetSettingsStore()}), z. B. auf
+ * {@link ApplicationSettings#inMemory()} oder ein eigenes Verzeichnis.
+ *
  * @see ApplicationSettings
  */
 public final class I18n {
@@ -52,14 +61,12 @@ public final class I18n {
     private static final String DOCUMENT_STRUCTURE_KEY = "documentStructure";
     private static final String LINE_NUMBERS_KEY = "lineNumbers";
     private static final String ZOOM_PERCENT_KEY = "zoomPercent";
+    private static final String LINE_WRAP_MODE_KEY = "lineWrapMode";
+    private static final String RECENT_FILES_KEY_PREFIX = "recentFile.";
+    private static final int MAX_RECENT_FILES = 10;
     private static final Preferences LEGACY_PREFERENCES =
             Preferences.userRoot().node("de/kilocode/richmarkdown/i18n");
-    private static final ApplicationSettings SETTINGS = new ApplicationSettings(
-            ApplicationSettings.defaultConfigDirectory(
-                    System.getProperty("os.name", ""),
-                    System.getProperty("user.home", ""),
-                    System.getenv("XDG_CONFIG_HOME"),
-                    System.getenv("APPDATA")));
+    private static volatile ApplicationSettings settingsStore = defaultSettingsStore();
     private static final List<String> SUPPORTED_LANGUAGES =
             List.of("de", "en", "fr", "es", "pt-BR", "ja", "zh-CN", "it", "ko", "nl");
     private static volatile Locale locale = Locale.GERMAN;
@@ -141,7 +148,7 @@ public final class I18n {
      *                                  mehr unterstützt wird
      */
     public static synchronized boolean initializeForStartup(Locale systemLocale) {
-        String savedLanguage = SETTINGS.read(LANGUAGE_KEY);
+        String savedLanguage = settingsStore.read(LANGUAGE_KEY);
         if (savedLanguage == null) {
             savedLanguage = migrateLegacyLanguagePreference();
         }
@@ -153,7 +160,7 @@ public final class I18n {
             Optional<String> systemLanguage = languageForSystemLocale(systemLocale);
             if (systemLanguage.isPresent()) {
                 setCurrentLanguage(systemLanguage.get());
-                SETTINGS.save(LANGUAGE_KEY, systemLanguage.get());
+                settingsStore.save(LANGUAGE_KEY, systemLanguage.get());
                 initialLanguageSelectionRequired = false;
             } else {
                 setCurrentLanguage("en");
@@ -182,7 +189,7 @@ public final class I18n {
     public static synchronized void selectInitialLanguage(String language) {
         requireSupportedLanguage(language);
         setCurrentLanguage(language);
-        SETTINGS.save(LANGUAGE_KEY, language);
+        settingsStore.save(LANGUAGE_KEY, language);
         initialLanguageSelectionRequired = false;
     }
 
@@ -198,7 +205,36 @@ public final class I18n {
      */
     public static void setLanguagePreference(String language) {
         requireSupportedLanguage(language);
-        SETTINGS.save(LANGUAGE_KEY, language);
+        settingsStore.save(LANGUAGE_KEY, language);
+    }
+
+    /**
+     * Setzt den globalen Settings-Store um (AP-04, Integrator-Konfiguration).
+     *
+     * <p>{@code null} deaktiviert die Persistenz (wie
+     * {@link ApplicationSettings#inMemory()}); synchronisiert, prozessglobal.
+     * Für Tests {@link #resetSettingsStore()} nutzen.
+     *
+     * @param store neuer Store oder {@code null} für In-Memory-Deaktivierung
+     */
+    public static synchronized void setSettingsStore(ApplicationSettings store) {
+        settingsStore = store != null ? store : ApplicationSettings.inMemory();
+    }
+
+    /**
+     * Stellt den Plattform-Default-Store wieder her (für Tests).
+     */
+    public static synchronized void resetSettingsStore() {
+        settingsStore = defaultSettingsStore();
+    }
+
+    private static ApplicationSettings defaultSettingsStore() {
+        return new ApplicationSettings(
+                ApplicationSettings.defaultConfigDirectory(
+                        System.getProperty("os.name", ""),
+                        System.getProperty("user.home", ""),
+                        System.getenv("XDG_CONFIG_HOME"),
+                        System.getenv("APPDATA")));
     }
 
     /**
@@ -207,7 +243,7 @@ public final class I18n {
      * @return gespeicherter Zustand; standardmäßig {@code false}
      */
     public static boolean documentStructureEnabled() {
-        return SETTINGS.readBoolean(DOCUMENT_STRUCTURE_KEY, false);
+        return settingsStore.readBoolean(DOCUMENT_STRUCTURE_KEY, false);
     }
 
     /**
@@ -216,7 +252,7 @@ public final class I18n {
      * @param enabled {@code true}, wenn die Dokumentstruktur angezeigt werden soll
      */
     public static void setDocumentStructureEnabled(boolean enabled) {
-        SETTINGS.saveBoolean(DOCUMENT_STRUCTURE_KEY, enabled);
+        settingsStore.saveBoolean(DOCUMENT_STRUCTURE_KEY, enabled);
     }
 
     /**
@@ -225,7 +261,7 @@ public final class I18n {
      * @return gespeicherter Zustand; standardmäßig {@code false}
      */
     public static boolean lineNumbersEnabled() {
-        return SETTINGS.readBoolean(LINE_NUMBERS_KEY, false);
+        return settingsStore.readBoolean(LINE_NUMBERS_KEY, false);
     }
 
     /**
@@ -234,7 +270,7 @@ public final class I18n {
      * @param enabled {@code true}, wenn Zeilennummern angezeigt werden sollen
      */
     public static void setLineNumbersEnabled(boolean enabled) {
-        SETTINGS.saveBoolean(LINE_NUMBERS_KEY, enabled);
+        settingsStore.saveBoolean(LINE_NUMBERS_KEY, enabled);
     }
 
     /**
@@ -246,7 +282,7 @@ public final class I18n {
      *                               Zahl ist oder nicht geparst werden kann
      */
     public static double zoomPercent() {
-        String value = SETTINGS.read(ZOOM_PERCENT_KEY);
+        String value = settingsStore.read(ZOOM_PERCENT_KEY);
         if (value == null) {
             return 100d;
         }
@@ -272,7 +308,72 @@ public final class I18n {
         if (!Double.isFinite(percent)) {
             throw new IllegalArgumentException("Zoom percentage must be finite: " + percent);
         }
-        SETTINGS.save(ZOOM_PERCENT_KEY, Double.toString(percent));
+        settingsStore.save(ZOOM_PERCENT_KEY, Double.toString(percent));
+    }
+
+    /**
+     * Liefert den gespeicherten Zeilenumbruch-Modus als Enum-Namen
+     * („AUTOMATIC“ oder „CONTINUOUS“, AddFeatures #6).
+     *
+     * <p>Die Persistenz speichert bewusst nur den Namen (keine UI-Abhängigkeit
+     * des I18n-Packages); die Zuordnung zum Enum erfolgt in der UI-Schicht.
+     *
+     * @return gespeicherter Modus-Name oder {@code AUTOMATIC}, falls noch
+     *         keiner gespeichert wurde (LO-Default)
+     * @throws IllegalStateException wenn der gespeicherte Name kein bekannter
+     *                               Zeilenumbruch-Modus ist
+     */
+    public static String lineWrapModeName() {
+        String value = settingsStore.read(LINE_WRAP_MODE_KEY);
+        if (value == null) {
+            return "AUTOMATIC";
+        }
+        if ("AUTOMATIC".equals(value) || "CONTINUOUS".equals(value)) {
+            return value;
+        }
+        throw new IllegalStateException("Invalid saved line wrap mode: " + value);
+    }
+
+    /**
+     * Speichert den Zeilenumbruch-Modus für den nächsten Fensterstart.
+     *
+     * @param modeName Enum-Name des Modus ({@code AUTOMATIC} oder
+     *                 {@code CONTINUOUS}); {@code null} wird abgelehnt
+     * @throws IllegalArgumentException wenn der Name kein bekannter
+     *                                  Zeilenumbruch-Modus ist
+     */
+    public static void setLineWrapModeName(String modeName) {
+        if (!"AUTOMATIC".equals(modeName) && !"CONTINUOUS".equals(modeName)) {
+            throw new IllegalArgumentException("Unknown line wrap mode: " + modeName);
+        }
+        settingsStore.save(LINE_WRAP_MODE_KEY, modeName);
+    }
+
+    /**
+     * Liefert die Liste der zuletzt geöffneten Dateien (maximal 10, neueste zuerst).
+     *
+     * @return Liste der Dateipfade
+     */
+    public static List<String> getRecentFiles() {
+        return settingsStore.readRecentFiles();
+    }
+
+    /**
+     * Fügt eine Datei zur Liste der zuletzt geöffneten Dateien hinzu.
+     *
+     * @param filePath Pfad der Datei
+     */
+    public static void addRecentFile(String filePath) {
+        settingsStore.addRecentFile(filePath);
+    }
+
+    /**
+     * Entfernt eine Datei aus der Liste der zuletzt geöffneten Dateien.
+     *
+     * @param filePath Pfad der zu entfernenden Datei
+     */
+    public static void removeRecentFile(String filePath) {
+        settingsStore.removeRecentFile(filePath);
     }
 
     static Optional<String> languageForSystemLocale(Locale systemLocale) {
@@ -314,7 +415,7 @@ public final class I18n {
             LEGACY_PREFERENCES.remove(LANGUAGE_KEY);
             return null;
         }
-        SETTINGS.save(LANGUAGE_KEY, legacyLanguage);
+        settingsStore.save(LANGUAGE_KEY, legacyLanguage);
         LEGACY_PREFERENCES.remove(LANGUAGE_KEY);
         return legacyLanguage;
     }

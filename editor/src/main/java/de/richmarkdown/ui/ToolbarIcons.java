@@ -260,6 +260,42 @@ public final class ToolbarIcons {
         return icon;
     }
 
+    /**
+     * Erstellt das Symbol für „Zurück“ – einen Pfeil nach links
+     * (Navigation wie in der LO-Navigationsleiste, AddFeatures #4).
+     *
+     * @return JavaFX-Knotengruppe im Icon-Raster
+     */
+    public static Node backIcon() {
+        return navigationArrowIcon("rme-icon-back",
+                new double[]{13.0, 8.0, 8.0, 8.0, 8.0, 5.0, 3.0, 10.0, 8.0, 15.0, 8.0, 12.0, 13.0, 12.0});
+    }
+
+    /**
+     * Erstellt das Symbol für „Vorwärts“ – einen Pfeil nach rechts
+     * (Navigation wie in der LO-Navigationsleiste, AddFeatures #4).
+     *
+     * @return JavaFX-Knotengruppe im Icon-Raster
+     */
+    public static Node forwardIcon() {
+        return navigationArrowIcon("rme-icon-forward",
+                new double[]{3.0, 8.0, 8.0, 8.0, 8.0, 5.0, 13.0, 10.0, 8.0, 15.0, 8.0, 12.0, 3.0, 12.0});
+    }
+
+    /** Navigationssymbol: Pfeil (Shaft + Spitze) im Icon-Raster. */
+
+    private static Node navigationArrowIcon(String styleClass, double[] arrowPoints) {
+        Pane icon = new Pane();
+        icon.getStyleClass().addAll(ICON_STYLE_CLASS, styleClass);
+        icon.setMinSize(ICON_SIZE, ICON_SIZE);
+        icon.setPrefSize(ICON_SIZE, ICON_SIZE);
+        icon.setMaxSize(ICON_SIZE, ICON_SIZE);
+        Polygon arrow = new Polygon(arrowPoints);
+        arrow.getStyleClass().add(SHAPE_STYLE_CLASS);
+        icon.getChildren().add(arrow);
+        return icon;
+    }
+
     /** Chevron „&lt;" bzw. „&gt;" – rechts heißt: Spitze zeigt nach rechts. */
     private static Shape chevron(boolean right) {
         double[] points = right

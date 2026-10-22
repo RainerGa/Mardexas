@@ -21,6 +21,7 @@ import com.gluonhq.richtextarea.RichTextArea;
 import de.richmarkdown.FxTestUtil;
 import javafx.scene.Scene;
 import javafx.scene.control.Slider;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -118,6 +120,25 @@ class ZoomControllerTest {
         assertEquals(1d, scaleTransform().getY(), 0.001);
     }
 
+    // ---------- Zeilenumbruch-Modus (AddFeatures #6) ----------
+
+    @Test
+    void wrapModeDefaultsToAutomatic() {
+        assertEquals(LineWrapMode.AUTOMATIC, zoom.getWrapMode());
+    }
+
+    @Test
+    void wrapModePropertyIsPublished() {
+        FxTestUtil.runAndWait(() -> zoom.setWrapMode(LineWrapMode.CONTINUOUS));
+        assertEquals(LineWrapMode.CONTINUOUS,
+                FxTestUtil.callAndWait(() -> zoom.wrapModeProperty().get()));
+    }
+
+    @Test
+    void nullWrapModeIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> zoom.setWrapMode(null));
+    }
+
     // ---------- Zoom setzen ----------
 
     @Test
@@ -178,6 +199,7 @@ class ZoomControllerTest {
     @Test
     void scaledContentCoversViewportWhenZoomingIn() {
         resizeViewport(600, 400);
+        FxTestUtil.runAndWait(() -> zoom.setWrapMode(LineWrapMode.CONTINUOUS));
         zoomAndLayout(200);
         assertCoversViewport(600, 400);
     }
@@ -185,6 +207,7 @@ class ZoomControllerTest {
     @Test
     void scaledContentCoversViewportAtAllZoomLevels() {
         resizeViewport(600, 400);
+        FxTestUtil.runAndWait(() -> zoom.setWrapMode(LineWrapMode.CONTINUOUS));
         for (double percent : new double[]{25, 50, 100, 150, 200, 300, 400}) {
             zoomAndLayout(percent);
             assertCoversViewport(600, 400);
@@ -194,6 +217,7 @@ class ZoomControllerTest {
     @Test
     void scaledContentCoversViewportAfterViewportResize() {
         resizeViewport(800, 600);
+        FxTestUtil.runAndWait(() -> zoom.setWrapMode(LineWrapMode.CONTINUOUS));
         zoomAndLayout(175);
         assertCoversViewport(800, 600);
 
@@ -322,6 +346,55 @@ class ZoomControllerTest {
         assertEquals(ZoomController.MIN_ZOOM, slider.getMin(), 0.001);
         assertEquals(ZoomController.MAX_ZOOM, slider.getMax(), 0.001);
         assertEquals(100d, slider.getValue(), 0.001);
+    }
+
+    @Test
+    void doubleClickOnSliderResetsZoom() {
+        Slider slider = zoom.createSlider();
+        FxTestUtil.runAndWait(() -> stage.setScene(new Scene(slider, 200, 40)));
+        FxTestUtil.flushFxEvents();
+        zoom.setZoom(250);
+        FxTestUtil.runAndWait(() -> slider.fireEvent(new MouseEvent(
+                MouseEvent.MOUSE_CLICKED, 40, 10, 40, 10, javafx.scene.input.MouseButton.PRIMARY,
+                2, false, false, false, false, false, false, false, false, false, false, false, true, null)));
+        assertEquals(100d, zoom.getZoom(), 0.001);
+    }
+
+    @Test
+    void singleClickOnSliderDoesNotResetZoom() {
+        Slider slider = zoom.createSlider();
+        FxTestUtil.runAndWait(() -> stage.setScene(new Scene(slider, 200, 40)));
+        FxTestUtil.flushFxEvents();
+        zoom.setZoom(250);
+        FxTestUtil.runAndWait(() -> slider.fireEvent(new MouseEvent(
+                MouseEvent.MOUSE_CLICKED, 40, 10, 40, 10, javafx.scene.input.MouseButton.PRIMARY,
+                1, false, false, false, false, false, false, false, false, false, false, false, true, null)));
+        assertEquals(250d, zoom.getZoom(), 0.001);
+    }
+
+    @Test
+    void sliderMarks100PercentPosition() {
+        Slider slider = zoom.createSlider();
+        FxTestUtil.runAndWait(() -> stage.setScene(new Scene(slider, 200, 40)));
+        FxTestUtil.flushFxEvents();
+        javafx.scene.Node mark = FxTestUtil.callAndWait(() -> slider.lookup(".zoom-slider-mark"));
+        assertNotNull(mark, "slider must contain a mark node for the 100% position");
+        // Mark liegt auf der Bahn und exakt auf der 100-%-Position:
+        // Bahnbreite = Sliderbreite - Daumenbreite, Start = Daumenbreite/2
+        double markX = FxTestUtil.callAndWait(mark::getLayoutX);
+        double thumbWidth = FxTestUtil.callAndWait(() -> {
+            javafx.scene.Node thumbNode = slider.lookup(".thumb");
+            return thumbNode instanceof javafx.scene.layout.Region r ? r.getWidth() : 0d;
+        });
+        double expected = thumbWidth / 2d
+                + (200d - thumbWidth) * (ZoomController.DEFAULT_ZOOM - ZoomController.MIN_ZOOM)
+                        / (ZoomController.MAX_ZOOM - ZoomController.MIN_ZOOM);
+        assertEquals(expected, markX, 1.5d,
+                "mark must sit on the 100% track position, thumbWidth=" + thumbWidth);
+        // y zentriert auf die Bahnhöhe des Reglers
+        double markY = FxTestUtil.callAndWait(mark::getLayoutY);
+        double sliderHeight = FxTestUtil.callAndWait(slider::getHeight);
+        assertEquals((sliderHeight - 9d) / 2d, markY, 1.5d);
     }
 
     @Test

@@ -24,12 +24,13 @@ import java.util.List;
  *
  * <p>Die Ebene ist einsbasiert und beschreibt die Verschachtelungstiefe; das
  * Modell gruppiert Listeneinträge bewusst nicht in separate Listencontainer.
- * Aufzählungsart und Inline-Inhalt werden pro Punkt gehalten.
+ * Aufzählungsart, Startnummer und Inline-Inhalt werden pro Punkt gehalten.
  */
 public class ListItemBlock extends Block {
 
     private final int level;
     private final boolean numbered;
+    private final int startNumber;
     private final List<Inline> inlines;
 
     /**
@@ -41,11 +42,28 @@ public class ListItemBlock extends Block {
      * @throws IllegalArgumentException wenn {@code level} kleiner als 1 ist
      */
     public ListItemBlock(int level, boolean numbered, List<Inline> inlines) {
+        this(level, numbered, 1, inlines);
+    }
+
+    /**
+     * Erstellt einen Listenpunkt mit Startnummer.
+     *
+     * @param level einsbasierte Verschachtelungstiefe
+     * @param numbered {@code true} für nummerierte Liste, sonst Aufzählung
+     * @param startNumber Startnummer für nummerierte Listen (>= 1), wird bei Aufzählungen ignoriert
+     * @param inlines formatierter Inhalt des Listenpunkts
+     * @throws IllegalArgumentException wenn {@code level} kleiner als 1 oder {@code startNumber} kleiner als 1 ist
+     */
+    public ListItemBlock(int level, boolean numbered, int startNumber, List<Inline> inlines) {
         if (level < 1) {
             throw new IllegalArgumentException("Invalid list level: " + level);
         }
+        if (startNumber < 1) {
+            throw new IllegalArgumentException("Invalid start number: " + startNumber);
+        }
         this.level = level;
         this.numbered = numbered;
+        this.startNumber = startNumber;
         this.inlines = List.copyOf(inlines);
     }
 
@@ -65,6 +83,15 @@ public class ListItemBlock extends Block {
      */
     public boolean isNumbered() {
         return numbered;
+    }
+
+    /**
+     * Liefert die Startnummer für nummerierte Listen.
+     *
+     * @return Startnummer (>= 1), Standard ist 1
+     */
+    public int getStartNumber() {
+        return startNumber;
     }
 
     /**

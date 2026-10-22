@@ -19,11 +19,13 @@ package de.richmarkdown.editor;
 
 import com.gluonhq.richtextarea.RichTextArea;
 import com.gluonhq.richtextarea.RichTextAreaSkin;
+import com.gluonhq.richtextarea.Selection;
 import com.gluonhq.richtextarea.model.DecorationModel;
 import com.gluonhq.richtextarea.model.ParagraphDecoration;
 import com.gluonhq.richtextarea.model.TableDecoration;
 import com.gluonhq.richtextarea.model.TextDecoration;
 import com.gluonhq.richtextarea.viewmodel.RichTextAreaViewModel;
+import de.richmarkdown.io.MarkdownFileHandler;
 import de.richmarkdown.markdown.MarkdownStyles;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -38,10 +40,14 @@ import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 
 import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -58,6 +64,14 @@ import java.util.function.Function;
  *   <li>den eigenen Strg+U-Accelerator (in rich-text-area 1.2.6 nicht builtin)</li>
  * </ul>
  *
+ * <p>Die Fassade ist zugleich der wiederverwendbare Kern für Integratoren: Ein
+ * Integrator bettet {@link #getControl()} in die eigene Szene ein und nutzt
+ * {@link #open(File)}, {@link #save(File)}, {@link #save()},
+ * {@link #getCurrentFile()} und {@link #clear()} für Datei-I/O ohne
+ * Anwendungsschale (kein {@code Application}, kein {@code EditorWindow}, keine
+ * Dialoge). Dialoge, Dirty-Check und Fehler-UI bleiben Sache der optionalen
+ * Default-Shell ({@code de.richmarkdown.ui.EditorWindow}) bzw. des Integrators.
+ *
  * <p>Öffentliche Dokument- und Formatierungsoperationen sind für den JavaFX-
  * Application Thread vorgesehen. Sie laufen über die {@code ActionFactory} und sind damit
  * undo-fähige Einzel-Commands. Für die Absatz-Analyse im Enter-Handler wird der
@@ -67,6 +81,8 @@ import java.util.function.Function;
 public class MarkdownEditor {
 
     private final RichTextArea control;
+    private final MarkdownFileHandler fileHandler = new MarkdownFileHandler();
+    private File currentFile;
 
     /**
      * Listener für Dokumentänderungen. Die Bibliothek bietet keine öffentliche
@@ -92,7 +108,28 @@ public class MarkdownEditor {
      * Das Control erhält seinen Skin, sobald es in einer angezeigten Szene liegt.
      */
     public MarkdownEditor() {
-        this.control = new RichTextArea();
+        this(new RichTextArea());
+    }
+
+    /**
+     * Erzeugt die Fassade für ein externes {@link RichTextArea} (AP-01).
+     *
+     * <p>Das übergebene Control wird vollständig übernommen: Link-Callback mit
+     * Schema-Allowlist (RME-002), Enter-Regelwerk und Strg+U-Accelerator werden
+     * wie beim parameterlosen Konstruktor installiert. Das Control darf noch
+     * ohne Skin sein; der Skin entsteht erst in einer angezeigten Szene (vgl.
+     * {@code createPrintCopy}/{@code loadPrintCopy}-Zweiphasigkeit). Alle
+     * Operationen sind für den JavaFX Application Thread vorgesehen.
+     *
+     * @param control externes Control, wird von dieser Fassade verwaltet
+     * @throws NullPointerException wenn {@code control} {@code null} ist
+     */
+    public MarkdownEditor(RichTextArea control) {
+        this.control = Objects.requireNonNull(control, "control");
+        initControl();
+    }
+
+    private void initControl() {
         // RME-002: eigener Link-Callback mit Schema-Allowlist. Die
         // Default-Factory der Bibliothek übergibt jede Dokument-URL ungeprüft
         // an xdg-open/rundll32 (Runtime.exec).
@@ -139,10 +176,121 @@ public class MarkdownEditor {
     /**
      * Liefert das Rich-Text-Area-Control, das diese Fassade verwaltet.
      *
+     * <p>Einziger Einbettungspunkt für Integratoren: Das Control in den eigenen
+     * Parent einhängen ({@code parent.getChildren().add(editor.getControl())}).
+     * Muss auf dem FX-Thread geschehen; der Skin entsteht erst in einer
+     * angezeigten Szene.
+     *
      * @return eingebettetes JavaFX-Control
      */
     public RichTextArea getControl() {
         return control;
+    }
+
+    // ---------- Datei-API für Integratoren (AP-02, ohne Dialoge) ----------
+
+    /**
+     * Öffnet die angegebene Markdown-Datei (UTF-8, {@code \n}-normalisiert).
+     *
+     * <p>Für den JavaFX Application Thread vorgesehen. Das Laden läuft wie
+     * {@link #setMarkdown(String)} asynchron über die ActionFactory – der
+     * Gespeichert-Status wird zurückgesetzt, sobald das Dokument übernommen
+     * wurde (ein Puls später; Tests nutzen {@code flush()}). Fehler werden als
+     * {@code IOException} propagiert – Dialoge/Fehler-UI bleiben Sache des
+     * Integrators bzw. der Default-Shell ({@code EditorWindow}).
+     *
+     * @param file zu ladende Datei
+     * @throws IOException wenn die Datei nicht gelesen werden kann
+     */
+    public void open(File file) throws IOException {
+        Objects.requireNonNull(file, "file");
+        setMarkdown(fileHandler.read(file));
+        currentFile = file;
+        // Das open() der Bibliothek läuft doppelt-asynchron (BasicAction +
+        // ViewModel je ein runLater). markSaved() wird daher ebenfalls
+        // gequet – es läuft nach dem Öffnen und markiert exakt dieses
+        // Dokument als gespeichert (kein synchroner Save des alten Stands).
+        Platform.runLater(() -> Platform.runLater(this::markSaved));
+    }
+
+    /**
+     * Speichert das aktuelle Dokument als UTF-8-Markdown in die Zieldatei.
+     *
+     * <p>{@link #getMarkdown()} synchronisiert das ViewModel und setzt dabei
+     * den Gespeichert-Status zurück (Bibliotheksverhalten) – ein separater
+     * Save ist hier nicht nötig.
+     *
+     * @param file Zieldatei
+     * @throws IOException wenn die Datei nicht geschrieben werden kann
+     */
+    public void save(File file) throws IOException {
+        Objects.requireNonNull(file, "file");
+        fileHandler.write(file, getMarkdown());
+        currentFile = file;
+    }
+
+    /**
+     * Speichert in die zugeordnete Datei.
+     *
+     * @throws IOException wenn die Datei nicht geschrieben werden kann
+     * @throws IllegalStateException wenn keine Datei zugeordnet ist
+     *         (Integrator ruft dann {@link #save(File)} – „Speichern unter“
+     *         ist nur diese Methode mit neuer Datei, kein separates
+     *         {@code saveAs})
+     */
+    public void save() throws IOException {
+        File target = currentFile;
+        if (target == null) {
+            throw new IllegalStateException("No file associated – use save(File)");
+        }
+        save(target);
+    }
+
+    /**
+     * Liefert die zugeordnete Datei.
+     *
+     * @return zugeordnete Datei, niemals {@code null} im Optional-Sinn;
+     *         leeres Optional, wenn noch keine Datei zugeordnet ist
+     */
+    public Optional<File> getCurrentFile() {
+        return Optional.ofNullable(currentFile);
+    }
+
+    /**
+     * Liefert den Datei-Dienst (stateless UTF-8-I/O-Engine, teilt sich kein
+     * Zustand mit dem Editor).
+     *
+     * @return Datei-Dienst für Markdown-Dokumente
+     */
+    public MarkdownFileHandler getFileHandler() {
+        return fileHandler;
+    }
+
+    /**
+     * Leert das Dokument und löst die Dateizuordnung (ohne Dialog/Confirm –
+     * das bleibt in {@code EditorWindow}). Wie {@link #open(File)} doppelt
+     * gequet, damit der Status exakt das geleerte Dokument markiert.
+     */
+    public void clear() {
+        setMarkdown("");
+        currentFile = null;
+        Platform.runLater(() -> Platform.runLater(this::markSaved));
+    }
+
+    /**
+     * Setzt den Gespeichert-Status zurück, ohne Undo-Historie zu verwerfen:
+     * Synchronisiert das ViewModel (wie {@link #getMarkdown()}) und markiert
+     * den aktuellen Undo-Stand als gespeichert. Ohne Skin (kein ViewModel)
+     * ist nichts zu tun – ein frisches Control ist unmodifiziert.
+     */
+    private void markSaved() {
+        RichTextAreaViewModel viewModel = viewModel();
+        if (viewModel == null) {
+            return;
+        }
+        // synchroner Save wie in getMarkdown(): setzt undoStackSizeWhenSaved
+        // auf den aktuellen Stand und savedProperty auf true.
+        new com.gluonhq.richtextarea.viewmodel.ActionCmdFactory().save().apply(viewModel);
     }
 
     // ---------- Textformatierung (Selektion → Decoration) ----------
@@ -243,6 +391,66 @@ public class MarkdownEditor {
     /** Nummerierte Liste ein/aus. */
     public void toggleNumberedList() {
         toggleList(ParagraphDecoration.GraphicType.NUMBERED_LIST);
+    }
+
+    /**
+     * Setzt die Startnummer für die aktuelle nummerierte Liste.
+     * Wenn eine Auswahl besteht, wird die Startnummer auf alle ausgewählten
+     * nummerierten Listenabsätze angewendet (wie LO Writer "Erste Nummer").
+     *
+     * @param startNumber die Startnummer (>= 1)
+     */
+    public void setListStartNumber(int startNumber) {
+        int effectiveStartNumber = Math.max(1, startNumber);
+        Selection selection = control.getSelection();
+
+        if (selection.isDefined()) {
+            // Auswahl vorhanden: Auf alle ausgewählten nummerierten Listenabsätze anwenden
+            RichTextAreaViewModel viewModel = viewModel();
+            if (viewModel != null) {
+                int selStart = selection.getStart();
+                int selEnd = selection.getEnd();
+                
+                // Sammle alle nummerierten Listenabsätze in der Auswahl
+                List<com.gluonhq.richtextarea.model.Paragraph> paragraphsToUpdate = new ArrayList<>();
+                for (com.gluonhq.richtextarea.model.Paragraph paragraph : viewModel.getParagraphList()) {
+                    if (paragraph.getEnd() >= selStart && paragraph.getStart() <= selEnd) {
+                        ParagraphDecoration pd = paragraph.getDecoration();
+                        if (pd != null && pd.getGraphicType() == ParagraphDecoration.GraphicType.NUMBERED_LIST) {
+                            paragraphsToUpdate.add(paragraph);
+                        }
+                    }
+                }
+                
+                if (!paragraphsToUpdate.isEmpty()) {
+                    // Erstelle eine Auswahl, die alle betroffenen Absätze abdeckt
+                    int start = paragraphsToUpdate.get(0).getStart();
+                    int end = paragraphsToUpdate.get(paragraphsToUpdate.size() - 1).getEnd();
+                    Selection paragraphSelection = new Selection(start, end);
+                    
+                    // Wende die Startnummer auf alle betroffenen Absätze an
+                    // Verwende selectAndDecorate, das die Selektion intern setzt und dann dekoriert
+                    ParagraphDecoration baseDecoration = paragraphsToUpdate.get(0).getDecoration();
+                    ParagraphDecoration updated = ParagraphDecoration.builder()
+                            .fromDecoration(baseDecoration)
+                            .startNumber(effectiveStartNumber)
+                            .build();
+                    
+                    control.getActionFactory().selectAndDecorate(paragraphSelection, updated).execute(new ActionEvent());
+                }
+            }
+        } else {
+            // Keine Auswahl: Nur aktuellen Absatz
+            ParagraphDecoration current = control.getDecorationAtParagraph();
+            if (current == null || current.getGraphicType() != ParagraphDecoration.GraphicType.NUMBERED_LIST) {
+                return; // Keine nummerierte Liste an der aktuellen Position
+            }
+            ParagraphDecoration updated = ParagraphDecoration.builder()
+                    .fromDecoration(current)
+                    .startNumber(effectiveStartNumber)
+                    .build();
+            decorate(updated);
+        }
     }
 
     /** Einzug erhöhen (verschachtelte Listen, Zitate). */
@@ -438,6 +646,42 @@ public class MarkdownEditor {
     }
 
     /**
+     * Ermittelt die Dokumentstatistik nach dem Vorbild LO „Extras → Statistik“
+     * (AddFeatures #3).
+     *
+     * <p>Liest direkt aus dem ViewModel (ohne {@code save()}), damit die
+     * Statistik den Gespeichert-Status nicht verfälscht – wie
+     * {@link #getHeadings()}. Tabellen werden über die Absatz-Dekorationen,
+     * Bilder über die Text-Dekorationen gezählt.
+     *
+     * @return aktuelle Dokumentstatistik; leer, solange kein Skin-ViewModel
+     *         verfügbar ist
+     */
+    public DocumentStatistics getStatistics() {
+        RichTextAreaViewModel viewModel = viewModel();
+        if (viewModel == null) {
+            return DocumentStatistics.empty();
+        }
+        String text = viewModel.getTextBuffer().getText(0, viewModel.getTextLength());
+        int tables = 0;
+        for (com.gluonhq.richtextarea.model.Paragraph paragraph : viewModel.getParagraphList()) {
+            ParagraphDecoration decoration = paragraph.getDecoration();
+            if (decoration != null && decoration.hasTableDecoration()) {
+                tables++;
+            }
+        }
+        int images = 0;
+        List<DecorationModel> models =
+                viewModel.getTextBuffer().getDecorationModelList(0, viewModel.getTextLength());
+        for (DecorationModel model : models) {
+            if (model.getDecoration() instanceof com.gluonhq.richtextarea.model.ImageDecoration) {
+                images++;
+            }
+        }
+        return DocumentStatistics.of(text, tables, images);
+    }
+
+    /**
      * Setzt die Caret-Position (Navigation über die Dokumentstruktur) und macht
      * die Stelle sichtbar (PROJEKTPLAN 7.1, Nachtrag).
      *
@@ -468,6 +712,7 @@ public class MarkdownEditor {
             return;
         }
         int target = Math.max(0, Math.min(position, viewModel.getTextLength()));
+        viewModel.clearSelection();
         viewModel.setCaretPosition(target);
         scrollToParagraphWithPosition(target);
         Platform.runLater(() -> {
@@ -475,6 +720,21 @@ public class MarkdownEditor {
                 control.requestFocus();
             }
         });
+    }
+
+    /**
+     * Scrollt den Absatz, der die gegebene Position enthaelt, in den
+     * Sichtbereich – ohne Selection, Caret oder Fokus zu veraendern.
+     * Wird von der Suchen-Funktion genutzt, damit ein markierter Treffer
+     * auch dann sichtbar ist, wenn er ausserhalb des Viewports liegt.
+     *
+     * @param position nullbasierte Editor-Position (siehe {@link #goToPosition})
+     */
+    public void revealPosition(int position) {
+        if (viewModel() == null) {
+            return;
+        }
+        scrollToParagraphWithPosition(position);
     }
 
     /**

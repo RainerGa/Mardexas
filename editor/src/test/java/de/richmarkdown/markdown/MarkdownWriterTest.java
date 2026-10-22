@@ -22,6 +22,7 @@ import com.gluonhq.richtextarea.model.Document;
 import com.gluonhq.richtextarea.model.ParagraphDecoration;
 import com.gluonhq.richtextarea.model.TextDecoration;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 
@@ -102,9 +103,14 @@ class MarkdownWriterTest {
     }
 
     private ParagraphDecoration numberedList(int level) {
+        return numberedList(level, 1);
+    }
+
+    private ParagraphDecoration numberedList(int level, int startNumber) {
         return ParagraphDecoration.builder().presets()
                 .graphicType(ParagraphDecoration.GraphicType.NUMBERED_LIST)
                 .indentationLevel(level)
+                .startNumber(startNumber)
                 .build();
     }
 
@@ -414,6 +420,17 @@ class MarkdownWriterTest {
                 dm(2, 2, normal(), bulletList(1)));
         MarkdownModel model = writer.toModel(document);
         assertEquals(2, model.getBlocks().size());
+    }
+
+    @Test
+    void numberedListWithStartNumber() {
+        // Create a document with a numbered list starting at 3
+        Document document = doc("First\nSecond",
+                dm(0, 6, normal(), numberedList(1, 3)),
+                dm(6, 7, normal(), numberedList(1, 3)));
+        String written = writer.write(document);
+        assertTrue(written.contains("3. First"), "Should start at 3: " + written);
+        assertTrue(written.contains("4. Second"), "Should continue at 4: " + written);
     }
 
     @Test

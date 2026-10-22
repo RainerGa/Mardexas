@@ -61,11 +61,16 @@ import java.text.MessageFormat;
  * Hauptfenster des RichMarkDownEditor mit Menüleiste, Formatierungsleiste,
  * Dokumentansichten, Statusleiste sowie Datei- und Druckaktionen.
  *
- * <p>Das Fenster verbindet die UI-Komponenten mit {@link MarkdownEditor} und
- * {@link MarkdownFileHandler}. Dateioperationen berücksichtigen ungespeicherte
- * Änderungen über einen Dirty-Check. Sichtbarkeit von Dokumentstruktur und
- * Zeilennummern sowie der Zoomfaktor werden über {@link I18n} dauerhaft
- * gespeichert und bei der Fensterinitialisierung wiederhergestellt.
+ * <p>Optionale Default-Shell für Standalone-Betrieb und Integratoren – keine
+ * Pflicht: Wer nur den Kern braucht, bettet
+ * {@link MarkdownEditor#getControl()} direkt ein und nutzt die Datei-API auf
+ * {@link MarkdownEditor} ({@code open}/{@code save}/{@code getCurrentFile}/
+ * {@code clear}). Das Fenster verbindet die UI-Komponenten mit
+ * {@link MarkdownEditor} und {@link MarkdownFileHandler}. Dateioperationen
+ * berücksichtigen ungespeicherte Änderungen über einen Dirty-Check.
+ * Sichtbarkeit von Dokumentstruktur und Zeilennummern sowie der Zoomfaktor
+ * werden über {@link I18n} dauerhaft gespeichert und bei der
+ * Fensterinitialisierung wiederhergestellt.
  *
  * <p>Die geschützten Druck- und Dateiauswahlschritte sind überschreibbar, damit
  * Tests und spezialisierte Fensterimplementierungen Systemdialoge und
@@ -91,14 +96,19 @@ public class EditorWindow extends Stage {
     private final MarkdownEditor editor;
     private final FormatToolBar toolBar;
     private final StatusBar statusBar;
-    private final MarkdownFileHandler fileHandler = new MarkdownFileHandler();
 
-    private File currentFile;
     private String lastError;
     private ConfirmationHandler confirmationHandler;
     private ZoomController zoomController;
     private DocumentStructureView structureView;
     private LineNumberGutter lineNumberGutter;
+    private final NavigationHistory navigationHistory = new NavigationHistory();
+    private final javafx.beans.property.ReadOnlyBooleanWrapper readOnly =
+            new javafx.beans.property.ReadOnlyBooleanWrapper(false);
+    private de.richmarkdown.ui.dialogs.FindReplaceDialog findReplaceDialog;
+    private String lastFindText = "";
+    private de.richmarkdown.findreplace.FindReplaceEngine.FindOptions lastFindOptions =
+            new de.richmarkdown.findreplace.FindReplaceEngine.FindOptions();
 
     /**
      * Erstellt das vollständige Editorfenster einschließlich Editor, Menüs,
@@ -112,18 +122,36 @@ public class EditorWindow extends Stage {
         toolBar.setSaveHandler(this::save);
         this.statusBar = new StatusBar(editor);
 
-        MenuBar menuBar = MenuBarFactory.create(this);
-
         // Zoom: der Controller stellt den Viewport (eigenes Region, keine
         // Zentrierung/Begrenzung) und skaliert den Editor darin
         this.zoomController = new ZoomController(editor.getControl());
         this.zoomController.setZoom(I18n.zoomPercent());
+        // Zeilenumbruch-Modus wiederherstellen (AddFeatures #6)
+        this.zoomController.setWrapMode(LineWrapMode.valueOf(I18n.lineWrapModeName()));
+
+        // Zurück-/Vorwärts-Navigation (AddFeatures #4): Sprünge aus der
+        // Strukturansicht werden gemerkt; Toolbar-Schaltflächen navigieren
+        // hin und zurück und folgen dem Stack-Zustand
+        toolBar.setBackHandler(this::navigateBack);
+        toolBar.setForwardHandler(this::navigateForward);
+        toolBar.getBackButton().disableProperty()
+                .bind(navigationHistory.canGoBackProperty().not());
+        toolBar.getForwardButton().disableProperty()
+                .bind(navigationHistory.canGoForwardProperty().not());
+
+        MenuBar menuBar = MenuBarFactory.create(this);
+
         this.zoomController.getViewport().getStyleClass().add("rme-zoom-viewport");
         statusBar.addZoomControls(this.zoomController.createControls());
-        setOnHiding(event -> I18n.setZoomPercent(zoomController.getZoom()));
+        setOnHiding(event -> {
+            I18n.setZoomPercent(zoomController.getZoom());
+            I18n.setLineWrapModeName(zoomController.getWrapMode().name());
+        });
 
         // Dokumentstruktur (Navigationsbereich) links vom Editor
         this.structureView = new DocumentStructureView(editor);
+        // Sprünge aus der Strukturansicht in die Navigations-Historie eintragen
+        structureView.setJumpHandler(this::jumpTo);
 
         // Zeilennummern links vom Editor (zwischen Struktur und Editor)
         this.lineNumberGutter = new LineNumberGutter(editor.getControl(),
@@ -190,10 +218,11 @@ public class EditorWindow extends Stage {
 
     /** Liefert den Datei-I/O-Dienst, der von den Dateiaktionen genutzt wird.
      *
-     * @return Datei-I/O-Dienst für Markdown-Dateien
+     * @return Datei-I/O-Dienst für Markdown-Dateien (stateless Engine aus dem
+     *         Editor, kein Fenster-Zustand)
      */
     public MarkdownFileHandler getFileHandler() {
-        return fileHandler;
+        return editor.getFileHandler();
     }
 
     /** Liefert den Controller für Zoomfaktor, Viewport und Zoom-Bedienelemente.
@@ -258,14 +287,266 @@ public class EditorWindow extends Stage {
         }
     }
 
+    // ---------- Zurück-/Vorwärts-Navigation (AddFeatures #4) ----------
+
+    /**
+     * Springt zur angegebenen Position und merkt sich die Ausgangsposition
+     * für die Zurück-Navigation (Vorbild LO-Navigationsleiste).
+     *
+     * @param position Zielposition im Dokument
+     */
+    public void jumpTo(int position) {
+        navigationHistory.jumpPerformed(editor.getControl().getCaretPosition());
+        editor.goToPosition(position);
+    }
+
+    /**
+     * Springt zurück zur letzten Sprungquelle.
+     *
+     * @return {@code true}, wenn ein Zurück-Sprung ausgeführt wurde
+     */
+    public boolean navigateBack() {
+        var target = navigationHistory.goBack(editor.getControl().getCaretPosition());
+        target.ifPresent(editor::goToPosition);
+        return target.isPresent();
+    }
+
+    /**
+     * Springt vorwärts zur nächsten gemerkten Position.
+     *
+     * @return {@code true}, wenn ein Vorwärts-Sprung ausgeführt wurde
+     */
+    public boolean navigateForward() {
+        var target = navigationHistory.goForward(editor.getControl().getCaretPosition());
+        target.ifPresent(editor::goToPosition);
+        return target.isPresent();
+    }
+
+    /**
+     * Liefert die Navigations-Historie dieses Fensters (für Tests und
+     * weitere Sprungquellen).
+     *
+     * @return Navigations-Historie der Zurück-/Vorwärts-Navigation
+     */
+    public NavigationHistory getNavigationHistory() {
+        return navigationHistory;
+    }
+
+    // ---------- Schreibgeschützter Modus (AddFeatures #5) ----------
+
+    /**
+     * Gibt an, ob das Dokument schreibgeschützt geöffnet ist
+     * (Vorbild LO „Datei → Öffnen (schreibgeschützt)“).
+     *
+     * @return {@code true}, wenn Bearbeitungen gesperrt sind
+     */
+    public boolean isReadOnly() {
+        return readOnly.get();
+    }
+
+    /**
+     * Liefert die lesbare Property des Schreibgeschützt-Zustands (Bindings
+     * für Menüeinträge).
+     *
+     * @return Property des Schreibgeschützt-Zustands
+     */
+    public javafx.beans.property.ReadOnlyBooleanProperty readOnlyProperty() {
+        return readOnly.getReadOnlyProperty();
+    }
+
+    /**
+     * Setzt den Schreibgeschützt-Zustand: Das Control wird nicht mehr
+     * editierbar, Bearbeitungs-Schaltflächen und Speichern-Aktionen der
+     * Toolbar werden gesperrt (graue Menüeinträge wie in LO).
+     *
+     * @param value {@code true}, um Bearbeitungen zu sperren
+     */
+    public void setReadOnly(boolean value) {
+        readOnly.set(value);
+        editor.getControl().setEditable(!value);
+        toolBar.setReadOnly(value);
+    }
+
+    /**
+     * Öffnet die über den Dialog gewählte Datei schreibgeschützt.
+     */
+    public void showOpenDialogReadOnly() {
+        if (!confirmDiscardChanges()) {
+            return;
+        }
+        File file = chooseFileToOpen();
+        if (file != null) {
+            loadFile(file);
+            setReadOnly(true);
+        }
+    }
+
+    /**
+     * Öffnet die angegebene Datei schreibgeschützt (Dirty-Check inklusive).
+     *
+     * @param file Markdown-Datei, die geladen werden soll
+     */
+    public void openFileReadOnly(File file) {
+        if (!confirmDiscardChanges()) {
+            return;
+        }
+        loadFile(file);
+        setReadOnly(true);
+    }
+
+    // ---------- Zeilenumbruch (AddFeatures #6) ----------
+
+    /**
+     * Setzt den Zeilenumbruch-Modus (Format → Zeilenumbruch, Vorbild LO).
+     *
+     * @param mode gewünschter Umbruchmodus
+     */
+    public void setLineWrapMode(LineWrapMode mode) {
+        zoomController.setWrapMode(mode);
+        I18n.setLineWrapModeName(mode.name());
+    }
+
+    /**
+     * Liefert den aktuellen Zeilenumbruch-Modus.
+     *
+     * @return aktueller Umbruchmodus
+     */
+    public LineWrapMode getLineWrapMode() {
+        return zoomController.getWrapMode();
+    }
+
+    // ---------- Statistik (AddFeatures #3) ----------
+
+    /**
+     * Öffnet den Statistik-Dialog (Extras → Statistik, Vorbild LO) mit den
+     * aktuellen Zählfeldern des Dokuments.
+     */
+    public void showStatisticsDialog() {
+        de.richmarkdown.ui.dialogs.StatisticsDialog dialog =
+                new de.richmarkdown.ui.dialogs.StatisticsDialog(editor::getStatistics);
+        dialog.initOwner(this);
+        dialog.showAndWait();
+    }
+
+    /**
+     * Oeffnet den Suchen-&-Ersetzen-Dialog (Bearbeiten, Vorbild LO).
+     * Nicht-modal: bleibt offen, waehrend im Dokument gearbeitet wird.
+     * Es gibt genau eine Instanz; die Auswahl wird als Suchtext uebernommen.
+     */
+    public void showFindReplaceDialog() {
+        com.gluonhq.richtextarea.RichTextArea control = editor.getControl();
+        com.gluonhq.richtextarea.RichTextAreaSkin skin =
+                (com.gluonhq.richtextarea.RichTextAreaSkin) control.getSkin();
+        if (skin == null) {
+            return;
+        }
+        if (findReplaceDialog == null) {
+            de.richmarkdown.findreplace.FindReplaceEngine engine =
+                    new de.richmarkdown.findreplace.FindReplaceEngine(control,
+                            skin.getViewModel());
+            // Treffer nach der Markierung in den Sichtbereich scrollen
+            // (reine Viewport-Aenderung, keine Selection-/Fokus-Eingriffe).
+            engine.setRevealHandler(editor::revealPosition);
+            findReplaceDialog = new de.richmarkdown.ui.dialogs.FindReplaceDialog(
+                    this, engine, backwards -> confirmWrap(backwards));
+            findReplaceDialog.setOnHidden(event -> findReplaceDialog = null);
+        }
+        String selected = selectedTextForFind();
+        findReplaceDialog.showWithSelection(selected);
+    }
+
+    /**
+     * Sucht ohne Dialog weiter (Strg+F): nutzt die letzten Suchkriterien.
+     */
+    public void findNextWithoutDialog() {
+        if (lastFindText == null || lastFindText.isEmpty()) {
+            showFindReplaceDialog();
+            return;
+        }
+        com.gluonhq.richtextarea.RichTextArea control = editor.getControl();
+        com.gluonhq.richtextarea.RichTextAreaSkin skin =
+                (com.gluonhq.richtextarea.RichTextAreaSkin) control.getSkin();
+        if (skin == null) {
+            return;
+        }
+        de.richmarkdown.findreplace.FindReplaceEngine engine =
+                new de.richmarkdown.findreplace.FindReplaceEngine(control,
+                        skin.getViewModel());
+        engine.setRevealHandler(editor::revealPosition);
+        de.richmarkdown.findreplace.FindReplaceEngine.SearchResult result =
+                engine.findNext(lastFindText, lastFindOptions.copy());
+        if (result == null) {
+            showError(I18n.text("dialog.findReplace.noMatch"));
+            return;
+        }
+        if (result.getWrap() == de.richmarkdown.findreplace.FindReplaceEngine.Wrap.WRAPPED
+                && !confirmWrap(lastFindOptions.isBackwards())) {
+            return;
+        }
+        engine.selectMatch(result.getMatch());
+    }
+
+    /** Merkt die letzten Suchkriterien fuer Strg+F (wird vom Dialog gesetzt). */
+    public void rememberFindCriteria(String findText,
+            de.richmarkdown.findreplace.FindReplaceEngine.FindOptions options) {
+        this.lastFindText = findText == null ? "" : findText;
+        this.lastFindOptions = options == null
+                ? new de.richmarkdown.findreplace.FindReplaceEngine.FindOptions()
+                : options.copy();
+    }
+
+    private boolean confirmWrap(boolean backwards) {
+        String key = backwards ? "dialog.findReplace.wrapToEnd" : "dialog.findReplace.wrapToStart";
+        if (confirmationHandler != null) {
+            return confirmationHandler.confirm(I18n.text("dialog.findReplace.title"),
+                    I18n.text(key));
+        }
+        javafx.scene.control.Alert alert =
+                new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.CONFIRMATION);
+        // Owner ist der Suchen-Dialog (falls offen): Nach dem Schliessen kehrt
+        // der Fokus dorthin zurueck, sodass Enter wieder „Weitersuchen“ ausloest.
+        // Mit Hauptfenster als Owner wuerde der Fokus in den Editor fallen und
+        // Enter dort den Absatzumbruch-Handler feuern (Formatierung kaputt).
+        alert.initOwner(findReplaceDialog != null && findReplaceDialog.isShowing()
+                ? findReplaceDialog : this);
+        alert.setTitle(I18n.text("dialog.findReplace.title"));
+        alert.setHeaderText(null);
+        alert.setContentText(I18n.text(key));
+        return alert.showAndWait()
+                .filter(response -> response == javafx.scene.control.ButtonType.OK)
+                .isPresent();
+    }
+
+    private String selectedTextForFind() {
+        com.gluonhq.richtextarea.Selection selection = editor.getControl().getSelection();
+        if (selection == null || !selection.isDefined()) {
+            return "";
+        }
+        com.gluonhq.richtextarea.model.Document document = editor.getControl().getDocument();
+        if (document == null) {
+            return "";
+        }
+        int start = Math.max(0, Math.min(selection.getStart(), document.getText().length()));
+        int end = Math.max(0, Math.min(selection.getEnd(), document.getText().length()));
+        if (end <= start || end - start > 500) {
+            return "";
+        }
+        String selected = document.getText().substring(start, end);
+        return selected.contains("\n") ? "" : selected;
+    }
+
     /**
      * Liefert die momentan geöffnete Datei oder {@code null}, wenn noch keine
      * Datei zugeordnet ist.
      *
+     * <p>Durchreichung zu {@link MarkdownEditor#getCurrentFile()} – der
+     * Editor ist die einzige Stelle mit Dateizuordnung (kein Fenster-Duplikat).
+     *
      * @return aktuell geöffnete Datei oder {@code null}
      */
     public File getCurrentFile() {
-        return currentFile;
+        return editor.getCurrentFile().orElse(null);
     }
 
     /**
@@ -295,8 +576,9 @@ public class EditorWindow extends Stage {
         if (!confirmDiscardChanges()) {
             return;
         }
-        editor.setMarkdown("");
-        currentFile = null;
+        editor.clear();
+        lastError = null;
+        setReadOnly(false);
         updateTitle();
     }
 
@@ -326,10 +608,10 @@ public class EditorWindow extends Stage {
 
     /** Speichert in die aktuelle Datei oder startet „Speichern unter“. */
     public void save() {
-        if (currentFile == null) {
+        if (editor.getCurrentFile().isEmpty()) {
             showSaveDialog();
         } else {
-            saveToFile(currentFile);
+            saveToFile(editor.getCurrentFile().orElseThrow());
         }
     }
 
@@ -343,14 +625,16 @@ public class EditorWindow extends Stage {
 
     /**
      * Speichert das aktuelle Dokument als UTF-8-Markdown in eine Datei.
+     * Delegiert an {@link MarkdownEditor#save(File)} – Dirty-Check,
+     * Fehler-UI und Titel bleiben Fenster-Sache.
      *
      * @param file Zieldatei
      */
     public void saveToFile(File file) {
         try {
-            fileHandler.write(file, editor.getMarkdown());
-            currentFile = file;
+            editor.save(file);
             lastError = null;
+            I18n.addRecentFile(file.getAbsolutePath());
             updateTitle();
         } catch (IOException e) {
             lastError = MessageFormat.format(I18n.text("error.save"),
@@ -682,7 +966,7 @@ public class EditorWindow extends Stage {
      */
     protected void printDocument(PrinterJob job) {
         JobSettings settings = job.getJobSettings();
-        settings.setJobName(currentFile != null ? currentFile.getName() : "RichMarkDownEditor");
+        settings.setJobName(editor.getCurrentFile().map(File::getName).orElse("RichMarkDownEditor"));
         PageLayout layout = settings.getPageLayout();
         RichTextArea printCopy = editor.createPrintCopy();
         printCopy.setPrefWidth(layout.getPrintableWidth());
@@ -725,10 +1009,12 @@ public class EditorWindow extends Stage {
 
     private void loadFile(File file) {
         try {
-            String content = fileHandler.read(file);
-            editor.setMarkdown(content);
-            currentFile = file;
+            editor.open(file);
             lastError = null;
+            // Normales Öffnen hebt einen allfälligen Schreibschutz auf
+            // (setReadOnly(true) folgt beim schreibgeschützten Öffnen danach)
+            setReadOnly(false);
+            I18n.addRecentFile(file.getAbsolutePath());
             updateTitle();
         } catch (IOException e) {
             lastError = MessageFormat.format(I18n.text("error.open"),
@@ -773,7 +1059,7 @@ public class EditorWindow extends Stage {
     }
 
     private void updateTitle() {
-        String name = currentFile != null ? currentFile.getName() : I18n.text("app.untitled");
+        String name = editor.getCurrentFile().map(File::getName).orElse(I18n.text("app.untitled"));
         setTitle(MessageFormat.format(I18n.text("app.title.document"), name));
     }
 

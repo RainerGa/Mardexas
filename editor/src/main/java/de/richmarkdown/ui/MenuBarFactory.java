@@ -24,6 +24,7 @@ import de.richmarkdown.ui.dialogs.DialogButtons;
 import de.richmarkdown.ui.dialogs.ImageDialog;
 import de.richmarkdown.ui.dialogs.LinkDialog;
 import de.richmarkdown.ui.dialogs.TableDialog;
+import com.gluonhq.richtextarea.model.ParagraphDecoration;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -35,6 +36,10 @@ import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.ToggleGroup;
+
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Baut die zur jeweiligen Anwendungssituation passende Menüleiste.
@@ -120,20 +125,84 @@ public final class MenuBarFactory {
 
         private Menu buildFileMenu() {
             Menu menu = new Menu(I18n.text("menu.file"));
+            javafx.scene.control.MenuItem saveItem = menuItem("menu.save", window::save);
+            javafx.scene.control.MenuItem saveAsItem = menuItem("menu.saveAs", window::showSaveDialog);
+            // Schreibgeschützt: Speichern ist gesperrt wie in LO (AddFeatures #5)
+            saveItem.disableProperty().bind(window.readOnlyProperty());
+            saveAsItem.disableProperty().bind(window.readOnlyProperty());
             menu.getItems().addAll(
                     menuItem("menu.new", window::newDocument),
                     menuItem("menu.open", window::showOpenDialog),
+                    menuItem("menu.openReadOnly", window::showOpenDialogReadOnly),
                     separator(),
-                    menuItem("menu.save", window::save),
-                    menuItem("menu.saveAs", window::showSaveDialog),
+                    buildRecentFilesMenu(),
+                    separator(),
+                    saveItem,
+                    saveAsItem,
                     menuItem("menu.print", window::print),
                     separator(),
                     menuItem("menu.quit", window::exit));
             return menu;
         }
 
+        /**
+         * Erstellt das Untermenü „Zuletzt geöffnet“ (Datei → Zuletzt geöffnet,
+         * Vorbild LO Datei → Zuletzt geöffnet, AddFeatures #7).
+         */
+        private Menu buildRecentFilesMenu() {
+            Menu menu = new Menu(I18n.text("menu.recentFiles"));
+            List<String> recentFiles = I18n.getRecentFiles();
+            if (recentFiles.isEmpty()) {
+                MenuItem emptyItem = new MenuItem(I18n.text("menu.recentFiles.empty"));
+                emptyItem.setDisable(true);
+                menu.getItems().add(emptyItem);
+            } else {
+                for (int i = 0; i < recentFiles.size(); i++) {
+                    String filePath = recentFiles.get(i);
+                    String label = (i + 1) + "  " + new java.io.File(filePath).getName();
+                    MenuItem item = new MenuItem(label);
+                    // MenuItem doesn't support tooltips directly in JavaFX
+                    int index = i;
+                    item.setOnAction(event -> {
+                        java.io.File file = new java.io.File(recentFiles.get(index));
+                        if (file.exists()) {
+                            window.openFile(file);
+                        } else {
+                            // Datei existiert nicht mehr -> aus Liste entfernen
+                            I18n.removeRecentFile(filePath);
+                            // Menü neu aufbauen (einfacher Ansatz: Fenster neu laden oder Menü aktualisieren)
+                            // Hier nur Fehlermeldung anzeigen
+                            showMessage(MessageFormat.format(I18n.text("error.recentFileNotFound"), filePath));
+                        }
+                    });
+                    menu.getItems().add(item);
+                }
+                menu.getItems().add(separator());
+                MenuItem clearItem = new MenuItem(I18n.text("menu.recentFiles.clear"));
+                clearItem.setOnAction(event -> {
+                    // Alle kürzlich geöffneten Dateien löschen
+                    for (String path : new ArrayList<>(I18n.getRecentFiles())) {
+                        I18n.removeRecentFile(path);
+                    }
+                });
+                menu.getItems().add(clearItem);
+            }
+            return menu;
+        }
+
         private Menu buildEditMenu() {
             Menu menu = new Menu(I18n.text("menu.edit"));
+            // Strg+F oeffnet den Suchen-&-Ersetzen-Dialog (wie in den meisten
+            // Editoren). F3 wiederholt die letzte Suche ohne Dialog.
+            javafx.scene.control.MenuItem findItem = menuItem("menu.findReplace",
+                    this::showFindReplaceDialog);
+            findItem.setAccelerator(new javafx.scene.input.KeyCodeCombination(
+                    javafx.scene.input.KeyCode.F,
+                    javafx.scene.input.KeyCombination.CONTROL_DOWN));
+            javafx.scene.control.MenuItem findNextItem = menuItem("menu.findNext",
+                    this::findNextWithoutDialog);
+            findNextItem.setAccelerator(new javafx.scene.input.KeyCodeCombination(
+                    javafx.scene.input.KeyCode.F3));
             menu.getItems().addAll(
                     menuItem("menu.undo", editor.getControl().getActionFactory()::undo),
                     menuItem("menu.redo", editor.getControl().getActionFactory()::redo),
@@ -142,7 +211,10 @@ public final class MenuBarFactory {
                     menuItem("menu.copy", editor.getControl().getActionFactory()::copy),
                     menuItem("menu.paste", editor.getControl().getActionFactory()::paste),
                     separator(),
-                    menuItem("menu.selectAll", editor.getControl().getActionFactory()::selectAll));
+                    menuItem("menu.selectAll", editor.getControl().getActionFactory()::selectAll),
+                    separator(),
+                    findItem,
+                    findNextItem);
             return menu;
         }
 
@@ -171,14 +243,42 @@ public final class MenuBarFactory {
                     menuItem("menu.heading1", () -> editor.applyHeading(1)),
                     menuItem("menu.heading2", () -> editor.applyHeading(2)),
                     menuItem("menu.heading3", () -> editor.applyHeading(3)),
+                    menuItem("menu.heading4", () -> editor.applyHeading(4)),
+                    menuItem("menu.heading5", () -> editor.applyHeading(5)),
+                    menuItem("menu.heading6", () -> editor.applyHeading(6)),
                     menuItem("menu.body", editor::applyParagraphStyle),
                     menuItem("menu.quote", editor::applyQuote),
                     separator(),
                     menuItem("menu.bulletList", editor::toggleBulletList),
                     menuItem("menu.numberedList", editor::toggleNumberedList),
+                    menuItem("menu.listStartNumber", () -> showListStartNumberDialog()),
                     separator(),
                     menuItem("menu.indent", editor::indent),
-                    menuItem("menu.outdent", editor::outdent));
+                    menuItem("menu.outdent", editor::outdent),
+                    separator(),
+                    buildLineWrapMenu());
+            return menu;
+        }
+
+        /**
+         * Unterformatmenü „Zeilenumbruch“ mit Radio-Items „Automatisch“ und
+         * „Durchgehend“ (Vorbild LO Format → Zeilenumbruch, AddFeatures #6).
+         */
+        private Menu buildLineWrapMenu() {
+            Menu menu = new Menu(I18n.text("menu.lineWrap"));
+            ToggleGroup group = new ToggleGroup();
+            for (LineWrapMode mode : LineWrapMode.values()) {
+                javafx.scene.control.RadioMenuItem item =
+                        new javafx.scene.control.RadioMenuItem(mode.getLabel());
+                item.setToggleGroup(group);
+                item.setSelected(mode == window.getLineWrapMode());
+                item.setOnAction(event -> {
+                    if (item.isSelected()) {
+                        window.setLineWrapMode(mode);
+                    }
+                });
+                menu.getItems().add(item);
+            }
             return menu;
         }
 
@@ -191,9 +291,36 @@ public final class MenuBarFactory {
 
     private Menu buildExtrasMenu() {
         Menu menu = new Menu(I18n.text("menu.extras"));
+        // Kein Einstellungs-Dialog: Sprache, Dokumentstruktur und Zeilennummern
+        // werden direkt ueber die Menueleiste bzw. die Statusleiste gesteuert.
         menu.getItems().addAll(
-                menuItem("extras.settings", () -> showMessage(I18n.text("extras.settings"))));
+                menuItem("menu.statistics", this::showStatisticsDialog));
         return menu;
+    }
+
+    /**
+     * Öffnet den Statistik-Dialog (Extras → Statistik, Vorbild LO,
+     * AddFeatures #3).
+     */
+    private void showStatisticsDialog() {
+        if (window == null) {
+            return;
+        }
+        window.showStatisticsDialog();
+    }
+
+    private void showFindReplaceDialog() {
+        if (window == null) {
+            return;
+        }
+        window.showFindReplaceDialog();
+    }
+
+    private void findNextWithoutDialog() {
+        if (window == null) {
+            return;
+        }
+        window.findNextWithoutDialog();
     }
 
     private Menu buildWindowMenu() {
@@ -342,6 +469,31 @@ public final class MenuBarFactory {
     private void showTableDialog() {
         TableDialog dialog = new TableDialog();
         dialog.showAndWait().ifPresent(size -> editor.insertTable(size.rows(), size.columns()));
+    }
+
+    private void showListStartNumberDialog() {
+        ParagraphDecoration current = editor.getControl().getDecorationAtParagraph();
+        if (current == null || current.getGraphicType() != ParagraphDecoration.GraphicType.NUMBERED_LIST) {
+            return; // Keine nummerierte Liste an der aktuellen Position
+        }
+        int currentStart = current.getStartNumber();
+        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog(String.valueOf(currentStart));
+        if (window != null) {
+            dialog.initOwner(window);
+        }
+        dialog.setTitle(I18n.text("dialog.listStartNumber.title"));
+        dialog.setHeaderText(I18n.text("dialog.listStartNumber.header"));
+        dialog.setContentText(I18n.text("dialog.listStartNumber.content"));
+        dialog.showAndWait().ifPresent(input -> {
+            try {
+                int startNumber = Integer.parseInt(input.trim());
+                if (startNumber >= 1) {
+                    editor.setListStartNumber(startNumber);
+                }
+            } catch (NumberFormatException ignored) {
+                // Ungültige Eingabe ignorieren
+            }
+        });
     }
 
         private void showTextDialog(String title, String header, String content) {

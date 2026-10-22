@@ -326,9 +326,20 @@ public class MarkdownParser {
             if (matcher.matches()) {
                 int indent = matcher.group(1).length();
                 int level = indent / 2 + 1;
-                boolean numbered = Character.isDigit(matcher.group(2).charAt(0));
+                String marker = matcher.group(2);
+                boolean numbered = Character.isDigit(marker.charAt(0));
+                int startNumber = 1;
+                if (numbered) {
+                    // Extract start number from marker (e.g., "3." or "3)")
+                    String numStr = marker.replaceAll("[.)]", "");
+                    try {
+                        startNumber = Integer.parseInt(numStr);
+                    } catch (NumberFormatException ignored) {
+                        startNumber = 1;
+                    }
+                }
                 String text = matcher.group(3) == null ? "" : matcher.group(3).trim();
-                ListItemBlock item = new ListItemBlock(level, numbered, parseInlines(text));
+                ListItemBlock item = new ListItemBlock(level, numbered, startNumber, parseInlines(text));
                 blocks.add(item);
                 previous = item;
                 i++;
@@ -339,7 +350,7 @@ public class MarkdownParser {
                     List<Inline> merged = new ArrayList<>(previous.getInlines());
                     merged.addAll(parseInlines(continuation));
                     blocks.set(blocks.size() - 1,
-                            new ListItemBlock(previous.getLevel(), previous.isNumbered(), merged));
+                            new ListItemBlock(previous.getLevel(), previous.isNumbered(), previous.getStartNumber(), merged));
                 }
                 i++;
             } else {
@@ -734,6 +745,7 @@ public class MarkdownParser {
                         ? ParagraphDecoration.GraphicType.NUMBERED_LIST
                         : ParagraphDecoration.GraphicType.BULLETED_LIST)
                 .indentationLevel(item.getLevel())
+                .startNumber(item.getStartNumber())
                 .build();
     }
 

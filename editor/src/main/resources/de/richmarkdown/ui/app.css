@@ -165,6 +165,12 @@
     -fx-text-fill: #404040;
 }
 
+/* Kleiner Strich auf der Bahn des Zoom-Reglers, der die 100-%-Position
+   markiert (wie bei LibreOffice Writer). */
+.zoom-slider-mark {
+    -fx-fill: #404040;
+}
+
 /* ---------- Dokumentstruktur ---------- */
 
 .rme-structure-view {
@@ -200,4 +206,14 @@
 .rme-line-number-gutter .line-number {
     -fx-text-fill: #8a8a8a;
     -fx-font-size: 0.9em;
+}
+
+/* ---------- Suchen & Ersetzen (Vorbild LO Writer, AddFeatures #11) ---------- */
+
+.rme-find-replace {
+    -fx-background-color: #f9f9f9;
+}
+
+.rme-find-replace .combo-box {
+    -fx-background-color: white;
 }

@@ -22,11 +22,15 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.ReadOnlyDoubleWrapper;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.transform.Scale;
 
 /**
@@ -43,6 +47,8 @@ import javafx.scene.transform.Scale;
  *   <li>Schieberegler (25 %–400 %) mit Prozentanzeige</li>
  *   <li>Strg+Mausrad zum Vergrößern und Verkleinern</li>
  *   <li>Ein-/Auszoomen in 10-Prozentpunkt-Schritten sowie Rücksetzen auf 100 %</li>
+ *   <li>Doppelklick auf den Regler setzt den Zoom auf 100 % zurück</li>
+ *   <li>Kleiner Strich auf dem Regler markiert die 100-%-Position (wie LibreOffice Writer)</li>
  * </ul>
  *
  * <p>Der Controller verwaltet keine Persistenz. Die aufrufende Fensterebene
@@ -64,10 +70,14 @@ public class ZoomController {
     private final Viewport viewport;
     private final Scale scale = new Scale(1, 1, 0, 0);
     private final ReadOnlyDoubleWrapper zoom = new ReadOnlyDoubleWrapper(DEFAULT_ZOOM);
+    private final javafx.beans.property.ReadOnlyObjectWrapper<LineWrapMode> wrapMode =
+            new javafx.beans.property.ReadOnlyObjectWrapper<>(LineWrapMode.AUTOMATIC);
 
     private Slider slider;
     private Label label;
     private HBox controls;
+    /** Kleiner Strich, der die 100-%-Position auf dem Regler markiert. */
+    private Rectangle mark;
 
     /**
      * Erstellt einen Zoom-Controller einschließlich eigenem Viewport.
@@ -89,11 +99,13 @@ public class ZoomController {
         control.setMaxWidth(Region.USE_PREF_SIZE);
         control.setMaxHeight(Region.USE_PREF_SIZE);
         control.prefWidthProperty().bind(Bindings.createDoubleBinding(
-                this::logicalWidth, viewport.widthProperty(), zoom.getReadOnlyProperty()));
+                this::logicalWidth, viewport.widthProperty(),
+                zoom.getReadOnlyProperty(), wrapMode));
         control.prefHeightProperty().bind(Bindings.createDoubleBinding(
                 this::logicalHeight, viewport.heightProperty(), zoom.getReadOnlyProperty()));
 
         zoom.addListener((obs, old, nv) -> applyZoom());
+        wrapMode.addListener((obs, old, nv) -> viewport.requestLayout());
 
         // Strg+Mausrad wie in Word/LibreOffice
         control.addEventFilter(ScrollEvent.SCROLL, event -> {
@@ -149,6 +161,37 @@ public class ZoomController {
         zoom.set(clamp(percent));
     }
 
+    /**
+     * Liefert den aktuellen Zeilenumbruch-Modus (AddFeatures #6).
+     *
+     * @return aktueller Umbruchmodus; standardmäßig {@link LineWrapMode#AUTOMATIC}
+     */
+    public LineWrapMode getWrapMode() {
+        return wrapMode.get();
+    }
+
+    /**
+     * Setzt den Zeilenumbruch-Modus und fordert ein Relayout an.
+     *
+     * @param mode gewünschter Umbruchmodus; {@code null} wird abgelehnt
+     * @throws IllegalArgumentException wenn {@code mode} {@code null} ist
+     */
+    public void setWrapMode(LineWrapMode mode) {
+        if (mode == null) {
+            throw new IllegalArgumentException("wrap mode must not be null");
+        }
+        wrapMode.set(mode);
+    }
+
+    /**
+     * Liefert die lesbare Property des Zeilenumbruch-Modus.
+     *
+     * @return Property des Umbruchmodus
+     */
+    public javafx.beans.property.ReadOnlyObjectProperty<LineWrapMode> wrapModeProperty() {
+        return wrapMode.getReadOnlyProperty();
+    }
+
     /** Erhöht den Zoom um {@link #ZOOM_STEP}, begrenzt auf den Maximalwert. */
     public void zoomIn() {
         setZoom(zoom.get() + ZOOM_STEP);
@@ -170,13 +213,30 @@ public class ZoomController {
      * Liefert den Schieberegler für den Zoom.
      *
      * <p>Der Regler wird einmalig erzeugt und anschließend bidirektional mit
-     * dem Zoomwert synchronisiert.
+     * dem Zoomwert synchronisiert. Ein <b>Doppelklick</b> auf den Regler setzt
+     * den Zoom auf {@value #DEFAULT_ZOOM} % zurück (der Klick auf die
+     * Regelposition wird dabei verbraucht, damit der Regler nicht zusätzlich
+     * auf die angeklickte Position springt). Auf der Bahn markiert ein kleiner
+     * Strich die 100-%-Position (wie bei LibreOffice Writer).
      *
      * @return wiederverwendbarer Zoom-Schieberegler
      */
     public Slider createSlider() {
         if (slider == null) {
-            slider = new Slider(MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM);
+            slider = new Slider(MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM) {
+                @Override
+                protected void layoutChildren() {
+                    super.layoutChildren();
+                    if (mark == null) {
+                        mark = new Rectangle(1.0, 9.0, Color.web("#404040"));
+                        mark.getStyleClass().add("zoom-slider-mark");
+                        mark.setMouseTransparent(true);
+                        getChildren().add(mark);
+                    }
+                    mark.toFront();
+                    layoutMark(this);
+                }
+            };
             slider.setPrefWidth(120);
             slider.setFocusTraversable(false);
             // bidirektionale Bindung: Regler ↔ Zoomfaktor
@@ -190,8 +250,38 @@ public class ZoomController {
                     slider.setValue(nv.doubleValue());
                 }
             });
+            // Doppelklick auf den Regler → zurück auf 100 %
+            slider.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+                if (event.getClickCount() == 2) {
+                    resetZoom();
+                    event.consume();
+                }
+            });
         }
         return slider;
+    }
+
+    /**
+     * Positioniert den 100-%-Strich auf der Reglerbahn.
+     *
+     * <p>Die Bahn läuft über {@code SliderBreite − DaumenBreite}; die
+     * 100-%-Position ergibt sich aus dem Wertebbereich und wird um die halbe
+     * Daumenbreite verschoben, damit der Strich exakt über dem Wert 100 liegt.
+     * Vertikal wird der Strich wie bei LibreOffice Writer auf Höhe der Bahn
+     * zentriert.
+     *
+     * @param s der Zoom-Schieberegler
+     */
+    private void layoutMark(Slider s) {
+        Node thumbNode = s.lookup(".thumb");
+        if (mark == null || !(thumbNode instanceof Region thumb)) {
+            return;
+        }
+        double trackWidth = s.getWidth() - thumb.getWidth();
+        double markX = thumb.getWidth() / 2.0
+                + trackWidth * (DEFAULT_ZOOM - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM);
+        double markY = (s.getHeight() - mark.getHeight()) / 2.0;
+        mark.relocate(Math.round(markX), Math.round(markY));
     }
 
     /**

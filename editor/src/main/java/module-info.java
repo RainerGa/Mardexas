@@ -20,7 +20,11 @@
  *
  * Basis ist das JavaFX-Control {@link com.gluonhq.richtextarea.RichTextArea}
  * (RichTextArea-Fork aus dem im Maven-Reactor eingebundenen Git-Submodul).
- * FXML wird nicht benötigt (reine Java-UI).
+ * FXML wird nicht benötigt (reine Java-UI). Als Bibliothek (AP-06/API-Doku)
+ * zusätzlich exportiert: {@code io} (Datei-Engine), {@code ui} (+
+ * {@code ui.dialogs} als Default-Shell), {@code i18n} + {@code settings}
+ * (globale Konfiguration), {@code findreplace} (Suchen & Ersetzen nach LO).
+ * Kein {@code opens} (kein FXML/Reflection).
  */
 module RichMarkDownEditor {
     requires transitive javafx.controls;
@@ -31,5 +35,11 @@ module RichMarkDownEditor {
 
     exports de.richmarkdown;
     exports de.richmarkdown.editor;
+    exports de.richmarkdown.findreplace;
     exports de.richmarkdown.markdown;
+    exports de.richmarkdown.io;
+    exports de.richmarkdown.ui;
+    exports de.richmarkdown.ui.dialogs;
+    exports de.richmarkdown.i18n;
+    exports de.richmarkdown.settings;
 }

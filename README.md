@@ -26,6 +26,7 @@ available.
 
 - [Why use Mardexas?](#why-use-mardexas)
 - [Get started](#get-started)
+- [Use as a library](#use-as-a-library)
 - [Release packages](#release-packages)
 - [What Markdown does it support?](#what-markdown-does-it-support)
 - [Build and run from source](#build-and-run-from-source)
@@ -77,6 +78,76 @@ version:
    ```
 
 The script builds the project before launching the editor.
+
+## Use as a library
+
+Mardexas stays a standalone editor and can additionally be embedded as a
+JavaFX library (`MarkdownEditor` + `getControl()`, file API without dialogs,
+swappable `I18n` settings store). The steps below take you from a full
+checkout to an editor inside your own application.
+
+1. **Install the library** from a full checkout with submodules (the
+   RichTextArea dependency is not on Maven Central):
+
+   ```sh
+   git clone --recurse-submodules https://github.com/RainerGa/Mardexas.git
+   cd Mardexas
+   mvn -pl editor -am install
+   ```
+
+2. **Add the dependency** to your `pom.xml`:
+
+   ```xml
+   <dependency>
+     <groupId>de.richmarkdown</groupId>
+     <artifactId>RichMarkDownEditor</artifactId>
+     <version>1.0.0</version>
+   </dependency>
+   ```
+
+   The artifact also pulls in JavaFX and the RichTextArea fork
+   `com.gluonhq:richtextarea:3.0-RG`; use your own JavaFX platform variants
+   if you need different classifiers.
+
+3. **Embed the editor** on the JavaFX Application Thread (no
+   `Application` subclass, no `EditorWindow`, no dialogs):
+
+   ```java
+   import de.richmarkdown.editor.MarkdownEditor;
+   import javafx.scene.layout.StackPane;
+
+   MarkdownEditor editor = new MarkdownEditor();
+   myPane.getChildren().add(editor.getControl()); // RichTextArea
+
+   // File API without dialogs — errors surface as exceptions:
+   editor.open(new File("document.md")); // IOException
+   editor.save(new File("document.md")); // IOException
+   editor.save();                        // IllegalStateException if no file
+   editor.clear();                       // empty document, reset file
+   String md = editor.getMarkdown();
+   ```
+
+4. **Optional global setup** (once at startup, process-wide):
+
+   ```java
+   I18n.setCurrentLanguage("de");
+   I18n.setSettingsStore(ApplicationSettings.inMemory()); // no persistence
+   ```
+
+5. **Module setup:** with `module-info.java`, add
+   `requires RichMarkDownEditor;` (exports `de.richmarkdown.editor`,
+   `de.richmarkdown.io`, `de.richmarkdown.ui`, `de.richmarkdown.i18n`,
+   `de.richmarkdown.settings`, …; no `opens` needed). Without the module
+   system, a plain classpath dependency is sufficient.
+
+All calls belong on the JavaFX Application Thread; file I/O blocks, so
+offload to a `Task` for large files. For a ready-made window
+(`FormatToolBar`, status bar, dialogs), construct `new EditorWindow()`
+instead and use `window.getEditor()` — the standalone app uses the same
+code path. The full API reference is in [docs/API.md](docs/API.md).
+
+> License note: the library is GPL-3.0. Applications that embed it must
+> comply with GPL-3.0 (source-code and notice requirements).
 
 ## Release packages
 
@@ -234,13 +305,13 @@ a corresponding source archive that includes the RichTextArea submodule.
 
 ## Current validation status
 
-The Maven reactor builds from the pinned submodule, but the latest full test
-run is not green: 451 tests ran, with five failures and no test errors. Three
-failures were in `EditorWindowTest`, one in `LineNumberGutterTest`, and one in
-`PrintSupportTest`. A separate focused run reproduced four failures in those
-areas. Earlier output also logged `Invalid URL` exceptions while RichTextArea
-laid out images. These issues are relevant to release readiness; the editor is
-not yet represented as a validated release.
+The Maven reactor builds from the pinned submodule. The latest full test run
+(`mvn -pl editor -am test`) is green: 473 tests, zero failures and zero
+errors, including the JavaFX UI tests and the library-API tests. Earlier runs
+reported five failures (`EditorWindowTest`, `LineNumberGutterTest`,
+`PrintSupportTest`) and `Invalid URL` log output from RichTextArea image
+layout; these are resolved or no longer reproduce. The project is not yet
+represented as a validated release.
 
 ## Deutsch
 

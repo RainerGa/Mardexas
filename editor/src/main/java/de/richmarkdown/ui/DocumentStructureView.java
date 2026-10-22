@@ -50,6 +50,9 @@ public class DocumentStructureView extends VBox {
     /** Guard gegen Selektions-/Navigations-Rückkopplung. */
     private boolean updatingSelection;
 
+    /** Eigener Sprungpfad (z. B. für die Zurück-/Vorwärts-Navigation). */
+    private java.util.function.IntConsumer jumpHandler;
+
     /**
      * Erstellt eine mit dem Editor verbundene Dokumentstrukturansicht.
      *
@@ -66,7 +69,7 @@ public class DocumentStructureView extends VBox {
             if (nv != null && !updatingSelection) {
                 updatingSelection = true;
                 try {
-                    editor.goToPosition(nv.position());
+                    performJump(nv.position());
                 } finally {
                     updatingSelection = false;
                 }
@@ -109,6 +112,30 @@ public class DocumentStructureView extends VBox {
             updatingSelection = false;
         }
         selectEntryAtCaret();
+    }
+
+    /**
+     * Setzt einen eigenen Sprungpfad für Klicks in die Strukturliste.
+     *
+     * <p>Standardmäßig springt die Ansicht direkt über
+     * {@link MarkdownEditor#goToPosition(int)}. {@link EditorWindow} setzt
+     * hier einen Handler, der die Sprungquelle für die Zurück-/Vorwärts-
+     * Navigation (AddFeatures #4) vermerkt, bevor gesprungen wird.
+     *
+     * @param handler erhält die Zielposition; {@code null} stellt das
+     *                Standardverhalten wieder her
+     */
+    public void setJumpHandler(java.util.function.IntConsumer handler) {
+        this.jumpHandler = handler;
+    }
+
+    /** Führt einen Sprung über den konfigurierten Handler bzw. den Editor aus. */
+    private void performJump(int position) {
+        if (jumpHandler != null) {
+            jumpHandler.accept(position);
+        } else {
+            editor.goToPosition(position);
+        }
     }
 
     /**

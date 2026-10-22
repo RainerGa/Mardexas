@@ -8,6 +8,27 @@
   <version>1.0.0</version>
   <packaging>pom</packaging>
   <name>Mardexas</name>
+  <description>Mardexas (RichMarkDownEditor) — desktop Markdown editor with a rich-text WYSIWYG interface for Linux, Windows, and macOS. Write Markdown visually and save UTF-8 CommonMark/GFM files. Built with JavaFX 25.</description>
+  <url>https://github.com/RainerGa/Mardexas</url>
+  <scm>
+    <connection>scm:git:https://github.com/RainerGa/Mardexas.git</connection>
+    <developerConnection>scm:git:https://github.com/RainerGa/Mardexas.git</developerConnection>
+    <url>https://github.com/RainerGa/Mardexas</url>
+    <tag>HEAD</tag>
+  </scm>
+  <licenses>
+    <license>
+      <name>GNU General Public License v3.0</name>
+      <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Rainer Garbotz</name>
+    </developer>
+  </developers>
 
   <modules>
     <module>editor</module>

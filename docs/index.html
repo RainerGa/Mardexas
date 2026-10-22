@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mardexas — Desktop Markdown Editor with WYSIWYG Interface</title>
+  <meta name="description" content="Mardexas (RichMarkDownEditor) is a desktop Markdown editor with a rich-text WYSIWYG interface for Linux, Windows, and macOS. Write Markdown visually without typing formatting markers by hand, and save UTF-8 CommonMark/GFM files. Built with JavaFX 25; released as Flatpak, MSI, and portable packages.">
+  <meta name="keywords" content="Mardexas, RichMarkDownEditor, Markdown editor, WYSIWYG, desktop Markdown editor, JavaFX, Linux, Windows, macOS, Flatpak, MSI, CommonMark, GFM, UTF-8">
+  <meta name="author" content="Rainer Garbotz">
+  <link rel="canonical" href="https://rainerg.ga.github.io/Mardexas/">
+  <link rel="repository" href="https://github.com/RainerGa/Mardexas">
+  <meta property="og:title" content="Mardexas — Desktop Markdown Editor with WYSIWYG Interface">
+  <meta property="og:description" content="Desktop Markdown editor with a rich-text WYSIWYG interface for Linux, Windows, and macOS. Save UTF-8 CommonMark/GFM files. Built with JavaFX 25.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://rainerg.ga.github.io/Mardexas/">
+  <meta property="og:image" content="https://github.com/RainerGa/Mardexas/raw/main/screenshot.png">
+  <meta property="og:site_name" content="Mardexas">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@RainergGarbotz">
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; line-height: 1.6; color: #222; max-width: 860px; margin: 0 auto; padding: 2rem 1rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    p.lead { font-size: 1.15rem; color: #444; margin-bottom: 2rem; }
+    img { max-width: 100%; height: auto; border: 1px solid #ddd; margin: 1rem 0; }
+    .badge { display: inline-block; border: 1px solid #ccc; padding: 0.15rem 0.5rem; margin: 0.1rem; border-radius: 0.25rem; font-size: 0.85rem; text-decoration: none; color: #333; }
+    .badge:hover { background: #f5f5f5; }
+    code { background: #f3f3f3; padding: 0.1rem 0.3rem; border-radius: 0.2rem; }
+    footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #ddd; color: #666; font-size: 0.9rem; }
+    a { color: #0366d6; }
+  </style>
+</head>
+<body>
+  <h1>Mardexas (RichMarkDownEditor)</h1>
+  <p class="lead">Desktop Markdown editor with a rich-text WYSIWYG interface for Linux, Windows, and macOS. Write Markdown visually without typing formatting markers by hand, and save UTF-8 CommonMark/GFM files. Built with JavaFX 25.</p>
+
+  <p><a class="badge" href="https://github.com/RainerGa/Mardexas">GitHub repository</a>
+  <a class="badge" href="https://github.com/RainerGa/Mardexas/releases">Releases</a>
+  <a class="badge" href="docs/API.md">API documentation</a>
+  <a class="badge" href="https://www.gnu.org/licenses/gpl-3.0.html">License GPL-3.0</a></p>
+
+  <img src="screenshot.png" alt="Mardexas screenshot">
+  <img src="screenshot_tables.png" alt="Mardexas screenshot – tables">
+
+  <h2>Platforms</h2>
+  <ul>
+    <li><strong>Linux x86-64:</strong> Flatpak (<code>io.github.rainerga.Mardexas</code>), portable runtime archive, GraalVM native executable</li>
+    <li><strong>Windows x86-64:</strong> MSI installer and portable ZIP</li>
+    <li><strong>macOS:</strong> portable ZIP with <code>Mardexas.app</code></li>
+  </ul>
+
+  <h2>Build from source</h2>
+  <pre><code>git clone --recurse-submodules https://github.com/RainerGa/Mardexas.git
+cd Mardexas
+mvn test
+./editor/start.sh</code></pre>
+
+  <footer>
+    Mardexas application source is licensed under the GNU General Public License v3.0.
+    See <a href="https://github.com/RainerGa/Mardexas/blob/main/LICENSE">LICENSE</a> and
+    <a href="https://github.com/RainerGa/Mardexas/blob/main/README.md">README.md</a> on GitHub.
+  </footer>
+</body>
+</html>

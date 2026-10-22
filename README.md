@@ -1,13 +1,12 @@
 # Mardexas
 
+**Mardexas (RichMarkDownEditor)** — desktop Markdown editor with a rich-text WYSIWYG interface for Linux, Windows, and macOS. Write Markdown visually without typing formatting markers by hand, and save UTF-8 CommonMark/GFM files. Built with JavaFX 25; released as Flatpak, MSI, and portable packages.
+
 ![Mardexas screenshot](screenshot.png)
 
 ![Mardexas screenshot – tables](screenshot_tables.png)
 
-**Write Markdown without having to write every formatting marker by hand.**
-Mardexas is a desktop Markdown editor with a rich-text, WYSIWYG interface. Edit
-your document visually, then save it as a UTF-8 Markdown file that you can open
-in a text editor, review in Git, or use with other Markdown tools.
+Mardexas is a desktop Markdown editor with a rich-text, WYSIWYG interface. Edit your document visually, then save it as a UTF-8 Markdown file that you can open in a text editor, review in Git, or use with other Markdown tools.
 
 This project is based on the rich-text-area library provided by
 [Gluon](https://gluonhq.com/). We thank Gluon for making this foundation

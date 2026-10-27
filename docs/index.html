@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mardexas — Modern WYSIWYG Markdown Editor for Desktop (Windows, Linux, macOS)</title>
   <meta name="description" content="Mardexas (RichMarkDownEditor) is a free, open-source desktop Markdown editor with a true rich-text WYSIWYG interface. Write Markdown visually without syntax clutter and save clean UTF-8 CommonMark/GFM files. Available for Linux, Windows, and macOS.">
-  <meta name="keywords" content="Markdown editor, WYSIWYG Markdown, visual Markdown editor, Typora alternative, open source Markdown editor, rich markdown editor, desktop markdown editor, Mardexas, RichMarkDownEditor, JavaFX 25, CommonMark, GFM, Linux, Windows, macOS, Flatpak, MSI, table editor">
+  <meta name="keywords" content="Markdown editor, WYSIWYG Markdown, visual Markdown editor, open source Markdown editor, rich markdown editor, desktop markdown editor, Mardexas, RichMarkDownEditor, JavaFX 25, CommonMark, GFM, Linux, Windows, macOS, Flatpak, MSI, table editor">
   <meta name="author" content="Rainer Garbotz">
   <meta name="robots" content="index, follow">
   
@@ -366,39 +366,6 @@
       line-height: 1.6;
     }
 
-    /* Comparison Table */
-    .comparison-section {
-      margin-bottom: 6rem;
-    }
-    .table-container {
-      overflow-x: auto;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--card-bg);
-      box-shadow: var(--shadow-sm);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 0.95rem;
-    }
-    th, td {
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--border);
-    }
-    th {
-      background: var(--surface);
-      font-weight: 700;
-    }
-    tr:last-child td { border-bottom: none; }
-    .highlight-col {
-      background: var(--primary-subtle);
-      font-weight: 600;
-    }
-    .check { color: #10b981; font-weight: bold; }
-    .cross { color: #ef4444; font-weight: bold; }
-
     /* Downloads Section */
     .downloads-section {
       margin-bottom: 6rem;
@@ -551,7 +518,6 @@
       </a>
       <ul class="nav-links">
         <li><a href="#features">Features</a></li>
-        <li><a href="#comparison">Comparison</a></li>
         <li><a href="#downloads">Downloads</a></li>
         <li><a href="#faq">FAQ</a></li>
         <li><a href="https://github.com/RainerGa/Mardexas" target="_blank" rel="noopener">GitHub</a></li>
@@ -644,7 +610,7 @@
         <div class="feature-card">
           <span class="feature-icon">🌐</span>
           <h3>Standard CommonMark & GFM</h3>
-          <p>Mardexas reads and writes standard UTF-8 <code>.md</code> files compatible with GitHub, Obsidian, VS Code, Git version control, and static site generators.</p>
+          <p>Mardexas reads and writes standard UTF-8 <code>.md</code> files compatible with GitHub, VS Code, Git version control, and static site generators.</p>
         </div>
 
         <div class="feature-card">
@@ -682,80 +648,6 @@
           <span class="showcase-title">Mardexas — Interactive Table Support</span>
         </div>
         <img src="screenshot_tables.png" alt="Mardexas table editing screenshot" width="1280" height="720" loading="lazy">
-      </div>
-    </section>
-
-    <!-- Comparison Table -->
-    <section id="comparison" class="comparison-section">
-      <div class="section-header">
-        <span class="tag">The Open Alternative</span>
-        <h2>How Mardexas Compares</h2>
-        <p>A true open-source, local-first alternative to proprietary editors and heavy Electron apps.</p>
-      </div>
-
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Feature</th>
-              <th class="highlight-col">Mardexas</th>
-              <th>Typora</th>
-              <th>Obsidian</th>
-              <th>MarkText</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Open Source & Free</strong></td>
-              <td class="highlight-col"><span class="check">✓</span> Yes (GPL-3.0)</td>
-              <td><span class="cross">✗</span> Proprietary ($14.99)</td>
-              <td><span class="cross">✗</span> Proprietary Core</td>
-              <td><span class="check">✓</span> Yes (MIT)</td>
-            </tr>
-            <tr>
-              <td><strong>True Visual WYSIWYG</strong></td>
-              <td class="highlight-col"><span class="check">✓</span> Full visual editing</td>
-              <td><span class="check">✓</span> Inline hybrid</td>
-              <td><span class="cross">✗</span> Live preview markdown</td>
-              <td><span class="check">✓</span> Inline hybrid</td>
-            </tr>
-            <tr>
-              <td><strong>Architecture</strong></td>
-              <td class="highlight-col"><strong>JavaFX / GraalVM Native</strong></td>
-              <td>Electron</td>
-              <td>Electron</td>
-              <td>Electron</td>
-            </tr>
-            <tr>
-              <td><strong>Memory Footprint</strong></td>
-              <td class="highlight-col"><span class="check">✓</span> Lightweight (~70–150 MB)</td>
-              <td>Medium (~250–400 MB)</td>
-              <td>Heavy (~400–800 MB)</td>
-              <td>Heavy (~400–700 MB)</td>
-            </tr>
-            <tr>
-              <td><strong>Standard UTF-8 Markdown</strong></td>
-              <td class="highlight-col"><span class="check">✓</span> CommonMark / GFM</td>
-              <td><span class="check">✓</span> CommonMark / GFM</td>
-              <td><span class="check">✓</span> CommonMark + Wiki</td>
-              <td><span class="check">✓</span> CommonMark / GFM</td>
-            </tr>
-            <tr>
-              <td><strong>Local-first & No Telemetry</strong></td>
-              <td class="highlight-col"><span class="check">✓</span> 100% Offline</td>
-              <td><span class="check">✓</span> Offline</td>
-              <td>Requires sync setup</td>
-              <td><span class="check">✓</span> Offline</td>
-            </tr>
-            <tr>
-              <td><strong>Embeddable as a Library</strong></td>
-              <td class="highlight-col"><span class="check">✓</span> JavaFX Library API</td>
-              <td><span class="cross">✗</span> No</td>
-              <td><span class="cross">✗</span> No</td>
-              <td><span class="cross">✗</span> No</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </section>
 
@@ -861,7 +753,7 @@ editor.open(new File("README.md"));</code></pre>
       <div class="faq-grid">
         <div class="faq-item">
           <h4>What file formats does Mardexas support?</h4>
-          <p>Mardexas natively opens and saves standard UTF-8 CommonMark and GitHub Flavored Markdown (<code>.md</code>, <code>.markdown</code>, <code>.txt</code>). Your documents remain 100% compatible with Git, Obsidian, VS Code, and any plain text editor.</p>
+          <p>Mardexas natively opens and saves standard UTF-8 CommonMark and GitHub Flavored Markdown (<code>.md</code>, <code>.markdown</code>, <code>.txt</code>). Your documents remain 100% compatible with Git, VS Code, and any plain text editor.</p>
         </div>
 
         <div class="faq-item">
@@ -907,7 +799,6 @@ editor.open(new File("README.md"));</code></pre>
           <h4>Navigation</h4>
           <ul class="footer-links">
             <li><a href="#features">Features</a></li>
-            <li><a href="#comparison">Comparison</a></li>
             <li><a href="#downloads">Downloads</a></li>
             <li><a href="#faq">FAQ</a></li>
           </ul>

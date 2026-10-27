@@ -29,7 +29,7 @@
 
 Unlike hybrid preview editors or heavy web-based Electron applications, Mardexas is built natively with **JavaFX 25** and delivers:
 - **True WYSIWYG editing:** Headings, bold, italic, strikethrough, underline, quotes, links, and tables style live in place as you type.
-- **Clean Standard Markdown:** Files are read and saved as 100% standard UTF-8 CommonMark and GitHub Flavored Markdown (GFM), ready for Git, Obsidian, Hugo, or static site generators.
+- **Clean Standard Markdown:** Files are read and saved as 100% standard UTF-8 CommonMark and GitHub Flavored Markdown (GFM), ready for Git, VS Code, Hugo, or any plain text editor.
 - **100% Offline & Private:** Zero telemetry, no cloud sync lock-in, no accounts required.
 - **Lightweight & Fast:** Bundled standalone runtimes or GraalVM native binaries start instantly with minimal RAM usage.
 - **Available in 10 Languages:** English, German, French, Spanish, Brazilian Portuguese, Japanese, Simplified Chinese, Italian, Korean, and Dutch.
@@ -65,21 +65,6 @@ Ready-to-run release packages bundle an optimized runtime image — **you do not
 - **📏 Optional Line Numbers:** Toggle paragraph line numbers in the gutter for quick reference.
 - **🖨️ Print & Export:** Direct print support and clean UTF-8 `.md` export.
 - **🌍 10 UI Languages:** Fully localized interface in English, German, French, Spanish, Portuguese, Japanese, Chinese, Italian, Korean, and Dutch.
-
----
-
-## Comparison: Mardexas vs. Alternatives
-
-| Feature | Mardexas | Typora | Obsidian | MarkText |
-| :--- | :---: | :---: | :---: | :---: |
-| **Open Source** | **Yes (GPL-3.0)** | No (Proprietary) | No (Proprietary Core) | Yes (MIT) |
-| **Price** | **100% Free** | $14.99 | Free / Paid Sync | Free |
-| **WYSIWYG Editing** | **Full Visual** | Inline Hybrid | Split / Live Preview | Inline Hybrid |
-| **Architecture** | **JavaFX / Native** | Electron | Electron | Electron |
-| **RAM Footprint** | **~70–150 MB** | ~250–400 MB | ~400–800 MB | ~400–700 MB |
-| **Standard CommonMark/GFM** | **Yes** | Yes | Yes (with wiki links) | Yes |
-| **Offline & Private** | **100% Local** | 100% Local | Local-first | 100% Local |
-| **Embeddable Library** | **Yes (JavaFX API)** | No | No | No |
 
 ---
 

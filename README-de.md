@@ -29,7 +29,7 @@
 
 Im Gegensatz zu hybriden Vorschau-Editoren oder ressourcenhungrigen Electron-Browser-Apps basiert Mardexas nativ auf **JavaFX 25**:
 - **Echtes WYSIWYG-Schreiben:** Überschriften, Fett, Kursiv, Durchgestrichen, Unterstrichen, Zitate, Links und Tabellen werden direkt während des Schreibens live formatiert.
-- **Sauberes Standard-Markdown:** Dokumente werden als echtes, portables UTF-8 CommonMark und GitHub Flavored Markdown (GFM) gespeichert – perfekt kompatibel mit Git, Obsidian, VS Code und statischen Website-Generatoren.
+- **Sauberes Standard-Markdown:** Dokumente werden als echtes, portables UTF-8 CommonMark und GitHub Flavored Markdown (GFM) gespeichert – perfekt kompatibel mit Git, VS Code, Dokumenten-Pipelines und statischen Website-Generatoren.
 - **100% Offline & Datenschutzfreundlich:** Keine Telemetrie, keine Zwangs-Cloud, keine Benutzerkonten.
 - **Ressourcenschonend & Schnell:** Gebündelte eigenständige Laufzeitumgebungen oder GraalVM-Native-Binärdateien starten blitzschnell mit minimalem RAM-Verbrauch.
 - **In 10 Sprachen verfügbar:** Deutsch, Englisch, Französisch, Spanisch, Brasilianisches Portugiesisch, Japanisch, Vereinfachtes Chinesisch, Italienisch, Koreanisch und Niederländisch.
@@ -65,21 +65,6 @@ Die vorgefertigten Release-Pakete enthalten eine optimierte Java-Laufzeitumgebun
 - **📏 Optionale Zeilennummern:** Zeilennummern am linken Rand für Absätze ein- oder ausblenden.
 - **🖨️ Drucken & Export:** Direkte Druckfunktion und saubere UTF-8 `.md`-Speicherung.
 - **🌍 10 Sprachen:** Vollständig übersetzte Benutzeroberfläche (Deutsch, Englisch, Französisch, Spanisch, Portugiesisch, Japanisch, Chinesisch, Italienisch, Koreanisch, Niederländisch).
-
----
-
-## Vergleich: Mardexas vs. Alternativen
-
-| Funktion | Mardexas | Typora | Obsidian | MarkText |
-| :--- | :---: | :---: | :---: | :---: |
-| **Open Source** | **Ja (GPL-3.0)** | Nein (Proprietär) | Nein (Proprietärer Kern) | Ja (MIT) |
-| **Preis** | **100% Kostenlos** | ca. 15 $ | Kostenlos / Bezahlte Sync | Kostenlos |
-| **WYSIWYG-Bearbeitung** | **Vollständig Visuell** | Inline-Hybrid | Split / Live-Vorschau | Inline-Hybrid |
-| **Architektur** | **JavaFX / Nativ** | Electron | Electron | Electron |
-| **RAM-Verbrauch** | **~70–150 MB** | ~250–400 MB | ~400–800 MB | ~400–700 MB |
-| **Standard-Markdown** | **Ja (CommonMark/GFM)** | Ja | Ja (mit Wiki-Links) | Ja |
-| **Offline & Privat** | **100% Lokal** | 100% Lokal | Lokal-first | 100% Lokal |
-| **Als Bibliothek nutzbar** | **Ja (JavaFX API)** | Nein | Nein | Nein |
 
 ---
 

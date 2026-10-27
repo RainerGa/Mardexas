@@ -3,61 +3,938 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mardexas — Desktop Markdown Editor with WYSIWYG Interface</title>
-  <meta name="description" content="Mardexas (RichMarkDownEditor) is a desktop Markdown editor with a rich-text WYSIWYG interface for Linux, Windows, and macOS. Write Markdown visually without typing formatting markers by hand, and save UTF-8 CommonMark/GFM files. Built with JavaFX 25; released as Flatpak, MSI, and portable packages.">
-  <meta name="keywords" content="Mardexas, RichMarkDownEditor, Markdown editor, WYSIWYG, desktop Markdown editor, JavaFX, Linux, Windows, macOS, Flatpak, MSI, CommonMark, GFM, UTF-8">
+  <title>Mardexas — Modern WYSIWYG Markdown Editor for Desktop (Windows, Linux, macOS)</title>
+  <meta name="description" content="Mardexas (RichMarkDownEditor) is a free, open-source desktop Markdown editor with a true rich-text WYSIWYG interface. Write Markdown visually without syntax clutter and save clean UTF-8 CommonMark/GFM files. Available for Linux, Windows, and macOS.">
+  <meta name="keywords" content="Markdown editor, WYSIWYG Markdown, visual Markdown editor, Typora alternative, open source Markdown editor, rich markdown editor, desktop markdown editor, Mardexas, RichMarkDownEditor, JavaFX 25, CommonMark, GFM, Linux, Windows, macOS, Flatpak, MSI, table editor">
   <meta name="author" content="Rainer Garbotz">
-  <link rel="canonical" href="https://rainerg.ga.github.io/Mardexas/">
-  <link rel="repository" href="https://github.com/RainerGa/Mardexas">
-  <meta property="og:title" content="Mardexas — Desktop Markdown Editor with WYSIWYG Interface">
-  <meta property="og:description" content="Desktop Markdown editor with a rich-text WYSIWYG interface for Linux, Windows, and macOS. Save UTF-8 CommonMark/GFM files. Built with JavaFX 25.">
+  <meta name="robots" content="index, follow">
+  
+  <link rel="canonical" href="https://rainerga.github.io/Mardexas/">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="sitemap" type="application/xml" title="Sitemap" href="sitemap.xml">
+
+  <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://rainerg.ga.github.io/Mardexas/">
-  <meta property="og:image" content="https://github.com/RainerGa/Mardexas/raw/main/screenshot.png">
+  <meta property="og:url" content="https://rainerga.github.io/Mardexas/">
   <meta property="og:site_name" content="Mardexas">
+  <meta property="og:title" content="Mardexas — Modern WYSIWYG Markdown Editor for Desktop">
+  <meta property="og:description" content="Free, open-source desktop Markdown editor with true visual WYSIWYG editing. Write cleanly, save standard CommonMark/GFM files. Available for Linux, Windows, and macOS.">
+  <meta property="og:image" content="https://rainerga.github.io/Mardexas/screenshot.png">
+  <meta property="og:image:alt" content="Mardexas WYSIWYG Markdown Editor screenshot">
+
+  <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:site" content="@RainergGarbotz">
+  <meta name="twitter:url" content="https://rainerga.github.io/Mardexas/">
+  <meta name="twitter:title" content="Mardexas — Modern WYSIWYG Markdown Editor for Desktop">
+  <meta name="twitter:description" content="Free, open-source desktop Markdown editor with true visual WYSIWYG editing. Write cleanly, save standard CommonMark/GFM files.">
+  <meta name="twitter:image" content="https://rainerga.github.io/Mardexas/screenshot.png">
+
+  <!-- Schema.org SoftwareApplication JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Mardexas",
+    "alternateName": "RichMarkDownEditor",
+    "applicationCategory": "ProductivityApplication",
+    "applicationSubCategory": "Text Editor",
+    "operatingSystem": "Linux, Windows, macOS",
+    "description": "Mardexas is a desktop Markdown editor with a rich-text WYSIWYG interface for Linux, Windows, and macOS. Write Markdown visually and save clean UTF-8 CommonMark/GFM files.",
+    "url": "https://rainerga.github.io/Mardexas/",
+    "downloadUrl": "https://github.com/RainerGa/Mardexas/releases",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Rainer Garbotz",
+      "url": "https://github.com/RainerGa"
+    },
+    "screenshot": [
+      "https://rainerga.github.io/Mardexas/screenshot.png",
+      "https://rainerga.github.io/Mardexas/screenshot_tables.png"
+    ],
+    "softwareVersion": "1.0.0",
+    "license": "https://www.gnu.org/licenses/gpl-3.0.html"
+  }
+  </script>
+
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; line-height: 1.6; color: #222; max-width: 860px; margin: 0 auto; padding: 2rem 1rem; }
-    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-    p.lead { font-size: 1.15rem; color: #444; margin-bottom: 2rem; }
-    img { max-width: 100%; height: auto; border: 1px solid #ddd; margin: 1rem 0; }
-    .badge { display: inline-block; border: 1px solid #ccc; padding: 0.15rem 0.5rem; margin: 0.1rem; border-radius: 0.25rem; font-size: 0.85rem; text-decoration: none; color: #333; }
-    .badge:hover { background: #f5f5f5; }
-    code { background: #f3f3f3; padding: 0.1rem 0.3rem; border-radius: 0.2rem; }
-    footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #ddd; color: #666; font-size: 0.9rem; }
-    a { color: #0366d6; }
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-subtle: #eff6ff;
+      --bg: #ffffff;
+      --surface: #f8fafc;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --code-bg: #f1f5f9;
+      --badge-bg: #dbeafe;
+      --badge-text: #1e40af;
+      --radius: 12px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --primary: #3b82f6;
+        --primary-hover: #60a5fa;
+        --primary-subtle: #1e293b;
+        --bg: #0b0f19;
+        --surface: #111827;
+        --border: #1f2937;
+        --text: #f9fafb;
+        --text-muted: #9ca3af;
+        --card-bg: #131c2e;
+        --card-border: #1f2a3d;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+        --code-bg: #1e293b;
+        --badge-bg: #1e3a8a;
+        --badge-text: #bfdbfe;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      background-color: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--primary); text-decoration: none; transition: color 0.15s ease; }
+    a:hover { color: var(--primary-hover); text-decoration: underline; }
+
+    /* Header & Navigation */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+      background-color: rgba(255, 255, 255, 0.85);
+      border-bottom: 1px solid var(--border);
+    }
+    @media (prefers-color-scheme: dark) {
+      header { background-color: rgba(11, 15, 25, 0.85); }
+    }
+
+    .nav-container {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0.875rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .brand img { width: 34px; height: 34px; border-radius: 8px; }
+    .brand span.tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      margin-left: 0.25rem;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 0.95rem;
+      text-decoration: none;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-btn {
+      padding: 0.45rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      background: var(--primary);
+      color: #ffffff !important;
+      text-decoration: none !important;
+      transition: background 0.15s ease;
+    }
+    .nav-btn:hover { background: var(--primary-hover); }
+
+    /* Container */
+    .container {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 5rem 0 3.5rem;
+      text-align: center;
+    }
+    .hero-badge-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 9999px;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2.25rem, 5vw, 3.75rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.025em;
+      margin-bottom: 1.25rem;
+      max-width: 900px;
+      margin-inline: auto;
+    }
+    .hero h1 span.gradient {
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p.lead {
+      font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+      color: var(--text-muted);
+      max-width: 780px;
+      margin: 0 auto 2.25rem;
+      font-weight: 400;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.85rem 1.6rem;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none !important;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.35);
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.45);
+    }
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: var(--card-bg);
+      border-color: var(--text-muted);
+      transform: translateY(-1px);
+    }
+
+    /* Screenshot Showcase */
+    .showcase {
+      margin-bottom: 5rem;
+      text-align: center;
+    }
+    .showcase-window {
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      background: var(--surface);
+    }
+    .showcase-bar {
+      height: 36px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 1rem;
+      gap: 0.5rem;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+    .showcase-title {
+      flex: 1;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      font-weight: 500;
+    }
+    .showcase img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Section Headers */
+    .section-header {
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto 3.5rem;
+    }
+    .section-header .tag {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    .section-header h2 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.75rem;
+      margin-bottom: 6rem;
+    }
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary);
+    }
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      display: inline-block;
+    }
+    .feature-card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Comparison Table */
+    .comparison-section {
+      margin-bottom: 6rem;
+    }
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card-bg);
+      box-shadow: var(--shadow-sm);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: var(--surface);
+      font-weight: 700;
+    }
+    tr:last-child td { border-bottom: none; }
+    .highlight-col {
+      background: var(--primary-subtle);
+      font-weight: 600;
+    }
+    .check { color: #10b981; font-weight: bold; }
+    .cross { color: #ef4444; font-weight: bold; }
+
+    /* Downloads Section */
+    .downloads-section {
+      margin-bottom: 6rem;
+    }
+    .os-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.75rem;
+      margin-bottom: 2.5rem;
+    }
+    .os-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-sm);
+    }
+    .os-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .os-icon { font-size: 2rem; }
+    .os-header h3 { font-size: 1.35rem; font-weight: 700; }
+    .os-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      flex-grow: 1;
+    }
+    .package-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .package-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0.85rem;
+      background: var(--surface);
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+    .package-item span.title { font-weight: 600; }
+    .package-item a {
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    /* Terminal / Code snippet */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.875rem;
+      margin: 1rem 0;
+      line-height: 1.5;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: var(--code-bg);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.875em;
+    }
+    pre code { background: none; padding: 0; }
+
+    /* FAQ */
+    .faq-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 6rem;
+    }
+    .faq-item {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+    }
+    .faq-item h4 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+    .faq-item p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 3rem 0 2rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .footer-content {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+    .footer-col h4 {
+      color: var(--text);
+      font-weight: 700;
+      margin-bottom: 0.85rem;
+      font-size: 1rem;
+    }
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .footer-bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hero { padding: 3rem 0 2rem; }
+      .faq-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <h1>Mardexas (RichMarkDownEditor)</h1>
-  <p class="lead">Desktop Markdown editor with a rich-text WYSIWYG interface for Linux, Windows, and macOS. Write Markdown visually without typing formatting markers by hand, and save UTF-8 CommonMark/GFM files. Built with JavaFX 25.</p>
 
-  <p><a class="badge" href="https://github.com/RainerGa/Mardexas">GitHub repository</a>
-  <a class="badge" href="https://github.com/RainerGa/Mardexas/releases">Releases</a>
-  <a class="badge" href="docs/API.md">API documentation</a>
-  <a class="badge" href="https://www.gnu.org/licenses/gpl-3.0.html">License GPL-3.0</a></p>
+  <!-- Navigation -->
+  <header>
+    <div class="nav-container">
+      <a href="#" class="brand">
+        <img src="favicon.svg" alt="Mardexas Logo" width="34" height="34">
+        <span>Mardexas</span>
+        <span class="tag">v1.0.0</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#comparison">Comparison</a></li>
+        <li><a href="#downloads">Downloads</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="https://github.com/RainerGa/Mardexas" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
+      <a href="#downloads" class="nav-btn">Download Free</a>
+    </div>
+  </header>
 
-  <img src="screenshot.png" alt="Mardexas screenshot">
-  <img src="screenshot_tables.png" alt="Mardexas screenshot – tables">
+  <main class="container">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-badge-wrap">
+        <span>🎉 Open Source (GPL-3.0)</span>
+        <span>•</span>
+        <span>No Cloud Lock-in</span>
+        <span>•</span>
+        <span>No Electron Bloat</span>
+      </div>
+      <h1>
+        Write Markdown Visually.<br>
+        <span class="gradient">Without the Syntax Clutter.</span>
+      </h1>
+      <p class="lead">
+        <strong>Mardexas (RichMarkDownEditor)</strong> is a fast, native desktop Markdown editor with a true rich-text WYSIWYG interface. Edit headings, bold text, links, lists, and tables visually — save clean, portable UTF-8 CommonMark & GFM files.
+      </p>
+      <div class="hero-actions">
+        <a href="#downloads" class="btn btn-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download for Desktop
+        </a>
+        <a href="https://github.com/RainerGa/Mardexas" target="_blank" rel="noopener" class="btn btn-secondary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          Star on GitHub
+        </a>
+      </div>
 
-  <h2>Platforms</h2>
-  <ul>
-    <li><strong>Linux x86-64:</strong> Flatpak (<code>io.github.rainerga.Mardexas</code>), portable runtime archive, GraalVM native executable</li>
-    <li><strong>Windows x86-64:</strong> MSI installer and portable ZIP</li>
-    <li><strong>macOS:</strong> portable ZIP with <code>Mardexas.app</code></li>
-  </ul>
+      <!-- Screenshot Showcase -->
+      <div class="showcase">
+        <div class="showcase-window">
+          <div class="showcase-bar">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+            <span class="showcase-title">Mardexas — Visual Rich Markdown Editor</span>
+          </div>
+          <img src="screenshot.png" alt="Mardexas WYSIWYG Markdown Editor screenshot" width="1280" height="720" fetchpriority="high">
+        </div>
+      </div>
+    </section>
 
-  <h2>Build from source</h2>
-  <pre><code>git clone --recurse-submodules https://github.com/RainerGa/Mardexas.git
-cd Mardexas
-mvn test
-./editor/start.sh</code></pre>
+    <!-- Key Features -->
+    <section id="features">
+      <div class="section-header">
+        <span class="tag">Why Mardexas?</span>
+        <h2>Everything you need for productive writing</h2>
+        <p>A desktop editor designed for content creators, authors, developers, and researchers who appreciate clean Markdown without the distraction of syntax characters.</p>
+      </div>
 
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">✨</span>
+          <h3>True WYSIWYG Editing</h3>
+          <p>Style your text visually with familiar shortcuts and toolbar buttons. Headings, bold, italic, strikethrough, underline, and blockquotes render live directly while you write.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">📊</span>
+          <h3>Interactive Table Editor</h3>
+          <p>Never struggle with pipe-and-dash ASCII syntax again. Mardexas features a first-class table editor with column alignment, cell navigation, and automatic GFM table formatting.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🔍</span>
+          <h3>Find & Replace with Highlighting</h3>
+          <p>Full-featured text and table search engine with case matching, whole-word search, occurrences highlighting, and instant replacement across your document.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">⚡</span>
+          <h3>Ultra-Fast Native Performance</h3>
+          <p>Built with JavaFX 25 and GraalVM native images. Mardexas starts instantly, uses a fraction of the RAM of Electron-based apps, and keeps your laptop running cool.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🔒</span>
+          <h3>100% Offline & Private</h3>
+          <p>Your documents never leave your computer. There are no tracking scripts, mandatory accounts, telemetry, or proprietary cloud lock-ins. Pure local files.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🌐</span>
+          <h3>Standard CommonMark & GFM</h3>
+          <p>Mardexas reads and writes standard UTF-8 <code>.md</code> files compatible with GitHub, Obsidian, VS Code, Git version control, and static site generators.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">📈</span>
+          <h3>Document Statistics & History</h3>
+          <p>Live word counts, character counts, reading time estimates, paragraph styles, forward/back navigation history, and optional line numbers in the gutter.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🌍</span>
+          <h3>Available in 10 Languages</h3>
+          <p>Native localized interface in German, English, French, Spanish, Brazilian Portuguese, Japanese, Simplified Chinese, Italian, Korean, and Dutch.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🧩</span>
+          <h3>Embeddable JavaFX Library</h3>
+          <p>Developers can embed Mardexas into their own Java/JavaFX desktop applications via a clean API (<code>MarkdownEditor</code>, file operations, swappable I18n).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Table Screenshot Section -->
+    <section class="showcase">
+      <div class="section-header">
+        <span class="tag">Tables Made Easy</span>
+        <h2>Visual Table Formatting</h2>
+        <p>Create and edit complex GitHub-Flavored Markdown tables with complete ease.</p>
+      </div>
+      <div class="showcase-window">
+        <div class="showcase-bar">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span class="showcase-title">Mardexas — Interactive Table Support</span>
+        </div>
+        <img src="screenshot_tables.png" alt="Mardexas table editing screenshot" width="1280" height="720" loading="lazy">
+      </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section id="comparison" class="comparison-section">
+      <div class="section-header">
+        <span class="tag">The Open Alternative</span>
+        <h2>How Mardexas Compares</h2>
+        <p>A true open-source, local-first alternative to proprietary editors and heavy Electron apps.</p>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th class="highlight-col">Mardexas</th>
+              <th>Typora</th>
+              <th>Obsidian</th>
+              <th>MarkText</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Open Source & Free</strong></td>
+              <td class="highlight-col"><span class="check">✓</span> Yes (GPL-3.0)</td>
+              <td><span class="cross">✗</span> Proprietary ($14.99)</td>
+              <td><span class="cross">✗</span> Proprietary Core</td>
+              <td><span class="check">✓</span> Yes (MIT)</td>
+            </tr>
+            <tr>
+              <td><strong>True Visual WYSIWYG</strong></td>
+              <td class="highlight-col"><span class="check">✓</span> Full visual editing</td>
+              <td><span class="check">✓</span> Inline hybrid</td>
+              <td><span class="cross">✗</span> Live preview markdown</td>
+              <td><span class="check">✓</span> Inline hybrid</td>
+            </tr>
+            <tr>
+              <td><strong>Architecture</strong></td>
+              <td class="highlight-col"><strong>JavaFX / GraalVM Native</strong></td>
+              <td>Electron</td>
+              <td>Electron</td>
+              <td>Electron</td>
+            </tr>
+            <tr>
+              <td><strong>Memory Footprint</strong></td>
+              <td class="highlight-col"><span class="check">✓</span> Lightweight (~70–150 MB)</td>
+              <td>Medium (~250–400 MB)</td>
+              <td>Heavy (~400–800 MB)</td>
+              <td>Heavy (~400–700 MB)</td>
+            </tr>
+            <tr>
+              <td><strong>Standard UTF-8 Markdown</strong></td>
+              <td class="highlight-col"><span class="check">✓</span> CommonMark / GFM</td>
+              <td><span class="check">✓</span> CommonMark / GFM</td>
+              <td><span class="check">✓</span> CommonMark + Wiki</td>
+              <td><span class="check">✓</span> CommonMark / GFM</td>
+            </tr>
+            <tr>
+              <td><strong>Local-first & No Telemetry</strong></td>
+              <td class="highlight-col"><span class="check">✓</span> 100% Offline</td>
+              <td><span class="check">✓</span> Offline</td>
+              <td>Requires sync setup</td>
+              <td><span class="check">✓</span> Offline</td>
+            </tr>
+            <tr>
+              <td><strong>Embeddable as a Library</strong></td>
+              <td class="highlight-col"><span class="check">✓</span> JavaFX Library API</td>
+              <td><span class="cross">✗</span> No</td>
+              <td><span class="cross">✗</span> No</td>
+              <td><span class="cross">✗</span> No</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Downloads Section -->
+    <section id="downloads" class="downloads-section">
+      <div class="section-header">
+        <span class="tag">Get Started</span>
+        <h2>Download Mardexas</h2>
+        <p>All release packages include a bundled runtime — no Java installation required.</p>
+      </div>
+
+      <div class="os-grid">
+        <!-- Linux -->
+        <div class="os-card">
+          <div class="os-header">
+            <span class="os-icon">🐧</span>
+            <h3>Linux</h3>
+          </div>
+          <p>Available as a sandboxed Flatpak, a self-contained portable tarball, or a high-performance GraalVM native binary.</p>
+          <ul class="package-list">
+            <li class="package-item">
+              <span class="title">Flatpak Package</span>
+              <a href="https://github.com/RainerGa/Mardexas/releases" target="_blank" rel="noopener">.flatpak</a>
+            </li>
+            <li class="package-item">
+              <span class="title">Portable Archive</span>
+              <a href="https://github.com/RainerGa/Mardexas/releases" target="_blank" rel="noopener">.tar.gz</a>
+            </li>
+            <li class="package-item">
+              <span class="title">GraalVM Native Binary</span>
+              <a href="https://github.com/RainerGa/Mardexas/releases" target="_blank" rel="noopener">Native x86_64</a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Windows -->
+        <div class="os-card">
+          <div class="os-header">
+            <span class="os-icon">🪟</span>
+            <h3>Windows</h3>
+          </div>
+          <p>Install with the guided Windows MSI installer or extract and run the portable ZIP package without setup.</p>
+          <ul class="package-list">
+            <li class="package-item">
+              <span class="title">MSI Installer</span>
+              <a href="https://github.com/RainerGa/Mardexas/releases" target="_blank" rel="noopener">.msi installer</a>
+            </li>
+            <li class="package-item">
+              <span class="title">Portable Package</span>
+              <a href="https://github.com/RainerGa/Mardexas/releases" target="_blank" rel="noopener">.zip portable</a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- macOS -->
+        <div class="os-card">
+          <div class="os-header">
+            <span class="os-icon">🍎</span>
+            <h3>macOS</h3>
+          </div>
+          <p>Extract the self-contained portable application archive and drag <code>Mardexas.app</code> into your Applications folder.</p>
+          <ul class="package-list">
+            <li class="package-item">
+              <span class="title">macOS Application</span>
+              <a href="https://github.com/RainerGa/Mardexas/releases" target="_blank" rel="noopener">Mardexas.app (.zip)</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <a href="https://github.com/RainerGa/Mardexas/releases" target="_blank" rel="noopener" class="btn btn-primary" style="font-size: 1.15rem; padding: 1rem 2rem;">
+          View All Downloads & Releases on GitHub
+        </a>
+      </div>
+
+      <!-- Developer Library Section -->
+      <div class="feature-card" style="margin-top: 3rem;">
+        <h3 style="margin-bottom: 0.5rem;">📦 Embed Mardexas in your JavaFX Project</h3>
+        <p style="margin-bottom: 1rem;">Use Mardexas as a rich markdown editor component inside your own Java/JavaFX application without dialogs:</p>
+        <pre><code>&lt;dependency&gt;
+  &lt;groupId&gt;de.richmarkdown&lt;/groupId&gt;
+  &lt;artifactId&gt;RichMarkDownEditor&lt;/artifactId&gt;
+  &lt;version&gt;1.0.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+        <pre><code>import de.richmarkdown.editor.MarkdownEditor;
+
+MarkdownEditor editor = new MarkdownEditor();
+rootPane.getChildren().add(editor.getControl());
+editor.open(new File("README.md"));</code></pre>
+        <p><a href="https://github.com/RainerGa/Mardexas/blob/main/docs/API.md" target="_blank" rel="noopener">Read the complete API documentation on GitHub →</a></p>
+      </div>
+    </section>
+
+    <!-- Frequently Asked Questions -->
+    <section id="faq">
+      <div class="section-header">
+        <span class="tag">FAQ</span>
+        <h2>Frequently Asked Questions</h2>
+        <p>Got questions about Mardexas? Find answers below.</p>
+      </div>
+
+      <div class="faq-grid">
+        <div class="faq-item">
+          <h4>What file formats does Mardexas support?</h4>
+          <p>Mardexas natively opens and saves standard UTF-8 CommonMark and GitHub Flavored Markdown (<code>.md</code>, <code>.markdown</code>, <code>.txt</code>). Your documents remain 100% compatible with Git, Obsidian, VS Code, and any plain text editor.</p>
+        </div>
+
+        <div class="faq-item">
+          <h4>Do I need to install Java to use Mardexas?</h4>
+          <p>No! The release packages for Windows (.msi and .zip), Linux (Flatpak and portable tar.gz), and macOS (.app) bundle an optimized runtime image, so you can run Mardexas immediately without installing Java.</p>
+        </div>
+
+        <div class="faq-item">
+          <h4>Is Mardexas really 100% free and open source?</h4>
+          <p>Yes. Mardexas is licensed under the GNU General Public License v3.0 (GPL-3.0). There are no paywalls, no trial limits, and no hidden subscriptions.</p>
+        </div>
+
+        <div class="faq-item">
+          <h4>How does Mardexas protect my privacy?</h4>
+          <p>Mardexas operates entirely offline on your local computer. It does not send telemetry, analytics, or document contents to any external server.</p>
+        </div>
+
+        <div class="faq-item">
+          <h4>Can I use Mardexas with Git or static site generators (Hugo, Jekyll)?</h4>
+          <p>Yes! Because Mardexas saves standard CommonMark / GFM files without proprietary wrapper metadata, Git diffs remain clean, and files can be deployed directly with Hugo, Jekyll, Astro, or Docusaurus.</p>
+        </div>
+
+        <div class="faq-item">
+          <h4>How can I contribute or report a bug?</h4>
+          <p>Contributions, feedback, and bug reports are warmly welcome! Visit our <a href="https://github.com/RainerGa/Mardexas" target="_blank" rel="noopener">GitHub repository</a> to submit an issue, suggest features, or open a pull request.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
   <footer>
-    Mardexas application source is licensed under the GNU General Public License v3.0.
-    See <a href="https://github.com/RainerGa/Mardexas/blob/main/LICENSE">LICENSE</a> and
-    <a href="https://github.com/RainerGa/Mardexas/blob/main/README.md">README.md</a> on GitHub.
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-col" style="max-width: 380px;">
+          <div class="brand" style="margin-bottom: 0.75rem;">
+            <img src="favicon.svg" alt="Mardexas" width="28" height="28">
+            <span>Mardexas</span>
+          </div>
+          <p>The free, open-source desktop Markdown editor with true rich-text WYSIWYG editing. Available for Windows, Linux, and macOS.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#comparison">Comparison</a></li>
+            <li><a href="#downloads">Downloads</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Project & Code</h4>
+          <ul class="footer-links">
+            <li><a href="https://github.com/RainerGa/Mardexas" target="_blank" rel="noopener">GitHub Repository</a></li>
+            <li><a href="https://github.com/RainerGa/Mardexas/releases" target="_blank" rel="noopener">Releases & Changelog</a></li>
+            <li><a href="https://github.com/RainerGa/Mardexas/blob/main/docs/API.md" target="_blank" rel="noopener">Developer API</a></li>
+            <li><a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener">GPL-3.0 License</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Community</h4>
+          <ul class="footer-links">
+            <li><a href="https://github.com/RainerGa/Mardexas/issues" target="_blank" rel="noopener">Report an Issue</a></li>
+            <li><a href="https://github.com/RainerGa/Mardexas/discussions" target="_blank" rel="noopener">Discussions</a></li>
+            <li><a href="https://github.com/RainerGa/Mardexas/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Rainer Garbotz. Released under the GNU General Public License v3.0. Based on Gluon rich-text-area.</p>
+      </div>
+    </div>
   </footer>
+
 </body>
 </html>

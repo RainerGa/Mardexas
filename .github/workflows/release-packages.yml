@@ -71,6 +71,7 @@ jobs:
           cp packaging/flatpak/mardexas dist/flatpak-source/flatpak/
           cp packaging/flatpak/io.github.rainerga.Mardexas.desktop dist/flatpak-source/flatpak/
           cp packaging/flatpak/io.github.rainerga.Mardexas.svg dist/flatpak-source/flatpak/
+          cp packaging/flatpak/io.github.rainerga.Mardexas.metainfo.xml dist/flatpak-source/flatpak/
 
       - name: Install Flatpak build tools and runtime
         run: |

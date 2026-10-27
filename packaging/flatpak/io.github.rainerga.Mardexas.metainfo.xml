@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.rainerga.Mardexas</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Mardexas</name>
+  <summary>Modern WYSIWYG Markdown Editor for Desktop</summary>
+  <description>
+    <p>
+      Mardexas is a desktop Markdown editor with a true rich-text WYSIWYG interface.
+      Write and format your text visually without typing formatting characters like hashes
+      or asterisks by hand, and save clean, standard UTF-8 CommonMark/GFM files.
+    </p>
+    <p>Key Features:</p>
+    <ul>
+      <li>Visual formatting: headings, bold, italic, underline, strikethrough, blockquotes, and lists</li>
+      <li>Interactive table editor with column alignment and keyboard navigation</li>
+      <li>Comprehensive Find and Replace with text and table cell highlighting</li>
+      <li>Document statistics: word count, character count, and reading time estimates</li>
+      <li>Fast native performance with bundled Java runtime</li>
+      <li>Available in 10 languages including English, German, French, Spanish, Japanese, and Chinese</li>
+      <li>100% offline, privacy-first, zero telemetry</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.rainerga.Mardexas.desktop</launchable>
+  <url type="homepage">https://rainerga.github.io/Mardexas/</url>
+  <url type="bugtracker">https://github.com/RainerGa/Mardexas/issues</url>
+  <url type="vcs-browser">https://github.com/RainerGa/Mardexas</url>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/RainerGa/Mardexas/main/screenshot.png</image>
+      <caption>Mardexas visual Markdown editor</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/RainerGa/Mardexas/main/screenshot_tables.png</image>
+      <caption>Interactive Markdown tables in Mardexas</caption>
+    </screenshot>
+  </screenshots>
+  <categories>
+    <category>Office</category>
+    <category>TextEditor</category>
+    <category>WordProcessor</category>
+  </categories>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="1.0.0" date="2026-10-22">
+      <description>
+        <p>Release 1.0.0 featuring true WYSIWYG editing, GFM table support, search and replace, document statistics, line numbers, and localization in 10 languages.</p>
+      </description>
+    </release>
+  </releases>
+</component>
+

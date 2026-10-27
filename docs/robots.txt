@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://rainerga.github.io/Mardexas/sitemap.xml

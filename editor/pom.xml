@@ -120,9 +120,96 @@
             <monocle.platform>Headless</monocle.platform>
             <!-- JavaFX-Cache in ein beschreibbares Verzeichnis lenken -->
             <javafx.cachedir>${project.build.directory}/javafx-cache</javafx.cachedir>
+            <java.util.prefs.userRoot>${project.build.directory}/test-prefs</java.util.prefs.userRoot>
+            <rme.config.dir>${project.build.directory}/test-config</rme.config.dir>
           </systemPropertyVariables>
           <argLine>-Djava.io.tmpdir=${project.build.directory}</argLine>
         </configuration>
+      </plugin>
+      <!-- Statische Codeanalyse: Codierungsstandards (Checkstyle), Bug-Muster (SpotBugs) und
+           Testabdeckung (JaCoCo) im Maven-Build verankert (Phase 2). -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.5.0</version>
+        <configuration>
+          <configLocation>checkstyle.xml</configLocation>
+          <consoleOutput>true</consoleOutput>
+          <failOnViolation>true</failOnViolation>
+          <sourceDirectories>
+            <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+            <sourceDirectory>${project.basedir}/src/test/java</sourceDirectory>
+          </sourceDirectories>
+          <suppressions>checkstyle-suppressions.xml</suppressions>
+        </configuration>
+        <executions>
+          <execution>
+            <id>checkstyle-validate</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>4.9.1</version>
+        <configuration>
+          <failOnError>false</failOnError>
+          <threshold>Medium</threshold>
+          <effort>Default</effort>
+        </configuration>
+        <executions>
+          <execution>
+            <id>spotbugs-check</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.12</version>
+        <executions>
+          <execution>
+            <id>jacoco-prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>jacoco-report</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>jacoco-check</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>0.75</value>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.openjfx</groupId>

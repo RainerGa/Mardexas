@@ -177,11 +177,27 @@ public class EditorWindow extends Stage {
         double sceneHeight = Math.min(700, Math.max(1, screenBounds.getHeight() - 80));
         Scene scene = new Scene(root, sceneWidth, sceneHeight);
         // Anwendungs-Design im Stil von Word/LibreOffice (Phase 13)
-        scene.getStylesheets().add(
-                getClass().getResource("/de/richmarkdown/ui/app.css").toExternalForm());
+        String stylesheet = loadApplicationStylesheet();
+        if (stylesheet != null) {
+            scene.getStylesheets().add(stylesheet);
+        }
         setScene(scene);
         // Druckersystem schon beim ersten Anzeigen vorbereiten
         setOnShowing(event -> warmUpPrintSystem());
+    }
+
+    /** Lädt das Anwendungs-Stylesheet defensiv; fehlt die Ressource im Classpath/JAR,
+     *  wird kein Stylesheet hinzugefügt (keine NPE).
+     *
+     * @return externe URL des Stylesheets oder {@code null}, wenn die Ressource nicht gefunden wurde
+     */
+    private String loadApplicationStylesheet() {
+        var css = getClass().getResource("/de/richmarkdown/ui/app.css");
+        if (css != null) {
+            return css.toExternalForm();
+        }
+        System.err.println("Ressource /de/richmarkdown/ui/app.css nicht gefunden – Stylesheet wird übersprungen.");
+        return null;
     }
 
     /** Liefert die Editor-Fassade, die Dokumentfunktionen dieses Fensters steuert.

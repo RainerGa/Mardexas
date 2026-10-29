@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<module name="Checker">
+    <!-- Einzige durch Checkstyle erzwungene Regel zum Start: keine Tab-Zeichen
+         (konsistent mit .editorconfig: indent_style = space). Die restlichen
+         Konventionen (UTF-8, LF, 4 Spaces, max 120 Spalten) werden bereits durch
+         .editorconfig sowie die Editor-Einstellungen getragen und können hier
+         nach Bedarf ergänzt werden. -->
+    <module name="FileTabCharacter"/>
+</module>

@@ -20,6 +20,7 @@ package de.richmarkdown.ui;
 import de.richmarkdown.FxTestUtil;
 import de.richmarkdown.editor.MarkdownEditor;
 import de.richmarkdown.i18n.I18n;
+import de.richmarkdown.settings.ApplicationSettings;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.Slider;
 import javafx.scene.transform.Scale;
@@ -27,7 +28,9 @@ import javafx.scene.layout.VBox;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +51,7 @@ class EditorWindowTest {
     static void initToolkit() throws Exception {
         FxTestUtil.startToolkit();
         // Tests müssen unabhängig von gespeicherten Benutzereinstellungen laufen
+        I18n.setSettingsStore(ApplicationSettings.inMemory());
         I18n.setCurrentLanguage("de");
         I18n.setDocumentStructureEnabled(false);
         I18n.setLineNumbersEnabled(false);
@@ -450,9 +454,11 @@ class EditorWindowTest {
     }
 
     @Test
-    void restoresAndSavesZoomWhenWindowCloses() {
-        double previousZoom = I18n.zoomPercent();
+    void restoresAndSavesZoomWhenWindowCloses(@TempDir Path tempDir) {
+        ApplicationSettings store = new ApplicationSettings(tempDir);
+        I18n.setSettingsStore(store);
         try {
+            double previousZoom = I18n.zoomPercent();
             EditorWindow window = FxTestUtil.callAndWait(EditorWindow::new);
             assertEquals(previousZoom, window.getZoomController().getZoom(), 0.001);
 
@@ -464,7 +470,7 @@ class EditorWindowTest {
 
             assertEquals(175d, I18n.zoomPercent(), 0.001);
         } finally {
-            I18n.setZoomPercent(previousZoom);
+            I18n.setSettingsStore(ApplicationSettings.inMemory());
         }
     }
 

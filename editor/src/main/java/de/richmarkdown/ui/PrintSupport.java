@@ -54,7 +54,7 @@ final class PrintSupport {
             return 0d;
         }
         Object lookup = area.lookup(".paragraph-list-view");
-        ListView<Node> listView = lookup instanceof ListView<?> lv ? (ListView<Node>) lv : null;
+        ListView<?> listView = lookup instanceof ListView<?> lv ? lv : null;
         if (listView == null) {
             return Math.max(area.getHeight(), 0d);
         }

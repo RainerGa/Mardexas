@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 import java.util.ArrayList;
+import java.nio.file.Path;
 
 /**
  * Zentraler Zugriffspunkt für Übersetzungen, Gebietsschema und dauerhaft
@@ -229,12 +230,16 @@ public final class I18n {
     }
 
     private static ApplicationSettings defaultSettingsStore() {
-        return new ApplicationSettings(
-                ApplicationSettings.defaultConfigDirectory(
-                        System.getProperty("os.name", ""),
-                        System.getProperty("user.home", ""),
-                        System.getenv("XDG_CONFIG_HOME"),
-                        System.getenv("APPDATA")));
+        Path configDir = ApplicationSettings.defaultConfigDirectory(
+                System.getProperty("os.name", ""),
+                System.getProperty("user.home", ""),
+                System.getenv("XDG_CONFIG_HOME"),
+                System.getenv("APPDATA"));
+        String override = System.getProperty("rme.config.dir");
+        if (override != null && !override.isBlank()) {
+            configDir = Path.of(override);
+        }
+        return new ApplicationSettings(configDir);
     }
 
     /**

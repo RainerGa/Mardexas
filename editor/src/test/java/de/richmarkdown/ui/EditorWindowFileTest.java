@@ -19,6 +19,8 @@ package de.richmarkdown.ui;
 
 import de.richmarkdown.FxTestUtil;
 import de.richmarkdown.editor.MarkdownEditor;
+import de.richmarkdown.i18n.I18n;
+import de.richmarkdown.settings.ApplicationSettings;
 import javafx.scene.control.MenuBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -51,6 +53,10 @@ class EditorWindowFileTest {
     @BeforeAll
     static void initToolkit() throws Exception {
         FxTestUtil.startToolkit();
+        I18n.setSettingsStore(ApplicationSettings.inMemory());
+        I18n.setCurrentLanguage("de");
+        I18n.setDocumentStructureEnabled(false);
+        I18n.setLineNumbersEnabled(false);
     }
 
     @AfterAll

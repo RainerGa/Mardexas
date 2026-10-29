@@ -15,6 +15,7 @@ import com.gluonhq.richtextarea.Selection;
 import de.richmarkdown.FxTestUtil;
 import de.richmarkdown.editor.MarkdownEditor;
 import de.richmarkdown.findreplace.FindReplaceEngine;
+import de.richmarkdown.i18n.I18n;
 import javafx.event.ActionEvent;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
@@ -278,7 +279,9 @@ class FindReplaceDialogTest {
         // Alle Treffer enthalten Absatzgrenze -> nichts ersetzt
         assertEquals("abc\ndef abc\ndef", text());
         String status = FxTestUtil.callAndWait(() -> dialog.statusLabel.getText());
-        assertTrue(status.contains("0"), "Status soll 0 ersetzte anzeigen: " + status);
+        // Bei 0 Treffern zeigt der Dialog den i18n-Text "Keine Übereinstimmung gefunden"
+        assertEquals(I18n.text("dialog.findReplace.noMatch"), status,
+                "Status soll 'Keine Übereinstimmung gefunden' anzeigen: " + status);
     }
 }
 

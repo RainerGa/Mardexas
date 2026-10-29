@@ -18,6 +18,8 @@
 package de.richmarkdown.ui;
 
 import de.richmarkdown.FxTestUtil;
+import de.richmarkdown.i18n.I18n;
+import de.richmarkdown.settings.ApplicationSettings;
 import javafx.scene.Scene;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.ToggleButton;
@@ -59,6 +61,10 @@ class AppDesignTest {
     @BeforeAll
     static void initToolkit() throws Exception {
         FxTestUtil.startToolkit();
+        I18n.setSettingsStore(ApplicationSettings.inMemory());
+        I18n.setCurrentLanguage("de");
+        I18n.setDocumentStructureEnabled(false);
+        I18n.setLineNumbersEnabled(false);
     }
 
     @BeforeEach

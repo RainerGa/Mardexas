@@ -23,6 +23,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 - UI test stability improvements for headless Monocle test execution
-
-### Known issues
-- Five UI tests fail: three in `EditorWindowTest`, one in `LineNumberGutterTest`, one in `PrintSupportTest`. These must be resolved before the next release.

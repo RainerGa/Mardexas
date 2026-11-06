@@ -27,6 +27,7 @@ import com.gluonhq.richtextarea.model.TextDecoration;
 import com.gluonhq.richtextarea.viewmodel.RichTextAreaViewModel;
 import de.richmarkdown.io.MarkdownFileHandler;
 import de.richmarkdown.markdown.MarkdownStyles;
+import de.richmarkdown.ui.dialogs.LinkConfirmDialog;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyIntegerProperty;
@@ -38,11 +39,13 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
+import javafx.stage.Window;
 
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -81,7 +84,7 @@ import java.util.function.Function;
 public class MarkdownEditor {
 
     private final RichTextArea control;
-    private final MarkdownFileHandler fileHandler = new MarkdownFileHandler();
+    private final MarkdownFileHandler fileHandler;
     private File currentFile;
 
     /**
@@ -90,7 +93,7 @@ public class MarkdownEditor {
      * eigene Operation. Das Feuern erfolgt über {@code Platform.runLater},
      * damit es **nach** der asynchronen Action läuft (für die Strukturansicht).
      */
-    private final List<Runnable> changeListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final List<Runnable> changeListeners;
 
     /** Leerzeichenlauf für die HR-Abbildung (Writer erkennt „nur Leerzeichen + strikethrough"). */
     private static final String HR_SPACES = "          ";
@@ -125,7 +128,10 @@ public class MarkdownEditor {
      * @throws NullPointerException wenn {@code control} {@code null} ist
      */
     public MarkdownEditor(RichTextArea control) {
-        this.control = Objects.requireNonNull(control, "control");
+        Objects.requireNonNull(control, "control");
+        this.control = control;
+        this.fileHandler = new MarkdownFileHandler();
+        this.changeListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
         initControl();
     }
 
@@ -134,9 +140,33 @@ public class MarkdownEditor {
         // Default-Factory der Bibliothek übergibt jede Dokument-URL ungeprüft
         // an xdg-open/rundll32 (Runtime.exec).
         this.control.setLinkCallbackFactory(
-                node -> node instanceof javafx.scene.text.Text ? this::openExternalLink : null);
+                node -> node instanceof javafx.scene.text.Text ? this::handleLinkClick : null);
         installEnterBehavior();
         installUnderlineAccelerator();
+    }
+
+    /**
+     * Behandelt einen Klick auf einen Link: Zeigt einen Bestätigungsdialog
+     * und öffnet den Link nur bei Bestätigung im Standardbrowser.
+     */
+    private void handleLinkClick(String url) {
+        if (!isSafeLinkUrl(url)) {
+            return;
+        }
+        javafx.scene.control.Dialog<javafx.scene.control.ButtonType> dialog =
+                new LinkConfirmDialog(url);
+        // Owner window for proper modality (window-modal)
+        javafx.stage.Window owner = control.getScene() != null
+                ? control.getScene().getWindow()
+                : null;
+        if (owner != null) {
+            dialog.initOwner(owner);
+        }
+        dialog.showAndWait().ifPresent(buttonType -> {
+            if (buttonType != null) {
+                openExternalLink(url);
+            }
+        });
     }
 
     /**
@@ -148,11 +178,24 @@ public class MarkdownEditor {
             return;
         }
         try {
-            Desktop.getDesktop().browse(URI.create(url.trim()));
+            String trimmedUrl = url.trim();
+            // Use xdg-open on Linux to avoid GTK/GDK warnings from Desktop.browse()
+            if (isLinux()) {
+                ProcessBuilder pb = new ProcessBuilder("xdg-open", trimmedUrl);
+                pb.redirectErrorStream(true);
+                pb.start();
+            } else {
+                Desktop.getDesktop().browse(URI.create(trimmedUrl));
+            }
         } catch (Throwable t) {
             // Kein Handler verfügbar oder Öffnen fehlgeschlagen – ein Klick auf
             // einen Link ist keine Bestätigung für einen Systemdialog.
         }
+    }
+
+    private static boolean isLinux() {
+        String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+        return os.contains("linux");
     }
 
     /**
@@ -181,7 +224,12 @@ public class MarkdownEditor {
      * Muss auf dem FX-Thread geschehen; der Skin entsteht erst in einer
      * angezeigten Szene.
      *
-     * @return eingebettetes JavaFX-Control
+     * <p><b>Wichtig:</b> Das zurückgegebenen Control sollte nicht modifiziert werden,
+     * da es den internen Zustand dieser Fassade beeinflusst. Integratoren sollten
+     * nur lesende Operationen durchführen oder die öffentlichen Methoden dieser
+     * Klasse verwenden.
+     *
+     * @return eingebettetes JavaFX-Control (nicht modifizieren!)
      */
     public RichTextArea getControl() {
         return control;
@@ -204,7 +252,7 @@ public class MarkdownEditor {
      */
     public void open(File file) throws IOException {
         Objects.requireNonNull(file, "file");
-        setMarkdown(fileHandler.read(file));
+        setMarkdown(fileHandler.read(file), file.toPath().toAbsolutePath().normalize().getParent());
         currentFile = file;
         // Das open() der Bibliothek läuft doppelt-asynchron (BasicAction +
         // ViewModel je ein runLater). markSaved() wird daher ebenfalls
@@ -225,7 +273,8 @@ public class MarkdownEditor {
      */
     public void save(File file) throws IOException {
         Objects.requireNonNull(file, "file");
-        fileHandler.write(file, getMarkdown());
+        Path targetDirectory = file.toPath().toAbsolutePath().normalize().getParent();
+        fileHandler.write(file, markdownForDirectory(targetDirectory));
         currentFile = file;
     }
 
@@ -260,6 +309,10 @@ public class MarkdownEditor {
      * Liefert den Datei-Dienst (stateless UTF-8-I/O-Engine, teilt sich kein
      * Zustand mit dem Editor).
      *
+     * <p>Diese Instanz ist stateless und kann sicher an andere Komponenten
+     * weitergegeben werden. Änderungen an der zurückgegebenen Instanz haben
+     * keine Auswirkungen auf den Editor.
+     *
      * @return Datei-Dienst für Markdown-Dokumente
      */
     public MarkdownFileHandler getFileHandler() {
@@ -275,6 +328,15 @@ public class MarkdownEditor {
         setMarkdown("");
         currentFile = null;
         Platform.runLater(() -> Platform.runLater(this::markSaved));
+    }
+
+    /**
+     * Löscht die aktuelle Dateizuordnung, ohne den Dokumentinhalt zu ändern.
+     * Wird verwendet, wenn ein Dokument aus einer Vorlage erstellt wurde und
+     * noch keine eigene Datei zugeordnet ist.
+     */
+    public void clearCurrentFile() {
+        currentFile = null;
     }
 
     /**
@@ -478,12 +540,51 @@ public class MarkdownEditor {
      * @param markdown einzulesender Markdown-Quelltext
      */
     public void setMarkdown(String markdown) {
+        Path imageBaseDirectory = currentFile == null ? null
+                : currentFile.toPath().toAbsolutePath().normalize().getParent();
+        setMarkdown(markdown, imageBaseDirectory);
+    }
+
+    private void setMarkdown(String markdown, Path imageBaseDirectory) {
         com.gluonhq.richtextarea.model.Document document =
-                new de.richmarkdown.markdown.MarkdownParser().parseInto(markdown);
+                new de.richmarkdown.markdown.MarkdownParser().parseInto(markdown, imageBaseDirectory);
         // Kein notifyChanged(): die Bibliothek lädt asynchron (verschachteltes
         // runLater) und meldet über documentProperty – das ist der spätere,
         // konsistente Zeitpunkt. Die Strukturansicht hört darauf.
         control.getActionFactory().open(document).execute(new ActionEvent());
+    }
+
+    /** Replaces the document as an undoable edit, preserving the current file. */
+    public void replaceDocument(com.gluonhq.richtextarea.model.Document document) {
+        replaceDocument(document, com.gluonhq.richtextarea.Selection.UNDEFINED);
+    }
+
+    /** Replaces contents with an exported result selection, retained by redo. */
+    public void replaceDocument(com.gluonhq.richtextarea.model.Document document,
+                                com.gluonhq.richtextarea.Selection selection) {
+        RichTextAreaViewModel model = viewModel();
+        if (model == null || !control.isEditable()) {
+            throw new IllegalStateException("Editor is not ready or is read-only");
+        }
+        model.replaceDocument(document, selection);
+        notifyChanged();
+    }
+
+    /** Replaces an exported range without discarding the surrounding document or undo context. */
+    public void replaceRange(int start, int end, com.gluonhq.richtextarea.model.Document replacement,
+                             com.gluonhq.richtextarea.Selection selection) {
+        RichTextAreaViewModel model = viewModel();
+        if (model == null || !control.isEditable()) {
+            throw new IllegalStateException("Editor is not ready or is read-only");
+        }
+        model.replaceRange(start, end, replacement, selection);
+        notifyChanged();
+    }
+
+    /** Installs a result that was already written to the associated file. */
+    public void replaceWithSavedDocument(com.gluonhq.richtextarea.model.Document document) {
+        replaceDocument(document);
+        markSaved();
     }
 
     // ---------- Einfüge-Operationen ----------
@@ -588,7 +689,8 @@ public class MarkdownEditor {
      */
     public void loadPrintCopy(RichTextArea copy) {
         com.gluonhq.richtextarea.model.Document document =
-                new de.richmarkdown.markdown.MarkdownParser().parseInto(getMarkdown());
+                new de.richmarkdown.markdown.MarkdownParser().parseInto(getMarkdown(),
+                        currentFileDirectory());
         if (copy.getSkin() instanceof RichTextAreaSkin skin) {
             // synchron in den ViewModel der Kopie (nur open() ist package-private
             // erreichbar – wie save() in getMarkdown)
@@ -615,32 +717,34 @@ public class MarkdownEditor {
             return List.of();
         }
         List<DocumentHeading> headings = new ArrayList<>();
-        List<com.gluonhq.richtextarea.model.Paragraph> paragraphs = viewModel.getParagraphList();
-        List<DecorationModel> models =
-                viewModel.getTextBuffer().getDecorationModelList(0, viewModel.getTextLength());
+        var buffer = viewModel.getTextBuffer();
+        String text = buffer.getText();
+        List<DecorationModel> models = buffer.getDecorationModelList(0, buffer.getTextLength());
 
-        // Dekorationsmodelle und Absätze in einem Durchgang verschneiden
+        // Decoration offsets refer to exported text; paragraph/caret offsets are
+        // internal positions, where an image or emoji occupies a single unit.
+        // Match styles and text in export coordinates, then convert only jump targets.
         int modelIndex = 0;
-        for (com.gluonhq.richtextarea.model.Paragraph paragraph : paragraphs) {
+        int start = 0;
+        while (start < text.length()) {
+            int end = text.indexOf('\n', start);
+            if (end < 0) end = text.length();
             while (modelIndex < models.size()
                     && models.get(modelIndex).getStart() + models.get(modelIndex).getLength()
-                            <= paragraph.getStart()) {
+                            <= start) {
                 modelIndex++;
             }
-            if (modelIndex >= models.size()) {
-                break;
-            }
+            if (modelIndex >= models.size()) break;
             DecorationModel model = models.get(modelIndex);
-            if (model.getDecoration() instanceof TextDecoration td) {
+            if (end > start && model.getStart() <= start && model.getDecoration() instanceof TextDecoration td) {
                 int level = MarkdownStyles.headingLevel(td.getFontSize());
                 if (level > 0 && td.getFontWeight() == FontWeight.BOLD) {
-                    String text = viewModel.getTextBuffer()
-                            .getText(paragraph.getStart(), paragraph.getEnd())
-                            .replace("\n", " ")
-                            .trim();
-                    headings.add(new DocumentHeading(level, text, paragraph.getStart()));
+                    int position = buffer.getInternalSelection(
+                            new com.gluonhq.richtextarea.Selection(start, end)).getStart();
+                    headings.add(new DocumentHeading(level, text.substring(start, end).trim(), position));
                 }
             }
+            start = end + 1;
         }
         return headings;
     }
@@ -722,6 +826,12 @@ public class MarkdownEditor {
         });
     }
 
+    /** Current position in editor units, matching heading targets and {@link #goToPosition(int)}. */
+    public int getInternalCaretPosition() {
+        RichTextAreaViewModel model = viewModel();
+        return model == null ? -1 : model.getCaretPosition();
+    }
+
     /**
      * Scrollt den Absatz, der die gegebene Position enthaelt, in den
      * Sichtbereich – ohne Selection, Caret oder Fokus zu veraendern.
@@ -749,7 +859,8 @@ public class MarkdownEditor {
         if (viewModel == null || listView == null) {
             return;
         }
-        int index = indexOfParagraphWithPosition(viewModel.getParagraphList(), position);
+        if (control.getSkin() instanceof com.gluonhq.richtextarea.RichTextAreaSkin skin) skin.revealParagraph(position);
+        int index = indexOfParagraphWithPosition(listView.getItems(), position);
         if (index >= 0 && index < listView.getItems().size()) {
             listView.scrollTo(index);
         }
@@ -830,7 +941,53 @@ public class MarkdownEditor {
         }
         // synchroner Save über die ActionCmdFactory (viewModel.save() ist package-private)
         new com.gluonhq.richtextarea.viewmodel.ActionCmdFactory().save().apply(viewModel);
-        return new de.richmarkdown.markdown.MarkdownWriter().write(viewModel.getDocument());
+        return new de.richmarkdown.markdown.MarkdownWriter()
+                .write(viewModel.getDocument(), currentFileDirectory());
+    }
+
+    /**
+     * Liefert den Markdown-Quelltext als reiner Lesezugriff, ohne den
+     * Gespeichert-Status zu ver\u00e4ndern (kein {@code save()}).
+     *
+     * <p>Eignet sich f\u00fcr-Ansichten, die das Dokument nur auslesen
+     * (z. B. Dokumentstruktur), ohne den Änderungsstatus zu ber\u00fchren.
+     *
+     * @return serialisierter Markdown-Text oder leerer String bei fehlendem
+     *         ViewModel
+     */
+    public String getMarkdownSource() {
+        RichTextAreaViewModel viewModel = viewModel();
+        if (viewModel == null) {
+            return "";
+        }
+        return new de.richmarkdown.markdown.MarkdownWriter().write(getDocumentSnapshot(), currentFileDirectory());
+    }
+
+    /** Captures current text and styles without serializing Markdown or marking the editor saved. */
+    public com.gluonhq.richtextarea.model.Document getDocumentSnapshot() {
+        RichTextAreaViewModel viewModel = viewModel();
+        if (viewModel == null) {
+            throw new IllegalStateException("Editor is not ready");
+        }
+        var buffer = viewModel.getTextBuffer();
+        return new com.gluonhq.richtextarea.model.Document(buffer.getText(),
+                buffer.getDecorationModelList(0, buffer.getTextLength()), 0,
+                control.getPageFormat(), control.getHeadersFooters());
+    }
+
+    private String markdownForDirectory(Path imageBaseDirectory) {
+        RichTextAreaViewModel viewModel = viewModel();
+        if (viewModel == null) {
+            return "";
+        }
+        new com.gluonhq.richtextarea.viewmodel.ActionCmdFactory().save().apply(viewModel);
+        return new de.richmarkdown.markdown.MarkdownWriter()
+                .write(viewModel.getDocument(), imageBaseDirectory);
+    }
+
+    private Path currentFileDirectory() {
+        return currentFile == null ? null
+                : currentFile.toPath().toAbsolutePath().normalize().getParent();
     }
 
     /**
@@ -877,8 +1034,8 @@ public class MarkdownEditor {
     }
 
     /**
-     * Toggle-Logik für TextDecoration: Der Zielzustand wird aus der aktuellen
-     * Caret-Dekoration abgeleitet (Word: erneuter Klick entfernt die Formatierung).
+     * Toggle-Logik für TextDecoration: Eine einheitliche Selektion wird umgeschaltet,
+     * eine gemischte Selektion eingeschaltet. Andere Formatierungen bleiben erhalten.
      * Ohne Selektion setzt die Bibliothek das Decoration als decorationAtCaret
      * (Eingabemodus) – genau wie Word.
      */
@@ -888,7 +1045,21 @@ public class MarkdownEditor {
                 ? td
                 : TextDecoration.builder().presets().build();
         T value = nextValue.apply(current);
-        TextDecoration.Builder builder = TextDecoration.builder().fromDecoration(current);
+        Selection selection = control.getSelection();
+        if (selection.isDefined() && viewModel() != null) {
+            var styles = viewModel().getTextBuffer().getDecorationModelList(selection.getStart(), selection.getEnd())
+                    .stream().filter(run -> run.getLength() > 0 && run.getDecoration() instanceof TextDecoration)
+                    .map(run -> (TextDecoration) run.getDecoration()).toList();
+            if (!styles.isEmpty()) {
+                T first = nextValue.apply(styles.get(0));
+                value = styles.stream().allMatch(style -> Objects.equals(first, nextValue.apply(style)))
+                        ? first : nextValue.apply(TextDecoration.builder().presets().build());
+            }
+        }
+        // A partial decoration is merged with each selected fragment by the buffer.
+        // Copying the caret style would erase unrelated formatting in mixed selections.
+        TextDecoration.Builder builder = selection.isDefined() ? TextDecoration.builder()
+                : TextDecoration.builder().fromDecoration(current);
         decorate(builderFunction.apply(builder, value));
     }
 

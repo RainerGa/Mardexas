@@ -23,7 +23,7 @@ package de.richmarkdown.editor;
  *
  * @param level    Überschriften-Ebene 1..6
  * @param text     Überschriftentext
- * @param position Caret-Position des Absatzanfangs
+ * @param position interne Editor-Position des Absatzanfangs (Bilder und Emojis zählen als eine Einheit)
  */
 public record DocumentHeading(int level, String text, int position) {
 

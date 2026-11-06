@@ -28,6 +28,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -90,6 +92,35 @@ class MarkdownParserTest {
         assertTrue(model.getBlocks().get(0) instanceof ParagraphBlock);
     }
 
+    @Test
+    void parsesSetextHeadingsAndKeepsTheirInlineFormatting() {
+        for (String underline : java.util.List.of("=", "===", "-", "--------", "   ---  ")) {
+            HeadingBlock heading = (HeadingBlock) parser.parse("A **formatted** heading\n" + underline).getBlocks().getFirst();
+            assertEquals(underline.contains("=") ? 1 : 2, heading.getLevel());
+            assertEquals("A formatted heading", heading.getInlines().stream().map(Inline::getText)
+                    .collect(java.util.stream.Collectors.joining()));
+            assertTrue(heading.getInlines().get(1).isBold());
+        }
+    }
+
+    @Test
+    void setextSupportsMultilineHeadingTextAndCanonicalRoundTrip() {
+        var document = parser.parseInto("A multiline\nheading\n===\n\nSection\n---");
+        assertEquals("# A multiline heading\n\n## Section", writer.write(document));
+        assertEquals(writer.write(document), writer.write(parser.parseInto(writer.write(document))));
+    }
+
+    @Test
+    void setextDoesNotConsumeRulesCodeTablesOrListItems() {
+        assertTrue(parser.parse("---").getBlocks().getFirst() instanceof HorizontalRuleBlock);
+        assertTrue(parser.parse("Text\n\n---").getBlocks().getLast() instanceof HorizontalRuleBlock);
+        assertTrue(parser.parse("Text\n- - -").getBlocks().getLast() instanceof HorizontalRuleBlock);
+        assertTrue(parser.parse("- item\n---").getBlocks().getFirst() instanceof ListItemBlock);
+        assertTrue(parser.parse("```\nText\n---\n```").getBlocks().getFirst() instanceof CodeBlockBlock);
+        assertTrue(parser.parse("| A | B |\n| --- | --- |\n| x | y |").getBlocks().getFirst() instanceof TableBlock);
+        assertTrue(parser.parse("Text\n    ===").getBlocks().getFirst() instanceof ParagraphBlock);
+    }
+
     // ---------- Inline-Formatierung ----------
 
     @Test
@@ -135,6 +166,151 @@ class MarkdownParserTest {
         Inline inline = block.getInlines().get(0);
         assertEquals("text", inline.getText());
         assertEquals("https://example.com", inline.getUrl());
+    }
+
+    @Test
+    void parsesBareUrl() {
+        ParagraphBlock block = singleParagraph(parser.parse("https://example.com"));
+        assertEquals(1, block.getInlines().size());
+        Inline inline = block.getInlines().get(0);
+        assertEquals("https://example.com", inline.getText());
+        assertEquals("https://example.com", inline.getUrl());
+    }
+
+    @Test
+    void parsesBareUrlInAngleBrackets() {
+        ParagraphBlock block = singleParagraph(parser.parse("<https://example.com>"));
+        assertEquals(1, block.getInlines().size());
+        Inline inline = block.getInlines().get(0);
+        assertEquals("https://example.com", inline.getText());
+        assertEquals("https://example.com", inline.getUrl());
+    }
+
+    @Test
+    void parsesBareUrlHttp() {
+        ParagraphBlock block = singleParagraph(parser.parse("http://example.com/path"));
+        assertEquals(1, block.getInlines().size());
+        Inline inline = block.getInlines().get(0);
+        assertEquals("http://example.com/path", inline.getText());
+        assertEquals("http://example.com/path", inline.getUrl());
+    }
+
+    @Test
+    void parsesBareUrlStripsTrailingPunctuation() {
+        ParagraphBlock block = singleParagraph(parser.parse("https://example.com."));
+        assertEquals(2, block.getInlines().size());
+        Inline url = block.getInlines().get(0);
+        assertEquals("https://example.com", url.getText());
+        assertEquals("https://example.com", url.getUrl());
+        Inline punct = block.getInlines().get(1);
+        assertEquals(".", punct.getText());
+        assertNull(punct.getUrl());
+    }
+
+    @Test
+    void parsesBareUrlMidSentence() {
+        ParagraphBlock block = singleParagraph(parser.parse("see https://example.com today"));
+        assertEquals(3, block.getInlines().size());
+        assertEquals("see ", block.getInlines().get(0).getText());
+        assertEquals("https://example.com", block.getInlines().get(1).getText());
+        assertEquals("https://example.com", block.getInlines().get(1).getUrl());
+        assertEquals(" today", block.getInlines().get(2).getText());
+    }
+
+    @Test
+    void doesNotParseUrlInInlineCode() {
+        ParagraphBlock block = singleParagraph(parser.parse("`https://example.com`"));
+        assertEquals(1, block.getInlines().size());
+        assertTrue(block.getInlines().get(0).isCode());
+        assertNull(block.getInlines().get(0).getUrl());
+    }
+
+    @Test
+    void doesNotParseUrlMidWord() {
+        ParagraphBlock block = singleParagraph(parser.parse("xhttps://example.com"));
+        assertEquals(1, block.getInlines().size());
+        assertEquals("xhttps://example.com", block.getInlines().get(0).getText());
+        assertNull(block.getInlines().get(0).getUrl());
+    }
+
+    @Test
+    void stylesBareUrlAsLink() {
+        Document doc = parser.parseInto("https://example.com");
+        TextDecoration link = null;
+        for (DecorationModel dm : doc.getDecorations()) {
+            if (dm.getDecoration() instanceof TextDecoration td && td.getURL() != null) {
+                link = td;
+            }
+        }
+        assertNotNull(link);
+        assertEquals("https://example.com", link.getURL());
+        assertEquals("blue", link.getForeground());
+        assertTrue(Boolean.TRUE.equals(link.isUnderline()));
+    }
+
+    @Test
+    void rendersMarkdownImageSyntaxPointingToWebPagesAsLabeledLinks() {
+        String markdown = "![Release](https://github.com/freecad/freecad/releases/latest)\n"
+                + "![Crowdin](https://crowdin.com/project/freecad)";
+        MarkdownModel model = parser.parse(markdown);
+
+        assertEquals(2, model.getBlocks().size());
+        assertTrue(model.getBlocks().get(0) instanceof ParagraphBlock);
+        ParagraphBlock release = (ParagraphBlock) model.getBlocks().get(0);
+        assertEquals("Release", release.getInlines().get(0).getText());
+        assertEquals("https://github.com/freecad/freecad/releases/latest",
+                release.getInlines().get(0).getUrl());
+        assertEquals("[Release](https://github.com/freecad/freecad/releases/latest)\n"
+                        + "[Crowdin](https://crowdin.com/project/freecad)",
+                writer.write(parser.parseInto(markdown)));
+    }
+
+    @Test
+    void parsesInlineImageSyntaxToWebpageAsLink() {
+        String markdown = "see ![Release](https://example.com) today";
+        MarkdownModel model = parser.parse(markdown);
+        assertEquals(1, model.getBlocks().size());
+        ParagraphBlock block = (ParagraphBlock) model.getBlocks().get(0);
+        assertEquals(3, block.getInlines().size());
+        assertEquals("see ", block.getInlines().get(0).getText());
+        Inline link = block.getInlines().get(1);
+        assertEquals("Release", link.getText());
+        assertEquals("https://example.com", link.getUrl());
+        assertEquals(" today", block.getInlines().get(2).getText());
+        // Kein stray '!' als Text-Inline
+        assertFalse(block.getInlines().stream()
+                .anyMatch(inline -> inline.getText().startsWith("!")));
+        assertEquals("see [Release](https://example.com) today",
+                writer.write(parser.parseInto(markdown)));
+    }
+
+    @Test
+    void roundTrip_inlineImageSyntaxToWebpage() {
+        String markdown = "see ![Release](https://example.com) today";
+        Document first = parser.parseInto(markdown);
+        String written = writer.write(first);
+        assertEquals("see [Release](https://example.com) today", written);
+        Document second = parser.parseInto(written);
+        String rewritten = writer.write(second);
+        assertEquals(written, rewritten);
+    }
+
+    @Test
+    void parsesHtmlAnchor() {
+        ParagraphBlock block = singleParagraph(
+                parser.parse("Visit <a href=\"https://example.com\">our website</a> today"));
+        assertEquals(3, block.getInlines().size());
+        assertEquals("our website", block.getInlines().get(1).getText());
+        assertEquals("https://example.com", block.getInlines().get(1).getUrl());
+        TextDecoration linkDecoration = (TextDecoration) parser
+                .parseInto("<a href=\"https://example.com\">our website</a>")
+                .getDecorations().get(0).getDecoration();
+        assertEquals("https://example.com", linkDecoration.getURL());
+        assertTrue(Boolean.TRUE.equals(linkDecoration.isUnderline()));
+        assertEquals("blue", linkDecoration.getForeground());
+        assertEquals("Visit [our website](https://example.com) today",
+                writer.write(parser.parseInto(
+                        "Visit <a href=\"https://example.com\">our website</a> today")));
     }
 
     @Test
@@ -335,6 +511,22 @@ class MarkdownParserTest {
         assertRoundTrip("a `code` b");
         assertRoundTrip("a <u>u</u> b");
         assertRoundTrip("[text](https://example.com)");
+    }
+
+    @Test
+    void roundTrip_bareUrlsNormalizeToAngleBrackets() {
+        // Bare URLs normalisieren zu <url> (kanonische Form)
+        assertRoundTripStable("https://example.com");
+        assertRoundTripStable("http://example.org/path");
+        assertRoundTripStable("see https://example.com today");
+    }
+
+    private void assertRoundTripStable(String markdown) {
+        Document first = parser.parseInto(markdown);
+        String written = writer.write(first);
+        Document second = parser.parseInto(written);
+        String rewritten = writer.write(second);
+        assertEquals(written, rewritten, "round trip not stable for: " + markdown);
     }
 
     @Test

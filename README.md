@@ -57,12 +57,17 @@ Ready-to-run release packages bundle an optimized runtime image — **you do not
 
 ## Key Features
 
+The additional writing tools and their Markdown compatibility rules are documented in [Writing features](editor/WRITING_FEATURES.md) (German).
+
+- **Classic menus or Ribbon:** Switch immediately under View → User interface. Both presentations share commands, shortcuts, favorites and scalable icons. The preference is stored outside Markdown files. [Usage and implementation (German)](editor/RIBBON_IMPLEMENTATION.md).
+
 - **✨ Visual Formatting:** Apply headings (H1–H6), bold, italic, underline, strikethrough, blockquotes, lists, links, images, and horizontal rules using standard hotkeys or the intuitive toolbar.
 - **📊 Interactive Table Editor:** Create and edit GitHub-Flavored Markdown tables with column alignment, keyboard navigation across cells, and visual row/column management.
 - **🔍 Advanced Find & Replace:** Find text and table cell content with case matching, whole-word filtering, occurrences highlighting, and instant replacement.
 - **📈 Document Statistics:** Live word count, character count, estimated reading time, and paragraph style indicator in the status bar.
 - **🧭 Structure & Navigation:** Browse headings in the collapsible document outline panel and navigate backward/forward through your editing history.
 - **📏 Optional Line Numbers:** Toggle paragraph line numbers in the gutter for quick reference.
+- **Document comparison:** Review text, formatting and image changes, undo decisions, apply results, and export Markdown results or review reports. [Usage guide (German)](editor/DIFF_DIALOG.md).
 - **🖨️ Print & Export:** Direct print support and clean UTF-8 `.md` export.
 - **🌍 10 UI Languages:** Fully localized interface in English, German, French, Spanish, Portuguese, Japanese, Chinese, Italian, Korean, and Dutch.
 

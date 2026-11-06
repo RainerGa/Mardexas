@@ -163,14 +163,18 @@ class EmptyLineClickTest {
 
         resetClickCount();
         TextFlow empty = emptyLineFlow(robot, 0);
-        for (int i = 0; i < 3; i++) {
-            Point2D at = centerOf(empty, 0.5);
-            robot.clickOn(at.getX(), at.getY());
-            if (i < 2) {
-                Thread.sleep(CLICK_PAUSE_MS);
+        Point2D at = centerOf(empty, 0.5);
+        // Submit the native input burst together. TestFX's individual clickOn
+        // waits can exceed the multi-click deadline on a busy CI worker.
+        FxTestUtil.runAndWait(() -> {
+            var pointer = new javafx.scene.robot.Robot();
+            pointer.mouseMove(at);
+            for (int i = 0; i < 3; i++) {
+                pointer.mousePress(javafx.scene.input.MouseButton.PRIMARY);
+                pointer.mouseRelease(javafx.scene.input.MouseButton.PRIMARY);
             }
-        }
-        waitForFxEvents();
+        });
+        de.richmarkdown.GuiTestSupport.pulses();
 
         assertEquals(7, caret());
         assertEquals("Zeile1\n\nZeile3", text());
@@ -193,11 +197,14 @@ class EmptyLineClickTest {
     @DisplayName("Klick in die leere letzte Zeile setzt den Caret an deren Anfang")
     void clickOnEmptyLastLinePlacesCaretAtLineStart(FxRobot robot) throws Exception {
         openDocument("Zeile1\n");
-
-        clickSingle(robot, emptyLineFlow(robot, 0), 0.5);
+        TextFlow empty = emptyLineFlow(robot, 0);
+        assertTrue(FxTestUtil.callAndWait(() -> empty.getHeight() >= 10),
+                "Auch die letzte leere Zeile muss eine anklickbare Zeilenhöhe besitzen");
+        clickSingle(robot, empty, 0.5);
 
         assertEquals(7, caret());
         assertFalse(hasSelection());
+        assertEquals("Zeile1\n", text(), "Der Platzhalter darf niemals in das Dokument gelangen");
     }
 
     @Test

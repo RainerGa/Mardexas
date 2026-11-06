@@ -12,7 +12,10 @@ LICENSE_DIR="$PROJECT_DIR/editor/target/package-licenses"
 JPACKAGE=""
 
 case "$JAVAFX_PLATFORM" in
-    linux|win|mac|mac-aarch64) ;;
+    linux) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] || exit 2 ;;
+    win) [[ "${OS:-}" == Windows_NT ]] || exit 2 ;;
+    mac) [[ "$(uname -s)" == Darwin && "$(uname -m)" == x86_64 ]] || exit 2 ;;
+    mac-aarch64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] || exit 2 ;;
     *)
         echo "Unsupported JavaFX platform: $JAVAFX_PLATFORM" >&2
         exit 2
@@ -35,15 +38,18 @@ fi
 
 cd "$PROJECT_DIR"
 mvn --batch-mode --no-transfer-progress \
-    -DskipTests \
+    -Dmaven.test.skip=true \
     -pl editor -am install
 
 rm -rf "$INPUT_DIR"
 rm -rf "$LICENSE_DIR"
 mkdir -p "$INPUT_DIR" "$OUTPUT_DIR" "$LICENSE_DIR"
 cp "$PROJECT_DIR/editor/target/$APP_JAR" "$INPUT_DIR/"
+python3 "$PROJECT_DIR/packaging/audit-icons.py" --jar "$INPUT_DIR/$APP_JAR"
 cp "$PROJECT_DIR/LICENSE" "$LICENSE_DIR/Mardexas-GPL-3.0.txt"
 cp "$PROJECT_DIR/rich-text-area/LICENSE" "$LICENSE_DIR/RichTextArea-GPL-3.0.txt"
+cp "$PROJECT_DIR/editor/src/main/resources/de/richmarkdown/ui/icons/tabler/LICENSE" "$LICENSE_DIR/Tabler-Icons-MIT.txt"
+cp "$PROJECT_DIR/emoji-noto/src/main/resources/com/gluonhq/emoji/noto/"*.txt "$LICENSE_DIR/"
 
 mvn --batch-mode --no-transfer-progress \
     -f "$PROJECT_DIR/editor/pom.xml" \
@@ -51,7 +57,9 @@ mvn --batch-mode --no-transfer-progress \
     -DoutputDirectory="$INPUT_DIR" \
     dependency:copy-dependencies
 
-rm -rf "$OUTPUT_DIR/Mardexas"
+python3 "$PROJECT_DIR/packaging/audit-emoji.py" --input-dir "$INPUT_DIR"
+
+rm -rf "$OUTPUT_DIR/Mardexas" "$OUTPUT_DIR/Mardexas.app"
 JPACKAGE_ARGS=(
     --type app-image
     --name Mardexas
@@ -60,7 +68,7 @@ JPACKAGE_ARGS=(
     --description "Visual Markdown editor"
     --module-path "$INPUT_DIR"
     --dest "$OUTPUT_DIR"
-    --module RichMarkDownEditor/de.richmarkdown.RichMarkDownEditorApp
+    --module RichMarkDownEditor/de.richmarkdown.Launcher
     --java-options "--add-exports=com.gluonhq.richtextarea/com.gluonhq.richtextarea.viewmodel=RichMarkDownEditor"
 )
 
@@ -79,6 +87,9 @@ esac
 
 case "$JAVAFX_PLATFORM" in
     mac|mac-aarch64)
+        mkdir -p "$OUTPUT_DIR/Mardexas.app/Contents/Resources/licenses"
+        cp "$LICENSE_DIR/"* "$OUTPUT_DIR/Mardexas.app/Contents/Resources/licenses/"
+        cp "$PROJECT_DIR/THIRD-PARTY-NOTICES.md" "$OUTPUT_DIR/Mardexas.app/Contents/Resources/licenses/"
         cp "$LICENSE_DIR/"* "$OUTPUT_DIR/"
         cp "$PROJECT_DIR/THIRD-PARTY-NOTICES.md" "$OUTPUT_DIR/"
         ;;

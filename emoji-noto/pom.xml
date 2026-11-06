@@ -1,0 +1,25 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>de.richmarkdown</groupId>
+  <artifactId>emoji-noto</artifactId>
+  <version>1.1.0-mardexas-1</version>
+  <name>Mardexas offline Noto emoji (Gluon Emoji fork)</name>
+  <description>Gluon Emoji 1.1.0 API with bundled Google-only Noto artwork and no network loader</description>
+  <licenses><license><name>GPL-3.0-or-later (code); Apache-2.0 (Noto artwork); MIT (emoji-data)</name>
+    <url>https://github.com/gluonhq/emoji</url><distribution>repo</distribution>
+  </license></licenses>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>21</maven.compiler.release>
+  </properties>
+  <dependencies>
+    <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>25.0.4</version></dependency>
+  </dependencies>
+  <build><plugins>
+    <plugin><artifactId>maven-compiler-plugin</artifactId><version>3.14.1</version></plugin>
+    <plugin><artifactId>maven-resources-plugin</artifactId><version>3.3.1</version></plugin>
+    <plugin><artifactId>maven-jar-plugin</artifactId><version>3.4.2</version></plugin>
+  </plugins></build>
+</project>

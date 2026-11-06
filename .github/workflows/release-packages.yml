@@ -58,6 +58,14 @@ jobs:
           APP_VERSION: ${{ steps.version.outputs.value }}
         run: packaging/build-app-image.sh
 
+      - name: Install Linux packaging tools
+        run: sudo apt-get update && sudo apt-get install --yes fakeroot rpm
+
+      - name: Build Linux DEB and RPM installers
+        env:
+          JAVAFX_PLATFORM: linux
+        run: packaging/build-installers.sh
+
       - name: Create portable Linux archive
         env:
           APP_VERSION: ${{ steps.version.outputs.value }}
@@ -66,8 +74,8 @@ jobs:
 
       - name: Prepare Flatpak source tree
         run: |
-          mkdir -p dist/flatpak-source/flatpak
-          cp -a dist/linux/Mardexas/bin dist/linux/Mardexas/lib dist/flatpak-source/
+          mkdir -p dist/flatpak-source/flatpak dist/flatpak-source/app
+          cp -a dist/linux/Mardexas/. dist/flatpak-source/app/
           cp packaging/flatpak/mardexas dist/flatpak-source/flatpak/
           cp packaging/flatpak/io.github.rainerga.Mardexas.desktop dist/flatpak-source/flatpak/
           cp packaging/flatpak/io.github.rainerga.Mardexas.svg dist/flatpak-source/flatpak/
@@ -110,6 +118,8 @@ jobs:
           name: mardexas-linux
           path: |
             dist/Mardexas-*-linux-x86_64-portable.tar.gz
+            dist/Mardexas-*-linux-x86_64.deb
+            dist/Mardexas-*-linux-x86_64.rpm
             dist/Mardexas-*-linux-x86_64.flatpak
             dist/Mardexas-*-source.tar.gz
           if-no-files-found: error
@@ -178,30 +188,11 @@ jobs:
             "$($wix.FullName)\bin" >> $env:GITHUB_PATH
           }
 
-      - name: Build Windows MSI installer
-        shell: pwsh
+      - name: Build Windows MSI and EXE installers
+        shell: bash
         env:
-          APP_VERSION: ${{ steps.version.outputs.value }}
-        run: |
-          $inputDir = (Resolve-Path editor/target/jpackage-input).Path
-          $output = Join-Path $PWD "dist/msi"
-          New-Item -ItemType Directory -Force $output | Out-Null
-          jpackage `
-            --type msi `
-            --name Mardexas `
-            --app-version $env:APP_VERSION `
-            --vendor RainerGa `
-            --description "Visual Markdown editor" `
-            --module-path $inputDir `
-            --dest $output `
-            --license-file LICENSE `
-            --module RichMarkDownEditor/de.richmarkdown.RichMarkDownEditorApp `
-            --java-options "--add-exports=com.gluonhq.richtextarea/com.gluonhq.richtextarea.viewmodel=RichMarkDownEditor" `
-            --win-menu `
-            --win-shortcut `
-            --win-dir-chooser `
-            --win-upgrade-uuid 76bd6ca4-fcaa-4abc-9cc2-458cb925c125
-          Move-Item "$output\Mardexas-$env:APP_VERSION.msi" "dist\Mardexas-$env:APP_VERSION-windows-x86_64.msi"
+          JAVAFX_PLATFORM: win
+        run: packaging/build-installers.sh
 
       - name: Upload Windows release assets
         uses: actions/upload-artifact@v4
@@ -210,11 +201,20 @@ jobs:
           path: |
             dist/Mardexas-*-windows-x86_64-portable.zip
             dist/Mardexas-*-windows-x86_64.msi
+            dist/Mardexas-*-windows-x86_64.exe
           if-no-files-found: error
 
   macos:
-    name: macOS portable ZIP
-    runs-on: macos-15
+    name: macOS portable and installers (${{ matrix.architecture }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            architecture: x86_64
+          - runner: macos-15
+            architecture: aarch64
     steps:
       - name: Check out source and pinned RichTextArea fork
         uses: actions/checkout@v4
@@ -270,6 +270,11 @@ jobs:
           APP_VERSION: ${{ steps.version.outputs.value }}
         run: packaging/build-app-image.sh
 
+      - name: Build macOS DMG and PKG installers
+        env:
+          JAVAFX_PLATFORM: ${{ steps.version.outputs.platform }}
+        run: packaging/build-installers.sh
+
       - name: Create portable macOS ZIP
         env:
           APP_VERSION: ${{ steps.version.outputs.value }}
@@ -287,8 +292,11 @@ jobs:
       - name: Upload macOS release asset
         uses: actions/upload-artifact@v4
         with:
-          name: mardexas-macos
-          path: dist/Mardexas-*-macos-*-portable.zip
+          name: mardexas-macos-${{ matrix.architecture }}
+          path: |
+            dist/Mardexas-*-macos-*-portable.zip
+            dist/Mardexas-*-macos-*.dmg
+            dist/Mardexas-*-macos-*.pkg
           if-no-files-found: error
 
   fat-jar:
@@ -340,217 +348,78 @@ jobs:
           if-no-files-found: error
 
   native-image:
-    name: GraalVM Native Image (Linux)
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check out source and pinned RichTextArea fork
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up GraalVM with Native Image
-        uses: graalvm/setup-graalvm@v1
-        with:
-          version: "25.0.2"
-          distribution: graalvm-community
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          cache: maven
-
-      - name: Determine release version
-        id: version
-        shell: bash
-        run: |
-          pom_version="$(sed -n 's/^[[:space:]]*<version>\([^<]*\)<\/version>[[:space:]]*$/\1/p' editor/pom.xml | head -n1)"
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            version="${GITHUB_REF_NAME#v}"
-          else
-            version="$pom_version"
-          fi
-          if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
-            echo "Release tags must use numeric versions such as v1.2.3." >&2
-            exit 1
-          fi
-          if [[ "$version" != "$pom_version" ]]; then
-            echo "Release tag version ($version) must match editor/pom.xml version ($pom_version)." >&2
-            exit 1
-          fi
-          echo "value=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Install virtual display and X11 tools
-        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends xvfb xauth x11-utils xdotool imagemagick libgtk-3-0t64 libxtst6 libasound2t64 libfontconfig1 libgl1
-
-      - name: Generate reachability metadata for Linux
-        shell: bash
-        env:
-          APP_VERSION: ${{ steps.version.outputs.value }}
-          JAVAFX_PLATFORM: linux
-        run: |
-          # Best-effort trace only (log/diagnostics). The build below uses the
-          # verified, committed metadata files (packaging/native-image/linux +
-          # linux-sw), exactly like a local
-          # 'JAVAFX_PLATFORM=linux packaging/build-native-image.sh' run.
-          # A failing trace must never block the build.
-          packaging/trace-reachability.sh linux app || echo "App trace failed (non-fatal, using committed metadata)"
-          packaging/trace-reachability.sh linux tests || echo "Tests trace failed (non-fatal, using committed metadata)"
-          if [[ -f packaging/native-image/trace-output/linux/app/reachability-metadata.json && -f packaging/native-image/trace-output/linux/tests/reachability-metadata.json ]]; then
-            # Merge the fresh traces to a temporary file for inspection only.
-            python3 packaging/merge-reachability-metadata.py \
-              packaging/native-image/trace-output/merged-reachability.json \
-              packaging/native-image/trace-output/linux/app/reachability-metadata.json \
-              packaging/native-image/trace-output/linux/tests/reachability-metadata.json \
-              || echo "Trace merge completed (non-fatal)"
-            # Validate fresh traces against the verified metadata (log only,
-            # never overwrite the committed files here).
-            python3 packaging/trace-diff.py \
-              packaging/native-image/trace-output/linux \
-              packaging/native-image/linux/reachability-metadata.json \
-              packaging/native-image/linux-sw/reachability-metadata.json \
-              || echo "Reachability diff completed (non-fatal)"
-          else
-            echo "Skipping trace merge/diff - no fresh traces, using committed metadata."
-          fi
-          # Optional: JNI scan (log only)
-          packaging/trace-reachability.sh linux jni || echo "JNI scan completed (non-fatal)"
-      - name: Build native executable
-        shell: bash
-        env:
-          APP_VERSION: ${{ steps.version.outputs.value }}
-          JAVAFX_PLATFORM: linux
-        run: packaging/build-native-image.sh
-
-
-
-      - name: Smoke-test Linux native executable
-        run: bash packaging/smoke-test-native-linux.sh
-
-      - name: Archive Linux native executable and notices
-        shell: bash
-        env:
-          APP_VERSION: ${{ steps.version.outputs.value }}
-        run: |
-          tar -C dist/native/linux -czf \
-            "dist/Mardexas-${APP_VERSION}-linux-x86_64-native.tar.gz" .
-
-      - name: Upload native executable
-        uses: actions/upload-artifact@v4
-        with:
-          name: mardexas-native-linux
-          path: dist/Mardexas-*-native.*
-          if-no-files-found: error
-
-  native-image-macos:
-    name: GraalVM Native Image (macOS)
-    runs-on: macos-15
+    name: Native image (${{ matrix.label }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
     strategy:
+      fail-fast: false
       matrix:
-        architecture: [x86_64, arm64]
+        include:
+          - runner: ubuntu-24.04
+            platform: linux
+            label: linux-x86_64
+            distribution: graalvm-community
+          - runner: windows-2025
+            platform: win
+            label: windows-x86_64
+            distribution: graalvm-community
+          - runner: macos-15
+            platform: mac-aarch64
+            label: macos-aarch64
+            distribution: graalvm-community
+          # GraalVM 25 dropped macOS Intel. Liberica NIK retains this target.
+          - runner: macos-15-intel
+            platform: mac
+            label: macos-x86_64
+            distribution: liberica
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Check out source and pinned RichTextArea fork
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Set up GraalVM with Native Image
-        uses: graalvm/setup-graalvm@v1
+      - uses: graalvm/setup-graalvm@v1
         with:
-          version: "25.0"
-          distribution: graalvm-community
+          java-version: '25.0.2'
+          distribution: ${{ matrix.distribution }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cache: maven
-      - name: Determine release version
-        id: version
-        shell: bash
+      - name: Install Linux GUI build prerequisites
+        if: runner.os == 'Linux'
         run: |
-          pom_version="$(sed -n 's/^[[:space:]]*<version>\([^<]*\)<\/version>[[:space:]]*$/\1/p' editor/pom.xml | head -n1)"
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            version="${GITHUB_REF_NAME#v}"
-          else
-            version="$pom_version"
-          fi
-          if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
-            echo "Release tags must use numeric versions such as v1.2.3." >&2
-            exit 1
-          fi
-          if [[ "$version" != "$pom_version" ]]; then
-            echo "Release tag version ($version) must match editor/pom.xml version ($pom_version)." >&2
-            exit 1
-          fi
-          case "${{ matrix.architecture }}" in
-            arm64|aarch64)
-              platform="mac-aarch64"
-              architecture="aarch64"
-              ;;
-            x86_64)
-              platform="mac"
-              architecture="x86_64"
-              ;;
-            *)
-              echo "Unsupported macOS architecture: ${{ matrix.architecture }}" >&2
-              exit 1
-              ;;
-          esac
-          echo "value=$version" >> "$GITHUB_OUTPUT"
-          echo "platform=$platform" >> "$GITHUB_OUTPUT"
-          echo "architecture=$architecture" >> "$GITHUB_OUTPUT"
-      - name: Generate reachability metadata for macOS
-        shell: bash
-        env:
-          APP_VERSION: ${{ steps.version.outputs.value }}
-          JAVAFX_PLATFORM: mac
+          sudo apt-get update
+          sudo apt-get install --yes build-essential libz-dev libgtk-3-0t64 xvfb xauth libfreetype6 fontconfig
+      - name: Validate release version
         run: |
-          # Best-effort trace only (log/diagnostics). The build below uses the
-          # verified, committed metadata files (packaging/native-image/mac),
-          # exactly like a local
-          # 'JAVAFX_PLATFORM=mac packaging/build-native-image.sh' run.
-          # A failing trace must never block the build.
-          packaging/trace-reachability.sh mac app || echo "App trace failed (non-fatal, using committed metadata)"
-          packaging/trace-reachability.sh mac tests || echo "Tests trace failed (non-fatal, using committed metadata)"
-          if [[ -f packaging/native-image/trace-output/mac/app/reachability-metadata.json && -f packaging/native-image/trace-output/mac/tests/reachability-metadata.json ]]; then
-            # Merge the fresh traces to a temporary file for inspection only.
-            python3 packaging/merge-reachability-metadata.py \
-              packaging/native-image/trace-output/merged-reachability.json \
-              packaging/native-image/trace-output/mac/app/reachability-metadata.json \
-              packaging/native-image/trace-output/mac/tests/reachability-metadata.json \
-              || echo "Trace merge completed (non-fatal)"
-            # Validate fresh traces against the verified metadata (log only,
-            # never overwrite the committed files here).
-            python3 packaging/trace-diff.py \
-              packaging/native-image/trace-output/mac \
-              packaging/native-image/mac/reachability-metadata.json \
-              || echo "Reachability diff completed (non-fatal)"
-          else
-            echo "Skipping trace merge/diff - no fresh traces, using committed metadata."
-          fi
-          # Optional: JNI scan (log only)
-          packaging/trace-reachability.sh mac jni || echo "JNI scan completed (non-fatal)"
-      - name: Build native executable
-        shell: bash
+          version="$(sed -n 's/^[[:space:]]*<version>\([^<]*\)<\/version>[[:space:]]*$/\1/p' editor/pom.xml | head -n1)"
+          requested="${{ inputs.release_tag }}"
+          [[ "$GITHUB_REF" != refs/tags/v* ]] || requested="$GITHUB_REF_NAME"
+          [[ -z "$requested" || "${requested#v}" == "$version" ]] || exit 2
+      - name: Build and verify native GUI and fonts
         env:
-          APP_VERSION: ${{ steps.version.outputs.value }}
-          JAVAFX_PLATFORM: mac
+          JAVAFX_PLATFORM: ${{ matrix.platform }}
         run: packaging/build-native-image.sh
-      - name: Smoke-test macOS native executable
-        run: |
-          # Run the native executable briefly to ensure it starts.
-          # macOS does not provide the GNU 'timeout' command, so use
-          # a background process + kill instead.
-          dist/native/mac/Mardexas &
-          pid=$!
-          sleep 30
-          kill "$pid" 2>/dev/null || true
-      - name: Archive macOS native executable and notices
-        shell: bash
+      - name: Archive native executable and all notices
         env:
-          APP_VERSION: ${{ steps.version.outputs.value }}
-          ARCHITECTURE: ${{ matrix.architecture }}
+          TARGET_PLATFORM: ${{ matrix.platform }}
+          TARGET_LABEL: ${{ matrix.label }}
         run: |
-          tar -C dist/native/mac -czf \
-            "dist/Mardexas-${APP_VERSION}-macos-${ARCHITECTURE}-native.tar.gz" .
-      - name: Upload macOS native executable
+          version="$(sed -n 's/^[[:space:]]*<version>\([^<]*\)<\/version>[[:space:]]*$/\1/p' editor/pom.xml | head -n1)"
+          tar -C "dist/native/$TARGET_PLATFORM" -czf "dist/Mardexas-$version-$TARGET_LABEL-native.tar.gz" .
+      - name: Upload native release asset
         uses: actions/upload-artifact@v4
         with:
-          name: mardexas-native-macos-${{ matrix.architecture }}
-          path: dist/Mardexas-*-native.*
+          name: mardexas-native-${{ matrix.label }}
+          path: dist/Mardexas-*-native.tar.gz
           if-no-files-found: error
+      - name: Retain rendering evidence and build traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-check-${{ matrix.label }}
+          path: editor/target/package-check/
+          if-no-files-found: warn
 
   publish-release:
     name: Publish GitHub release with packages
@@ -561,7 +430,6 @@ jobs:
       - macos
       - fat-jar
       - native-image
-      - native-image-macos
     runs-on: ubuntu-24.04
     steps:
       - name: Download all release assets

@@ -21,9 +21,13 @@ import com.gluonhq.richtextarea.RichTextArea;
 import de.richmarkdown.editor.MarkdownEditor;
 import de.richmarkdown.i18n.I18n;
 import de.richmarkdown.ui.dialogs.DialogButtons;
+import de.richmarkdown.ui.dialogs.IssueDialog;
 import de.richmarkdown.ui.dialogs.PrintDialog;
 import de.richmarkdown.ui.dialogs.PrintDialogResult;
+import de.richmarkdown.ui.dialogs.TemplateDialog;
 import de.richmarkdown.io.MarkdownFileHandler;
+import de.richmarkdown.markdown.MarkdownChecker;
+import de.richmarkdown.ui.NavigationHistory;
 import javafx.application.Platform;
 import javafx.print.JobSettings;
 import javafx.print.PageLayout;
@@ -35,8 +39,11 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.MenuButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -96,7 +103,15 @@ public class EditorWindow extends Stage {
     private final MarkdownEditor editor;
     private final FormatToolBar toolBar;
     private final StatusBar statusBar;
+    private final ViewModeController viewModeController;
 
+    private WorkspaceWindow workspace;
+    private BorderPane editorRoot;
+    private VBox chrome;
+    private final List<Runnable> featureDisposers = new ArrayList<>();
+    private record PrintRequest(com.gluonhq.richtextarea.model.Document document,
+                                de.richmarkdown.features.printing.PrintOptions options) { }
+    private final java.util.concurrent.ConcurrentMap<PrinterJob, PrintRequest> printRequests = new java.util.concurrent.ConcurrentHashMap<>();
     private String lastError;
     private ConfirmationHandler confirmationHandler;
     private ZoomController zoomController;
@@ -110,11 +125,14 @@ public class EditorWindow extends Stage {
     private de.richmarkdown.findreplace.FindReplaceEngine.FindOptions lastFindOptions =
             new de.richmarkdown.findreplace.FindReplaceEngine.FindOptions();
 
-    /**
+/**
      * Erstellt das vollständige Editorfenster einschließlich Editor, Menüs,
      * Formatierungsleiste und Statusleiste.
      */
-    public EditorWindow() {
+    public EditorWindow() { this(null); }
+
+    EditorWindow(WorkspaceWindow host) {
+        this.workspace = host;
         this.editor = new MarkdownEditor();
         this.toolBar = new FormatToolBar(editor);
         toolBar.setNewDocumentHandler(this::newDocument);
@@ -126,14 +144,22 @@ public class EditorWindow extends Stage {
         // Zentrierung/Begrenzung) und skaliert den Editor darin
         this.zoomController = new ZoomController(editor.getControl());
         this.zoomController.setZoom(I18n.zoomPercent());
+        this.viewModeController = new ViewModeController(editor.getControl(), zoomController);
+        statusBar.setViewModeChangeHandler(mode -> {
+            if (mode == StatusBar.ViewMode.PAGES) {
+                viewModeController.showPageView();
+            } else {
+                viewModeController.showFlowView();
+            }
+        });
         // Zeilenumbruch-Modus wiederherstellen (AddFeatures #6)
         this.zoomController.setWrapMode(LineWrapMode.valueOf(I18n.lineWrapModeName()));
 
         // Zurück-/Vorwärts-Navigation (AddFeatures #4): Sprünge aus der
         // Strukturansicht werden gemerkt; Toolbar-Schaltflächen navigieren
         // hin und zurück und folgen dem Stack-Zustand
-        toolBar.setBackHandler(this::navigateBack);
-        toolBar.setForwardHandler(this::navigateForward);
+        toolBar.setBackHandler(() -> navigateBack());
+        toolBar.setForwardHandler(() -> navigateForward());
         toolBar.getBackButton().disableProperty()
                 .bind(navigationHistory.canGoBackProperty().not());
         toolBar.getForwardButton().disableProperty()
@@ -163,13 +189,15 @@ public class EditorWindow extends Stage {
         HBox.setHgrow(zoomController.getViewport(), Priority.ALWAYS);
 
         BorderPane root = new BorderPane();
+        this.editorRoot = root;
         root.getStyleClass().add("rme-editor-root");
         VBox topBar = new VBox(menuBar, toolBar);
+        this.chrome = topBar;
         topBar.setSpacing(4.0);
         root.setTop(topBar);
         root.setCenter(editorRow);
         root.setBottom(statusBar);
-        root.setLeft(this.structureView);
+        root.setLeft(structureView);
 
         updateTitle();
         Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
@@ -182,6 +210,29 @@ public class EditorWindow extends Stage {
             scene.getStylesheets().add(stylesheet);
         }
         setScene(scene);
+        FeatureMenus.install(this, menuBar);
+        Menu modes = new Menu(FeatureUi.text("Bedienoberfläche", "Interface"));
+        modes.setId("menu.commandSurface");
+        javafx.scene.control.ToggleGroup modeGroup = new javafx.scene.control.ToggleGroup();
+        for (UiMode value : UiMode.values()) {
+            javafx.scene.control.RadioMenuItem item = new javafx.scene.control.RadioMenuItem(value == UiMode.CLASSIC
+                    ? FeatureUi.text("Klassisches Menü", "Classic menu") : "Ribbon");
+            item.setId("ui.mode." + value.name().toLowerCase(java.util.Locale.ROOT));
+            item.setToggleGroup(modeGroup); item.setSelected(value == UiMode.CLASSIC);
+            item.setOnAction(event -> commandSurface.setMode(value)); modes.getItems().add(item);
+        }
+        CommandIdentity.menu(menuBar, "menu.view").getItems().add(modes);
+        MenuItem searchCommands = new MenuItem(FeatureUi.text("Befehle und Tastenkürzel …", "Commands and shortcuts …"));
+        searchCommands.setId("commands.search");
+        searchCommands.setAccelerator(javafx.scene.input.KeyCombination.keyCombination("Shortcut+Shift+P"));
+        CommandIdentity.menu(menuBar, "menu.extras").getItems().add(searchCommands);
+        CommandCenter[] centerHolder = new CommandCenter[1];
+        searchCommands.setOnAction(event -> centerHolder[0].show());
+        commandRegistry = new WindowCommandRegistry(this, menuBar);
+        centerHolder[0] = new CommandCenter(this, commandRegistry);
+        commandSurface = new CommandSurfaceController(this, menuBar, commandRegistry);
+        addFeatureDisposer(commandSurface::close); addFeatureDisposer(commandRegistry::close);
+        addEventHandler(javafx.stage.WindowEvent.WINDOW_HIDDEN, event -> disposeFeatures());
         // Druckersystem schon beim ersten Anzeigen vorbereiten
         setOnShowing(event -> warmUpPrintSystem());
     }
@@ -212,6 +263,11 @@ public class EditorWindow extends Stage {
      *
      * @return Formatierungsleiste des Fensters
      */
+    private WindowCommandRegistry commandRegistry;
+    private CommandSurfaceController commandSurface;
+    public WindowCommandRegistry getCommandRegistry() { return commandRegistry; }
+    public CommandSurfaceController getCommandSurface() { return commandSurface; }
+
     public FormatToolBar getToolBar() {
         return toolBar;
     }
@@ -312,7 +368,19 @@ public class EditorWindow extends Stage {
      * @param position Zielposition im Dokument
      */
     public void jumpTo(int position) {
-        navigationHistory.jumpPerformed(editor.getControl().getCaretPosition());
+        navigationHistory.jumpPerformed(editor.getInternalCaretPosition());
+        editor.goToPosition(position);
+    }
+
+    /**
+     * Springt zur angegebenen Position mit Label und Sprungtyp.
+     *
+     * @param position Zielposition im Dokument
+     * @param label optionales Label (z. B. Überschriftentext)
+     * @param type Art des Sprungs
+     */
+    public void jumpTo(int position, String label, NavigationHistory.JumpType type) {
+        navigationHistory.jumpPerformed(editor.getInternalCaretPosition(), label, type);
         editor.goToPosition(position);
     }
 
@@ -322,8 +390,8 @@ public class EditorWindow extends Stage {
      * @return {@code true}, wenn ein Zurück-Sprung ausgeführt wurde
      */
     public boolean navigateBack() {
-        var target = navigationHistory.goBack(editor.getControl().getCaretPosition());
-        target.ifPresent(editor::goToPosition);
+        var target = navigationHistory.goBack(editor.getInternalCaretPosition());
+        target.ifPresent(jt -> editor.goToPosition(jt.position()));
         return target.isPresent();
     }
 
@@ -333,8 +401,8 @@ public class EditorWindow extends Stage {
      * @return {@code true}, wenn ein Vorwärts-Sprung ausgeführt wurde
      */
     public boolean navigateForward() {
-        var target = navigationHistory.goForward(editor.getControl().getCaretPosition());
-        target.ifPresent(editor::goToPosition);
+        var target = navigationHistory.goForward(editor.getInternalCaretPosition());
+        target.ifPresent(jt -> editor.goToPosition(jt.position()));
         return target.isPresent();
     }
 
@@ -346,6 +414,38 @@ public class EditorWindow extends Stage {
      */
     public NavigationHistory getNavigationHistory() {
         return navigationHistory;
+    }
+
+    /**
+     * Liefert den ViewModeController (für Tests).
+     */
+    public ViewModeController getViewModeController() {
+        return viewModeController;
+    }
+
+    /**
+     * Erstellt ein neues Dokument aus einer Vorlage (AddFeatures #17).
+     */
+    public void newFromTemplate() {
+        TemplateDialog dialog = new TemplateDialog(getDialogOwner());
+        dialog.showAndWait().ifPresent(templateContent -> FeatureMenus.newFromMarkdown(this, templateContent));
+    }
+
+    /**
+     * Öffnet den Formatfehler-Prüf-Dialog (Extras → Dokument auf Formatfehler
+     * prüfen). Prüft das aktuelle Dokument und springt per Klick auf ein Issue
+     * an die betreffende Stelle (NavigationHistory zeichnet den Sprung auf).
+     */
+    public void showIssueCheckDialog() {
+        de.richmarkdown.features.checking.CheckingTools.showIssues(editor, getDialogOwner(), sourcePosition -> {
+            int exported = de.richmarkdown.features.checking.IssueNavigation.exportedParagraph(
+                    editor.getMarkdownSource(), sourcePosition,
+                    de.richmarkdown.features.checking.CheckingTools.directory(editor));
+            if (editor.getControl().getSkin() instanceof com.gluonhq.richtextarea.RichTextAreaSkin skin) {
+                int internal = skin.getViewModel().getTextBuffer().getInternalPosition(exported);
+                jumpTo(internal, null, NavigationHistory.JumpType.ISSUE);
+            }
+        });
     }
 
     // ---------- Schreibgeschützter Modus (AddFeatures #5) ----------
@@ -387,6 +487,11 @@ public class EditorWindow extends Stage {
      * Öffnet die über den Dialog gewählte Datei schreibgeschützt.
      */
     public void showOpenDialogReadOnly() {
+        if (workspace != null) {
+            File file = chooseFileToOpen();
+            if (file != null) workspace.openFile(file).setReadOnly(true);
+            return;
+        }
         if (!confirmDiscardChanges()) {
             return;
         }
@@ -403,6 +508,7 @@ public class EditorWindow extends Stage {
      * @param file Markdown-Datei, die geladen werden soll
      */
     public void openFileReadOnly(File file) {
+        if (workspace != null) { workspace.openFile(file).setReadOnly(true); return; }
         if (!confirmDiscardChanges()) {
             return;
         }
@@ -440,7 +546,7 @@ public class EditorWindow extends Stage {
     public void showStatisticsDialog() {
         de.richmarkdown.ui.dialogs.StatisticsDialog dialog =
                 new de.richmarkdown.ui.dialogs.StatisticsDialog(editor::getStatistics);
-        dialog.initOwner(this);
+        dialog.initOwner(getDialogOwner());
         dialog.showAndWait();
     }
 
@@ -489,8 +595,18 @@ public class EditorWindow extends Stage {
                 new de.richmarkdown.findreplace.FindReplaceEngine(control,
                         skin.getViewModel());
         engine.setRevealHandler(editor::revealPosition);
-        de.richmarkdown.findreplace.FindReplaceEngine.SearchResult result =
-                engine.findNext(lastFindText, lastFindOptions.copy());
+        de.richmarkdown.findreplace.FindReplaceEngine.SearchResult result;
+        try {
+            result = engine.findNext(lastFindText, lastFindOptions.copy());
+        } catch (IllegalArgumentException error) {
+            lastError = error.getMessage();
+            showError(lastError);
+            return;
+        } catch (StackOverflowError error) {
+            lastError = de.richmarkdown.ui.FeatureUi.text("Regulärer Ausdruck ist zu komplex.", "Regular expression is too complex.");
+            showError(lastError);
+            return;
+        }
         if (result == null) {
             showError(I18n.text("dialog.findReplace.noMatch"));
             return;
@@ -585,10 +701,56 @@ public class EditorWindow extends Stage {
         this.confirmationHandler = handler;
     }
 
+    /** Owner used by dialogs whether this document is standalone or inside a tab. */
+    public javafx.stage.Window getDialogOwner() { return workspace == null ? this : workspace; }
+
+    void attachWorkspace(WorkspaceWindow host) { this.workspace = host; }
+    void openFileInPlace(File file) { loadFile(file); }
+    public boolean mayCloseDocument() { return confirmDiscardChanges(); }
+    public void addFeatureDisposer(Runnable disposer) { featureDisposers.add(disposer); }
+    public void removeFeatureDisposer(Runnable disposer) { featureDisposers.remove(disposer); }
+    public void disposeFeatures() {
+        for (Runnable disposer : List.copyOf(featureDisposers)) disposer.run();
+        featureDisposers.clear();
+        if (findReplaceDialog != null) findReplaceDialog.close();
+    }
+    public WorkspaceWindow getWorkspace() { return workspace; }
+    public BorderPane getEditorRoot() { return editorRoot; }
+    public VBox getChrome() { return chrome; }
+
+    public double captureScroll() {
+        var bar = editor.getControl().lookup(".scroll-bar:vertical");
+        return bar instanceof javafx.scene.control.ScrollBar scroll ? Math.max(0, scroll.getValue()) : 0;
+    }
+    public void restoreScroll(double value) {
+        var bar = editor.getControl().lookup(".scroll-bar:vertical");
+        if (bar instanceof javafx.scene.control.ScrollBar scroll) scroll.setValue(Math.min(scroll.getMax(), Math.max(scroll.getMin(), value)));
+    }
+    void showExternalChangeNotice(String message) {
+        if (editorRoot == null) return;
+        if (message == null) { editorRoot.setTop(chrome); return; }
+        HBox notice = new HBox(8, new javafx.scene.control.Label(message));
+        notice.getChildren().add(FeatureUi.button(FeatureUi.text("Neu laden", "Reload"),
+                FeatureUi.text("Datei nach Bestätigung neu laden", "Reload the disk file after confirmation"), () -> {
+                    if (confirmDiscardChanges() && getCurrentFile() != null) loadFile(getCurrentFile());
+                }));
+        notice.getChildren().add(FeatureUi.button(FeatureUi.text("Vergleichen", "Compare"),
+                FeatureUi.text("Editorinhalt mit dem aktuellen Dateistand vergleichen", "Compare editor contents with the disk file"), () -> {
+                    File file = getCurrentFile();
+                    if (file != null && file.isFile()) {
+                        new DiffDialog(getDialogOwner(), editor, file, file, editor.getDocumentSnapshot(), isReadOnly(), this::showError).show();
+                    }
+                }));
+        notice.getChildren().add(FeatureUi.button(FeatureUi.text("Ausblenden", "Dismiss"),
+                FeatureUi.text("Hinweis ausblenden; Überschreibschutz bleibt aktiv", "Hide the notice; overwrite protection remains active"), () -> editorRoot.setTop(chrome)));
+        editorRoot.setTop(new VBox(chrome, notice));
+    }
+
     // ---------- Datei-Operationen ----------
 
     /** Erstellt ein leeres Dokument, sofern der Dirty-Check dies zulässt. */
     public void newDocument() {
+        if (workspace != null) { workspace.newDocument(); return; }
         if (!confirmDiscardChanges()) {
             return;
         }
@@ -605,6 +767,7 @@ public class EditorWindow extends Stage {
      * @param file Markdown-Datei, die geladen werden soll
      */
     public void openFile(File file) {
+        if (workspace != null) { workspace.openFile(file); return; }
         if (!confirmDiscardChanges()) {
             return;
         }
@@ -613,6 +776,11 @@ public class EditorWindow extends Stage {
 
     /** Öffnet den Dateiauswahldialog und lädt die ausgewählte Markdown-Datei. */
     public void showOpenDialog() {
+        if (workspace != null) {
+            File selected = chooseFileToOpen();
+            if (selected != null) workspace.openFile(selected);
+            return;
+        }
         if (!confirmDiscardChanges()) {
             return;
         }
@@ -647,8 +815,10 @@ public class EditorWindow extends Stage {
      * @param file Zieldatei
      */
     public void saveToFile(File file) {
+        if (workspace != null && !workspace.confirmExternalOverwrite(this, file)) return;
         try {
             editor.save(file);
+            if (workspace != null) workspace.documentSaved(this);
             lastError = null;
             I18n.addRecentFile(file.getAbsolutePath());
             updateTitle();
@@ -661,8 +831,35 @@ public class EditorWindow extends Stage {
 
     /** Schließt das Fenster, wenn der Dirty-Check das Verwerfen erlaubt. */
     public void exit() {
+        if (workspace != null) { if (workspace.closeWorkspace()) workspace.close(); return; }
         if (confirmDiscardChanges()) {
             close();
+        }
+    }
+
+    /**
+     * Opens the file comparison dialog (File → Compare with another file...).
+     * Compares current editor contents with a second file chosen via file dialog,
+     * compares both and shows the differences in a Track Changes view
+     * (Word/LibreOffice Writer style inline diff).
+     */
+    public void showDiffDialog() {
+        File current = editor.getCurrentFile().orElse(null);
+        if (current == null) {
+            lastError = I18n.text("dialog.diff.noFile");
+            showError(lastError);
+            return;
+        }
+        try {
+            File other = chooseFileToOpen();
+            if (other == null) return;
+            var currentContents = editor.getDocumentSnapshot();
+            lastError = null;
+            new DiffDialog(this, editor, current, other, currentContents, isReadOnly(),
+                    message -> lastError = message).showAndWait();
+        } catch (RuntimeException failure) {
+            lastError = MessageFormat.format(I18n.text("trackChanges.error"), failure.getMessage());
+            showError(lastError);
         }
     }
 
@@ -686,6 +883,32 @@ public class EditorWindow extends Stage {
      * (neue Szene/Stage).
      */
     public void print() {
+        print(de.richmarkdown.features.printing.PrintOptions.load(java.util.prefs.Preferences.userNodeForPackage(EditorWindow.class).node("printing")));
+    }
+
+    public void configurePrint() {
+        var prefs = java.util.prefs.Preferences.userNodeForPackage(EditorWindow.class).node("printing");
+        var selection = editor.getControl().getSelection();
+        var dialog = new de.richmarkdown.features.printing.PrintOptionsDialog(getDialogOwner(),
+                de.richmarkdown.features.printing.PrintOptions.load(prefs), selection != null && selection.isDefined());
+        dialog.showAndWait().ifPresent(options -> { options.save(prefs); print(options); });
+    }
+
+    private void print(de.richmarkdown.features.printing.PrintOptions options) {
+        PrintRequest request;
+        try {
+            editorRoot.applyCss();
+            var snapshot = editor.getDocumentSnapshot();
+            var selection = editor.getControl().getSelection();
+            int start = 0, end = 0;
+            if (selection != null && selection.isDefined() && editor.getControl().getSkin() instanceof com.gluonhq.richtextarea.RichTextAreaSkin skin) {
+                var buffer = skin.getViewModel().getTextBuffer();
+                start = buffer.getText(0, selection.getStart()).length(); end = buffer.getText(0, selection.getEnd()).length();
+            }
+            int caret = Math.max(0, editor.getControl().getCaretPosition());
+            request = new PrintRequest(de.richmarkdown.features.printing.PrintDocuments.prepare(snapshot, options,
+                    caret, start, end), options);
+        } catch (RuntimeException failure) { FeatureUi.error(getDialogOwner(), failure); return; }
         Thread thread = new Thread(() -> {
             List<Printer> printers;
             try {
@@ -729,8 +952,19 @@ public class EditorWindow extends Stage {
                 });
                 return;
             }
-            applyPrintChoice(job, choice);
-            Platform.runLater(() -> printDocument(job));
+            try {
+                applyPrintChoice(job, choice);
+                PageLayout chosenLayout = choice.printer().createPageLayout(choice.paper(), choice.orientation(),
+                        de.richmarkdown.features.printing.PrintOptions.points(options.left()),
+                        de.richmarkdown.features.printing.PrintOptions.points(options.right()),
+                        de.richmarkdown.features.printing.PrintOptions.points(options.top()),
+                        de.richmarkdown.features.printing.PrintOptions.points(options.bottom()));
+                job.getJobSettings().setPageLayout(chosenLayout);
+                printRequests.put(job, request);
+                Platform.runLater(() -> printDocument(job));
+            } catch (RuntimeException failure) {
+                job.cancelJob(); Platform.runLater(() -> FeatureUi.error(getDialogOwner(), failure));
+            }
         }, "rme-print");
         thread.setDaemon(true);
         thread.setUncaughtExceptionHandler((t, e) -> {
@@ -991,15 +1225,20 @@ public class EditorWindow extends Stage {
                 layout.getPrintableWidth(), layout.getPrintableHeight()));
         // Skin ohne sichtbares Fenster aufbauen
         printStage.getScene().getRoot().applyCss();
-        editor.loadPrintCopy(printCopy);
+        PrintRequest request = printRequests.remove(job);
+        var options = request == null ? de.richmarkdown.features.printing.PrintOptions.defaults() : request.options();
+        if (request == null) editor.loadPrintCopy(printCopy);
+        else if (printCopy.getSkin() instanceof com.gluonhq.richtextarea.RichTextAreaSkin skin) {
+            new com.gluonhq.richtextarea.viewmodel.ActionCmdFactory().open(request.document()).apply(skin.getViewModel());
+        }
         // Die Bibliothek übernimmt das Dokument asynchron (ein Puls) – Messung
         // und Paginierung folgen danach
         Platform.runLater(() -> Platform.runLater(
-                () -> printLoadedCopy(printCopy, job, layout, printStage)));
+                () -> printLoadedCopy(printCopy, job, layout, printStage, options)));
     }
 
     private void printLoadedCopy(RichTextArea printCopy, PrinterJob job,
-                                 PageLayout layout, Stage printStage) {
+                                 PageLayout layout, Stage printStage, de.richmarkdown.features.printing.PrintOptions options) {
         try {
             printCopy.resize(layout.getPrintableWidth(), layout.getPrintableHeight());
             double contentHeight = PrintSupport.measureContentHeight(printCopy);
@@ -1008,14 +1247,20 @@ public class EditorWindow extends Stage {
             printCopy.applyCss();
             printCopy.requestLayout();
             printCopy.layout();
-            int pages = PrintSupport.pageCount(contentHeight, layout.getPrintableHeight());
-            for (int page = 0; page < pages; page++) {
-                printCopy.setTranslateY(PrintSupport.sliceOffset(page, layout.getPrintableHeight()));
-                if (!job.printPage(printCopy)) {
-                    break;
-                }
+            double bodyHeight = PrintPageView.bodyHeight(layout.getPrintableHeight(), options);
+            int pages = PrintSupport.pageCount(contentHeight, bodyHeight);
+            var selectedPages = options.pages(pages);
+            ((Pane) printCopy.getParent()).getChildren().remove(printCopy);
+            PrintPageView pageView = new PrintPageView(printCopy, layout.getPrintableWidth(), layout.getPrintableHeight(), options);
+            printStage.getScene().setRoot(pageView); pageView.applyCss(); pageView.layout();
+            boolean successful = true;
+            for (int page : selectedPages) {
+                pageView.showPage(page, pages);
+                if (!job.printPage(pageView)) { successful = false; break; }
             }
-            job.endJob();
+            if (successful) job.endJob(); else job.cancelJob();
+        } catch (RuntimeException failure) {
+            job.cancelJob(); FeatureUi.error(getDialogOwner(), failure);
         } finally {
             printStage.close();
         }
@@ -1026,6 +1271,7 @@ public class EditorWindow extends Stage {
     private void loadFile(File file) {
         try {
             editor.open(file);
+            if (workspace != null) workspace.documentSaved(this);
             lastError = null;
             // Normales Öffnen hebt einen allfälligen Schreibschutz auf
             // (setReadOnly(true) folgt beim schreibgeschützten Öffnen danach)
@@ -1068,9 +1314,15 @@ public class EditorWindow extends Stage {
      */
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.initOwner(getDialogOwner());
         alert.setTitle(I18n.text("error.title"));
         alert.setHeaderText(null);
         alert.setContentText(message);
+        alert.getDialogPane().getButtonTypes().forEach(type -> {
+            if (alert.getDialogPane().lookupButton(type) instanceof javafx.scene.control.Button button) {
+                button.setTooltip(new javafx.scene.control.Tooltip(type.getText()));
+            }
+        });
         alert.show();
     }
 
@@ -1090,7 +1342,7 @@ public class EditorWindow extends Stage {
         chooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter(I18n.text("file.filter"),
                         "*.md", "*.markdown", "*.txt"));
-        return chooser.showOpenDialog(this);
+        return chooser.showOpenDialog(getDialogOwner());
     }
 
     /**
@@ -1103,6 +1355,6 @@ public class EditorWindow extends Stage {
         chooser.setTitle(I18n.text("file.save.title"));
         chooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter(I18n.text("file.filter"), "*.md"));
-        return chooser.showSaveDialog(this);
+        return chooser.showSaveDialog(getDialogOwner());
     }
 }

@@ -20,6 +20,13 @@ test.md
 /work_on_problems.md
 /IMPLEMENTATION_PLAN.md
 
+# Generated command inventories and internal audit/planning notes
+/editor/COMMAND_INVENTORY.md
+/editor/COMMAND_INVENTORY.tsv
+/editor/FEATURE_AUDIT.md
+/editor/FEATURE_AUDIT_REMAINING.md
+/editor/RIBBON_IMPLEMENTATION_PLAN.md
+
 # IDE/tool-local configuration
 /.kilo/
 /.kilo-free-router/

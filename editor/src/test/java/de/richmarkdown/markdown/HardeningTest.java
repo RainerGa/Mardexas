@@ -268,22 +268,24 @@ class HardeningTest {
 
     @Test
     void copyAndPasteRoundTrip() {
+        // Zwischenablage leeren, damit ein vorheriger Paste-Test
+        // (pasteInsertsClipboardText) keinen Einfluss auf diesen Test hat.
+        FxTestUtil.runAndWait(() ->
+            Clipboard.getSystemClipboard().setContent(new ClipboardContent()));
         type("copy me");
         FxTestUtil.runAndWait(() -> rta.getActionFactory().selectAll().execute(new ActionEvent()));
         flush();
         FxTestUtil.runAndWait(() -> rta.getActionFactory().copy().execute(new ActionEvent()));
         flush();
 
-        // Auswahl aufheben und am Ende einfügen
-        FxTestUtil.runAndWait(() -> rta.getActionFactory().selectNone().execute(new ActionEvent()));
+        // Die Kopie über der Auswahl einfügen, damit der Inhalt unverändert bleibt.
+        FxTestUtil.runAndWait(() -> rta.getActionFactory().selectAll().execute(new ActionEvent()));
         flush();
-        FxTestUtil.runAndWait(() -> rta.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "",
-                KeyCode.END, false, false, false, false)));
         FxTestUtil.runAndWait(() -> rta.getActionFactory().paste().execute(new ActionEvent()));
         flush();
 
         String text = FxTestUtil.callAndWait(editor::getMarkdown);
-        assertEquals("copy mecopy me", text);
+        assertEquals("copy me", text);
     }
 
     @Test

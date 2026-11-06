@@ -19,7 +19,7 @@ modules:
     buildsystem: simple
     build-commands:
       - install -d /app/opt/mardexas
-      - cp -a bin lib /app/opt/mardexas/
+      - cp -a app/. /app/opt/mardexas/
       - install -Dm755 flatpak/mardexas /app/bin/mardexas
       - install -Dm644 flatpak/io.github.rainerga.Mardexas.desktop /app/share/applications/io.github.rainerga.Mardexas.desktop
       - install -Dm644 flatpak/io.github.rainerga.Mardexas.svg /app/share/icons/hicolor/scalable/apps/io.github.rainerga.Mardexas.svg

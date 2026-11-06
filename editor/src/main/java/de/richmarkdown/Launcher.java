@@ -17,10 +17,9 @@
 
 package de.richmarkdown;
 
-import javafx.application.Application;
 
 /**
- * Startklasse für das ausführbare FAT-JAR ({@code Mardexas-*-fat.jar}).
+ * Startklasse für Maven, Anwendungspakete und das ausführbare FAT-JAR ({@code Mardexas-*-fat.jar}).
  *
  * <p>Die eigentliche Anwendung ({@link RichMarkDownEditorApp}) erweitert
  * {@code javafx.application.Application}. Stünde deren {@code main}-Methode
@@ -47,6 +46,6 @@ public final class Launcher {
      * @param args Startargumente, werden an die Anwendung weitergereicht
      */
     public static void main(String[] args) {
-        Application.launch(RichMarkDownEditorApp.class, args);
+        RichMarkDownEditorApp.main(args);
     }
 }

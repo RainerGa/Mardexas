@@ -18,6 +18,7 @@
 package de.richmarkdown.markdown;
 
 import java.util.List;
+import javafx.scene.text.TextAlignment;
 
 /**
  * Tabelle im GitHub-Flavored-Markdown-Format (GFM) mit formatierten Zellinhalten.
@@ -33,6 +34,7 @@ public class TableBlock extends Block {
     private final int rows;
     private final int columns;
     private final List<List<Inline>> cells;
+    private final List<TextAlignment> columnAlignments;
 
     /**
      * Erstellt eine Tabelle aus einer zeilenweise abgelegten Zellfolge.
@@ -44,13 +46,33 @@ public class TableBlock extends Block {
      *                                  {@code rows * columns} entspricht
      */
     public TableBlock(int rows, int columns, List<List<Inline>> cells) {
-        if (cells.size() != rows * columns) {
-            throw new IllegalArgumentException(
-                    "Expected " + (rows * columns) + " cells but got " + cells.size());
-        }
+        this(rows, columns, cells, java.util.Collections.nCopies(columns, TextAlignment.LEFT));
+    }
+
+    public TableBlock(int rows, int columns, List<List<Inline>> cells, List<TextAlignment> columnAlignments) {
+        validateCellCount(rows, columns, cells);
+        if (columnAlignments.size() != columns) throw new IllegalArgumentException("Column alignment count differs from column count");
         this.rows = rows;
         this.columns = columns;
-        this.cells = List.copyOf(cells);
+        this.cells = List.copyOf(cells.stream().map(List::copyOf).toList());
+        this.columnAlignments = List.copyOf(columnAlignments);
+    }
+
+    public TextAlignment getColumnAlignment(int column) { return columnAlignments.get(column); }
+
+    /**
+     * Validiert die Zellanzahl.
+     *
+     * @param rows Anzahl der Zeilen
+     * @param columns Anzahl der Spalten
+     * @param cells Zellliste
+     * @throws IllegalArgumentException wenn die Zellanzahl nicht passt
+     */
+    private static void validateCellCount(int rows, int columns, List<List<Inline>> cells) {
+        if (cells == null || cells.size() != rows * columns) {
+            throw new IllegalArgumentException(
+                    "Expected " + (rows * columns) + " cells but got " + (cells != null ? cells.size() : 0));
+        }
     }
 
     /**
@@ -105,6 +127,6 @@ public class TableBlock extends Block {
      * @return Zellinhalte mit exakt {@code getRows() * getColumns()} Elementen
      */
     public List<List<Inline>> getCells() {
-        return cells;
+        return List.copyOf(cells);
     }
 }

@@ -26,6 +26,9 @@ import javafx.scene.text.FontWeight;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.nio.file.Path;
+import java.net.URI;
+import java.nio.file.Paths;
 
 /**
  * Serialisiert ein Rich-Text-Document oder {@link MarkdownModel} in kanonischen
@@ -64,7 +67,46 @@ public class MarkdownWriter {
      * @return serialisierter Markdown-Text
      */
     public String write(Document document) {
-        return write(toModel(document));
+        return write(document, null);
+    }
+
+    /**
+     * Schreibt ein Document und wandelt Bilddateien innerhalb des
+     * Quelldateiverzeichnisses wieder in relative Pfade um.
+     *
+     * @param document Quelldokument
+     * @param imageBaseDirectory Verzeichnis, relativ zu dem lokale Bilder
+     *                           serialisiert werden
+     * @return serialisierter Markdown-Text
+     */
+    public String write(Document document, Path imageBaseDirectory) {
+        MarkdownModel model = toModel(document);
+        if (imageBaseDirectory == null) {
+            return write(model);
+        }
+        Path baseDirectory = imageBaseDirectory.toAbsolutePath().normalize();
+        List<Block> blocks = new ArrayList<>();
+        for (Block block : model.getBlocks()) {
+            if (block instanceof ImageBlock image) {
+                blocks.add(new ImageBlock(relativeImageUrl(image, baseDirectory),
+                        image.getWidth(), image.getHeight(), image.getLink()));
+            } else {
+                blocks.add(block);
+            }
+        }
+        return write(MarkdownModel.of(blocks));
+    }
+
+    private String relativeImageUrl(ImageBlock image, Path baseDirectory) {
+        URI uri = URI.create(image.getUrl());
+        if (!"file".equalsIgnoreCase(uri.getScheme())) {
+            return image.getUrl();
+        }
+        Path imagePath = Paths.get(uri).toAbsolutePath().normalize();
+        if (!imagePath.startsWith(baseDirectory)) {
+            return image.getUrl();
+        }
+        return baseDirectory.relativize(imagePath).toString().replace('\\', '/');
     }
 
     /**
@@ -142,16 +184,9 @@ public class MarkdownWriter {
 
             Block block = classify(paragraphText, pd, decoration, document, start, end);
             if (block != null) {
-                if (block instanceof CodeBlockBlock codeBlock
-                        && !blocks.isEmpty()
-                        && blocks.get(blocks.size() - 1) instanceof CodeBlockBlock previous) {
-                    // Zusammenhängende Code-Block-Absätze zu einem Block verschmelzen
-                    List<String> merged = new ArrayList<>(previous.getLines());
-                    merged.addAll(codeBlock.getLines());
-                    blocks.set(blocks.size() - 1, new CodeBlockBlock(merged));
-                } else {
-                    blocks.add(block);
-                }
+                Block merged = blocks.isEmpty() ? null : mergeCodeBlocks(blocks.get(blocks.size() - 1), block);
+                if (merged != null) blocks.set(blocks.size() - 1, merged);
+                else blocks.add(block);
             }
         }
 
@@ -160,12 +195,29 @@ public class MarkdownWriter {
         return MarkdownModel.of(blocks);
     }
 
+    private Block mergeCodeBlocks(Block previous, Block current) {
+        if (previous instanceof CodeBlockBlock a && current instanceof CodeBlockBlock b
+                && a.getLanguage().equals(b.getLanguage())) {
+            var lines = new ArrayList<>(a.getLines()); lines.addAll(b.getLines());
+            return new CodeBlockBlock(a.getLanguage(), lines);
+        }
+        if (previous instanceof QuoteBlock a && current instanceof QuoteBlock b
+                && a.getChildren().size() == 1 && b.getChildren().size() == 1) {
+            Block merged = mergeCodeBlocks(a.getChildren().get(0), b.getChildren().get(0));
+            if (merged != null) return new QuoteBlock(List.of(merged));
+        }
+        return null;
+    }
+
     private Block classify(String paragraphText, ParagraphDecoration pd,
                            com.gluonhq.richtextarea.model.Decoration decoration,
                            Document document, int start, int end) {
         // Bild: ImageDecoration (kein TextDecoration!)
         if (decoration instanceof com.gluonhq.richtextarea.model.ImageDecoration imageDecoration) {
-            return new ImageBlock(imageDecoration.getUrl());
+            Block image = new ImageBlock(imageDecoration.getUrl(), imageDecoration.getWidth(),
+                    imageDecoration.getHeight(), imageDecoration.getLink());
+            return pd != null && pd.getIndentationLevel() > 0
+                    ? nestedQuote(pd.getIndentationLevel(), image) : image;
         }
         TextDecoration td = decoration instanceof TextDecoration textDecoration ? textDecoration : null;
 
@@ -198,7 +250,8 @@ public class MarkdownWriter {
             for (String line : paragraphText.split("\n", -1)) {
                 lines.add(stripZeroWidth(line));
             }
-            return new CodeBlockBlock(lines);
+            Block code = new CodeBlockBlock(td.getCodeLanguage(), lines);
+            return pd != null && pd.getIndentationLevel() > 0 ? nestedQuote(pd.getIndentationLevel(), code) : code;
         }
 
         // Liste
@@ -258,7 +311,9 @@ public class MarkdownWriter {
             cells.add(inlineRuns(document, pos, cellEnd));
             pos = cellEnd + 1;
         }
-        return new TableBlock(rows, columns, cells);
+        List<javafx.scene.text.TextAlignment> alignments = new ArrayList<>();
+        for (int c = 0; c < columns; c++) alignments.add(tableDecoration.getCellAlignment()[0][c]);
+        return new TableBlock(rows, columns, cells, alignments);
     }
 
     private Block nestedQuote(int depth, Block child) {
@@ -334,11 +389,13 @@ public class MarkdownWriter {
         if (decoration instanceof TextDecoration td) {
             builder.bold(td.getFontWeight() == FontWeight.BOLD)
                     .italic(td.getFontPosture() == javafx.scene.text.FontPosture.ITALIC)
-                    .underline(Boolean.TRUE.equals(td.isUnderline()))
+                    .underline(td.getURL() == null && Boolean.TRUE.equals(td.isUnderline()))
                     .strikethrough(Boolean.TRUE.equals(td.isStrikethrough()))
                     .code(MarkdownStyles.MONOSPACED.equals(td.getFontFamily())
                             && !MarkdownStyles.isCodeBlockBackground(td.getBackground()));
-            if (td.getURL() != null && !td.getURL().isEmpty()) {
+            if (ImagePlaceholder.fromMarker(td.getBackground()).isPresent()) {
+                builder.url(td.getBackground());
+            } else if (td.getURL() != null && !td.getURL().isEmpty()) {
                 builder.url(td.getURL());
             }
         }
@@ -440,20 +497,63 @@ public class MarkdownWriter {
         } else if (block instanceof QuoteBlock quote) {
             renderQuote(quote, sb, 1);
         } else if (block instanceof CodeBlockBlock codeBlock) {
-            sb.append("```").append(codeBlock.getLanguage());
+            String fence = codeFence(codeBlock);
+            sb.append(fence).append(codeBlock.getLanguage());
             for (String line : codeBlock.getLines()) {
                 sb.append('\n').append(line);
             }
-            sb.append('\n').append("```");
+            sb.append('\n').append(fence);
         } else if (block instanceof HorizontalRuleBlock) {
             sb.append("---");
         } else if (block instanceof TableBlock table) {
             renderTable(table, sb);
         } else if (block instanceof ImageBlock image) {
-            sb.append("![](").append(image.getUrl()).append(")");
+            renderImage(image, sb);
         } else {
             throw new IllegalArgumentException("Unsupported block: " + block.getClass());
         }
+    }
+
+    /** Choose a fence longer than any matching delimiter inside the code. */
+    private static String codeFence(CodeBlockBlock block) {
+        char marker = block.getLanguage().indexOf('`') >= 0 ? '~' : '`';
+        int longest = 2;
+        for (String line : block.getLines()) {
+            int run = 0;
+            for (int i = 0; i < line.length(); i++) {
+                if (line.charAt(i) == marker) longest = Math.max(longest, ++run);
+                else run = 0;
+            }
+        }
+        return String.valueOf(marker).repeat(longest + 1);
+    }
+
+    private void renderImage(ImageBlock image, StringBuilder sb) {
+        if (image.getLink() == null && image.getWidth() < 0 && image.getHeight() < 0) {
+            sb.append("![](").append(image.getUrl()).append(")");
+            return;
+        }
+        if (image.getLink() != null) {
+            sb.append("<a href=\"").append(escapeHtmlAttribute(image.getLink())).append("\">");
+        }
+        sb.append("<img src=\"").append(escapeHtmlAttribute(image.getUrl())).append('"');
+        if (image.getWidth() >= 0) {
+            sb.append(" width=\"").append(image.getWidth()).append("px\"");
+        }
+        if (image.getHeight() >= 0) {
+            sb.append(" height=\"").append(image.getHeight()).append("px\"");
+        }
+        sb.append('>');
+        if (image.getLink() != null) {
+            sb.append("</a>");
+        }
+    }
+
+    private String escapeHtmlAttribute(String value) {
+        return value.replace("&", "&amp;")
+                .replace("\"", "&quot;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
     }
 
     /** Rendert eine GFM-Tabelle: Kopfzeile, Trennzeile, Datenzeilen. */
@@ -476,7 +576,11 @@ public class MarkdownWriter {
                     if (column > 0) {
                         sb.append(" | ");
                     }
-                    sb.append("---");
+                    sb.append(switch (table.getColumnAlignment(column)) {
+                        case CENTER -> ":---:";
+                        case RIGHT -> "---:";
+                        default -> "---";
+                    });
                 }
                 sb.append(" |");
             }
@@ -544,7 +648,7 @@ public class MarkdownWriter {
         boolean first = true;
 
         for (Inline inline : inlines) {
-            String text = escape(inline.getText(), lineStart && first);
+            String text = inline.isCode() ? inline.getText() : escape(inline.getText(), lineStart && first);
             if (text.isEmpty()) {
                 continue;
             }
@@ -552,26 +656,59 @@ public class MarkdownWriter {
 
             if (inline.isCode()) {
                 // Code-Span: Marker bleiben geöffnet (**a `code` b** ist valide)
-                sb.append('`').append(text).append('`');
+                int longest = 0, run = 0;
+                for (int i = 0; i < text.length(); i++) {
+                    if (text.charAt(i) == '`') longest = Math.max(longest, ++run);
+                    else run = 0;
+                }
+                String delimiter = "`".repeat(longest + 1);
+                boolean pad = text.startsWith("`") || text.endsWith("`")
+                        || text.startsWith(" ") && text.endsWith(" ") && !text.isBlank();
+                sb.append(delimiter);
+                if (pad) sb.append(' ');
+                sb.append(text);
+                if (pad) sb.append(' ');
+                sb.append(delimiter);
                 continue;
             }
 
-            if (inline.getUrl() != null) {
-                // Link: Marker-Zustand sichern, Linkinhalt rendern, innerhalb
-                // des Links geöffnete Marker schließen, äußeren Zustand wiederherstellen
-                MarkerState saved = state.copy();
-                sb.append('[');
+            ImagePlaceholder placeholder = ImagePlaceholder.fromMarker(inline.getUrl()).orElse(null);
+            if (placeholder != null && placeholder.displayText().equals(inline.getText())) {
+                state.closeAll(sb);
+                renderImage(new ImageBlock(placeholder.url(), placeholder.width(),
+                        placeholder.height(), placeholder.link()), sb);
+                continue;
+            }
+            if (inline.getUrl() != null && placeholder == null) {
+                renderLink(inline, text, sb, state);
+            } else if (placeholder != null) {
+                Inline plainText = Inline.builder(inline.getText())
+                        .bold(inline.isBold())
+                        .italic(inline.isItalic())
+                        .underline(inline.isUnderline())
+                        .strikethrough(inline.isStrikethrough())
+                        .code(inline.isCode())
+                        .build();
+                state.adjust(sb, plainText, text);
+            } else {
                 state.adjust(sb, inline, text);
-                state.closeTo(sb, saved);
-                sb.append("](").append(inline.getUrl()).append(")");
-                state.restore(saved);
-                continue;
             }
-
-            state.adjust(sb, inline, text);
         }
 
         state.closeAll(sb);
+    }
+
+    private void renderLink(Inline inline, String text, StringBuilder sb, MarkerState state) {
+        if (inline.getText().equals(inline.getUrl())) {
+            sb.append('<').append(inline.getUrl()).append('>');
+            return;
+        }
+        MarkerState saved = state.copy();
+        sb.append('[');
+        state.adjust(sb, inline, text);
+        state.closeTo(sb, saved);
+        sb.append("](").append(inline.getUrl()).append(")");
+        state.restore(saved);
     }
 
     /** Zustand der offenen Betonungs-Marker. */
@@ -679,17 +816,25 @@ public class MarkdownWriter {
 
     // ---------- Escaping ----------
 
-    /**
-     * Escaping nur am Zeilenanfang: Dort würden Marker die Blockstruktur
-     * ändern (Überschrift, Zitat, Liste). Inline-Zeichen werden nicht
-     * maskiert – ungematchte Marker round-trippen identisch, gematchte
-     * werden als Formatierung korrekt wiederholt.
-     */
+    /** Literal text must not acquire Markdown formatting after save/reload. */
     private String escape(String text, boolean lineStart) {
-        if (lineStart && !text.isEmpty()) {
-            return escapeLineStart(text);
+        StringBuilder escaped = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); i++) {
+            char value = text.charAt(i);
+            boolean isolatedMarker = "*_~".indexOf(value) >= 0 && i > 0 && i + 1 < text.length()
+                    && Character.isWhitespace(text.charAt(i - 1)) && Character.isWhitespace(text.charAt(i + 1));
+            // Literal URLs must not acquire GFM autolink decoration on reload.
+            // Escaping the colon is standard Markdown and keeps the displayed text identical.
+            int protocolStart = i >= 5 && text.regionMatches(i - 5, "https", 0, 5) ? i - 5
+                    : i >= 4 && text.regionMatches(i - 4, "http", 0, 4) ? i - 4 : -1;
+            boolean literalUrlColon = value == ':' && i + 2 < text.length()
+                    && text.charAt(i + 1) == '/' && text.charAt(i + 2) == '/' && protocolStart >= 0
+                    && (protocolStart == 0 || !Character.isLetterOrDigit(text.charAt(protocolStart - 1)));
+            if ("\\`*_[]~!<".indexOf(value) >= 0 && !isolatedMarker || literalUrlColon) escaped.append('\\');
+            escaped.append(value);
         }
-        return text;
+        String result = escaped.toString();
+        return lineStart && !result.isEmpty() ? escapeLineStart(result) : result;
     }
 
     private String escapeLineStart(String text) {

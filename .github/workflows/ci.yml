@@ -33,3 +33,13 @@ jobs:
 
       - name: Tests ausführen
         run: mvn clean test
+
+      - name: Release checks testen
+        run: python3 -B -m unittest discover -s packaging -p test_release_checks.py
+
+      - name: Icon-Herkunft und Lizenzprüfung testen
+        run: |
+          python3 -B -m unittest discover -s packaging -p test_audit_icons.py
+          python3 packaging/audit-icons.py
+          python3 -B -m unittest discover -s packaging -p test_audit_emoji.py
+          python3 packaging/audit-emoji.py

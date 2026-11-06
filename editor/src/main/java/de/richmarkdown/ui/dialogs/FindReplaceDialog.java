@@ -38,6 +38,12 @@ import javafx.stage.Window;
 
 import java.text.MessageFormat;
 import java.util.List;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.TextInputDialog;
+import javafx.util.StringConverter;
+import de.richmarkdown.io.SearchPresetStore;
+import de.richmarkdown.ui.FeatureUi;
+import static de.richmarkdown.ui.FeatureUi.text;
 
 /**
  * Suchen-und-Ersetzen-Dialog nach LibreOffice Writer.
@@ -61,6 +67,9 @@ public class FindReplaceDialog extends Stage {
     final Button findPreviousButton = new Button();
     final Button replaceButton = new Button();
     final Button replaceAllButton = new Button();
+    final ComboBox<FindReplaceEngine.FormatFilter> formatBox = new ComboBox<>();
+    final ComboBox<SearchPresetStore.Preset> presetBox = new ComboBox<>();
+    private final SearchPresetStore presets = new SearchPresetStore(FeatureUi.profileDirectory());
     private Window ownerWindow;
     public FindReplaceDialog(Window owner, FindReplaceEngine engine, java.util.function.Function<Boolean, Boolean> wrapConfirmed) {
         this.ownerWindow = owner;
@@ -107,25 +116,77 @@ public class FindReplaceDialog extends Stage {
         fields.add(replaceBox, 1, 1);
         GridPane.setHgrow(findBox, Priority.ALWAYS);
         GridPane.setHgrow(replaceBox, Priority.ALWAYS);
-        VBox opts = new VBox(4, matchCaseBox, wholeWordsBox, regexBox, wildcardsBox, backwardsBox, selectionOnlyBox, strikethroughOnlyBox);
+        formatBox.getItems().setAll(FindReplaceEngine.FormatFilter.values());
+        formatBox.setValue(FindReplaceEngine.FormatFilter.ANY);
+        formatBox.setId("search-format-filter");
+        formatBox.setConverter(new StringConverter<>() {
+            @Override public String toString(FindReplaceEngine.FormatFilter value) {
+                if (value == null) return "";
+                return switch (value) {
+                    case ANY -> text("Alle Formatierungen", "Any formatting");
+                    case BOLD -> text("Fett", "Bold"); case ITALIC -> text("Kursiv", "Italic");
+                    case UNDERLINE -> text("Unterstrichen", "Underline");
+                    case STRIKETHROUGH -> text("Durchgestrichen", "Strikethrough");
+                    case LINK -> text("Links", "Links"); case HEADING -> text("Überschriften", "Headings");
+                    case CODE -> text("Code", "Code");
+                };
+            }
+            @Override public FindReplaceEngine.FormatFilter fromString(String value) { return FindReplaceEngine.FormatFilter.valueOf(value); }
+        });
+        formatBox.setTooltip(new Tooltip(text("Treffer müssen vollständig diese Auszeichnung besitzen", "Matches must fully have this formatting")));
+        VBox opts = new VBox(4, matchCaseBox, wholeWordsBox, regexBox, wildcardsBox, backwardsBox, selectionOnlyBox, strikethroughOnlyBox,
+                new HBox(8, new Label(text("Formatfilter", "Format filter")), formatBox));
         TitledPane pane = new TitledPane(I18n.text("dialog.findReplace.options"), opts);
         pane.setExpanded(false);
         pane.setCollapsible(true);
         HBox buttons = new HBox(8, findAllButton, findNextButton, findPreviousButton, replaceButton, replaceAllButton);
         statusLabel.setWrapText(true);
         statusLabel.setMaxWidth(Double.MAX_VALUE);
-        VBox root = new VBox(10, fields, pane, buttons, statusLabel);
+        Button results = FeatureUi.button(text("Trefferliste", "Results"), text("Alle Treffer anzeigen und zu Textstellen springen", "List matches and jump to their positions"), () -> runSearchAction(() -> showResults(false)));
+        results.setId("search-results");
+        Button preview = FeatureUi.button(text("Ersetzungen prüfen…", "Preview replacements…"), text("Vorschau anzeigen und nur ausgewählte Treffer ersetzen", "Preview and replace selected matches only"), () -> runSearchAction(() -> showResults(true)));
+        preview.setId("search-replacement-preview");
+        Button load = FeatureUi.button(text("Laden", "Load"), text("Gespeicherte Suchen auflisten und ausgewählte Suche laden", "List saved searches and load the selected search"), () -> {
+            try {
+                if (presetBox.getValue() != null) applyPreset(presetBox.getValue());
+                presetBox.getItems().setAll(presets.list());
+                presetBox.show();
+            } catch (Exception error) { statusLabel.setText(error.getMessage()); }
+        });
+        presetBox.setPromptText(text("Gespeicherte Suchen", "Saved searches"));
+        presetBox.setOnAction(event -> { if (presetBox.getValue() != null) applyPreset(presetBox.getValue()); });
+        Button save = FeatureUi.button(text("Speichern…", "Save…"), text("Suchbegriff, Ersatz und Optionen im Benutzerprofil speichern", "Save query, replacement and options in the user profile"), () -> {
+            TextInputDialog name = new TextInputDialog(findText());
+            name.initOwner(this); name.setHeaderText(text("Name der gespeicherten Suche", "Saved search name"));
+            name.showAndWait().ifPresent(value -> {
+                try { savePreset(value); } catch (Exception error) { statusLabel.setText(error.getMessage()); }
+            });
+        });
+        Button delete = FeatureUi.button(text("Löschen", "Delete"), text("Ausgewählte gespeicherte Suche löschen", "Delete the selected saved search"), () -> {
+            if (presetBox.getValue() == null) return;
+            try { presets.delete(presetBox.getValue().id()); presetBox.getItems().setAll(presets.list()); }
+            catch (Exception error) { statusLabel.setText(error.getMessage()); }
+        });
+        for (Button button : List.of(findAllButton, findNextButton, findPreviousButton, replaceButton, replaceAllButton))
+            button.setTooltip(new Tooltip(button.getText()));
+        VBox root = new VBox(10, fields, pane, buttons, new HBox(8, results, preview),
+                new HBox(8, presetBox, load, save, delete), statusLabel);
         root.setPadding(new Insets(12));
         root.getStyleClass().add("rme-find-replace");
-        Scene scene = new Scene(root, 520, 360);
+        Scene scene = new Scene(root, 760, 470);
         var css = getClass().getResource("/de/richmarkdown/ui/app.css");
         if (css != null) scene.getStylesheets().add(css.toExternalForm());
         setScene(scene);
-        findAllButton.setOnAction(e -> findAll());
-        findNextButton.setOnAction(e -> findNext());
-        findPreviousButton.setOnAction(e -> findPrevious());
-        replaceButton.setOnAction(e -> replace());
-        replaceAllButton.setOnAction(e -> replaceAll());
+        findAllButton.setOnAction(e -> runSearchAction(this::findAll));
+        findNextButton.setOnAction(e -> runSearchAction(this::findNext));
+        findPreviousButton.setOnAction(e -> runSearchAction(this::findPrevious));
+        replaceButton.setOnAction(e -> runSearchAction(this::replace));
+        replaceAllButton.setOnAction(e -> runSearchAction(this::replaceAll));
+    }
+    private void runSearchAction(Runnable action) {
+        try { action.run(); }
+        catch (RuntimeException error) { statusLabel.setText(error.getMessage()); }
+        catch (StackOverflowError error) { statusLabel.setText(text("Regulärer Ausdruck ist zu komplex.", "Regular expression is too complex.")); }
     }
     FindReplaceEngine.FindOptions buildOptions() {
         FindReplaceEngine.FindOptions o = new FindReplaceEngine.FindOptions();
@@ -136,6 +197,7 @@ public class FindReplaceDialog extends Stage {
         o.setBackwards(backwardsBox.isSelected());
         o.setSelectionOnly(selectionOnlyBox.isSelected());
         o.setStrikethroughOnly(strikethroughOnlyBox.isSelected());
+        o.setFormatFilter(formatBox.getValue());
         return o;
     }
     String findText() {
@@ -241,6 +303,38 @@ public class FindReplaceDialog extends Stage {
         } else {
             statusLabel.setText(MessageFormat.format(I18n.text("dialog.findReplace.replacedCount"), replaced));
         }
+    }
+    void applyPreset(SearchPresetStore.Preset preset) {
+        findBox.getEditor().setText(preset.query()); replaceBox.getEditor().setText(preset.replacement());
+        var o = preset.options();
+        matchCaseBox.setSelected(o.isMatchCase()); wholeWordsBox.setSelected(o.isWholeWords());
+        regexBox.setSelected(o.isRegex()); wildcardsBox.setSelected(o.isWildcards());
+        backwardsBox.setSelected(o.isBackwards()); selectionOnlyBox.setSelected(o.isSelectionOnly());
+        strikethroughOnlyBox.setSelected(o.isStrikethroughOnly()); formatBox.setValue(o.getFormatFilter());
+    }
+    void savePreset(String name) throws java.io.IOException {
+        if (findText().isEmpty()) throw new IllegalArgumentException(text("Suchbegriff fehlt", "Search query is empty"));
+        presets.save(name, findText(), replaceText(), buildOptions());
+        presetBox.getItems().setAll(presets.list());
+    }
+    private void showResults(boolean replacements) {
+        if (findText().isEmpty()) return;
+        var options = buildOptions();
+        if (engine.compilePattern(findText(), options) == null) {
+            statusLabel.setText(I18n.text("dialog.findReplace.invalidRegex")); return;
+        }
+        try {
+            String original = engine.getText();
+            var rows = engine.previewReplacements(findText(), replacements ? replaceText() : "", options);
+            if (rows.isEmpty()) { statusLabel.setText(I18n.text("dialog.findReplace.noMatch")); return; }
+            var dialog = new SearchResultsDialog(this, rows, replacements, match -> engine.selectMatch(match, false));
+            dialog.showAndWait().ifPresent(selected -> {
+                try {
+                    int count = engine.applyPreview(original, selected);
+                    statusLabel.setText(MessageFormat.format(I18n.text("dialog.findReplace.replacedCount"), count));
+                } catch (Exception error) { statusLabel.setText(error.getMessage()); }
+            });
+        } catch (Exception error) { statusLabel.setText(error.getMessage()); }
     }
     private void rememberCriteria(String search, FindReplaceEngine.FindOptions o) {
         if (ownerWindow instanceof de.richmarkdown.ui.EditorWindow w) w.rememberFindCriteria(search, o);

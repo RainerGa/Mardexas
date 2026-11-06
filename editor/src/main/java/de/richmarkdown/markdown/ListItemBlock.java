@@ -55,16 +55,36 @@ public class ListItemBlock extends Block {
      * @throws IllegalArgumentException wenn {@code level} kleiner als 1 oder {@code startNumber} kleiner als 1 ist
      */
     public ListItemBlock(int level, boolean numbered, int startNumber, List<Inline> inlines) {
-        if (level < 1) {
-            throw new IllegalArgumentException("Invalid list level: " + level);
-        }
-        if (startNumber < 1) {
-            throw new IllegalArgumentException("Invalid start number: " + startNumber);
-        }
+        validateLevel(level);
+        validateStartNumber(startNumber);
         this.level = level;
         this.numbered = numbered;
         this.startNumber = startNumber;
-        this.inlines = List.copyOf(inlines);
+        this.inlines = List.copyOf(inlines != null ? inlines : List.of());
+    }
+
+    /**
+     * Validiert die Verschachtelungsebene.
+     *
+     * @param level zu prüfende Ebene
+     * @throws IllegalArgumentException wenn die Ebene ungültig ist
+     */
+    private static void validateLevel(int level) {
+        if (level < 1) {
+            throw new IllegalArgumentException("Invalid list level: " + level);
+        }
+    }
+
+    /**
+     * Validiert die Startnummer.
+     *
+     * @param startNumber zu prüfende Startnummer
+     * @throws IllegalArgumentException wenn die Startnummer ungültig ist
+     */
+    private static void validateStartNumber(int startNumber) {
+        if (startNumber < 1) {
+            throw new IllegalArgumentException("Invalid start number: " + startNumber);
+        }
     }
 
     /**

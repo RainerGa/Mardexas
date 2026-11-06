@@ -38,7 +38,6 @@ import javafx.stage.Stage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -75,6 +74,8 @@ class FindReplaceEngineTest {
         FxTestUtil.flushFxEvents();
     }
 
+    @org.junit.jupiter.api.AfterEach void closeStage() { FxTestUtil.runAndWait(stage::close); }
+
     private void setText(String text) {
         FxTestUtil.runAndWait(() -> editor.setMarkdown(text));
         FxTestUtil.flushFxEvents();
@@ -94,6 +95,19 @@ class FindReplaceEngineTest {
 
     private FindReplaceEngine.FindOptions opts() {
         return new FindReplaceEngine.FindOptions();
+    }
+
+    @Test void normalSearchStartsAtExportedCaretAfterEmoji() {
+        setText("😀 aaa aaa");
+        FxTestUtil.runAndWait(() -> {
+            var model = ((RichTextAreaSkin) rta.getSkin()).getViewModel();
+            model.clearSelection();
+            model.setCaretPosition(model.getTextBuffer().getInternalPosition(7));
+            assertEquals(7, rta.getCaretPosition());
+            var result = engine.findNext("aaa", opts());
+            assertEquals(7, result.getMatch().getStart(), "Search must not skip text after an emoji");
+            assertEquals(FindReplaceEngine.Wrap.FOUND, result.getWrap());
+        });
     }
 
     @Test
@@ -251,7 +265,7 @@ class FindReplaceEngineTest {
         setText("Heading\nHeading");
         FxTestUtil.runAndWait(() -> {
             ((RichTextAreaSkin) rta.getSkin()).getViewModel().setCaretPosition(7);
-            editor.insertImage("https://example.com/logo.png");
+            editor.insertImage("pic.png");
         });
         flush();
         engine = FxTestUtil.callAndWait(() ->
@@ -377,7 +391,6 @@ class FindReplaceEngineTest {
     }
 
     @Test
-    @Disabled("format preservation fix pending")
     void replaceAll_replacesEverything() {
         setText("eins zwei eins");
         int count = FxTestUtil.callAndWait(() -> engine.replaceAll("eins", "1", opts()));
@@ -387,7 +400,6 @@ class FindReplaceEngineTest {
     }
 
     @Test
-    @Disabled("format preservation fix pending")
     void replaceAll_regexGroups() {
         setText("a1 b2");
         FindReplaceEngine.FindOptions o = opts();
@@ -425,7 +437,6 @@ class FindReplaceEngineTest {
     }
 
     @Test
-    @Disabled("format preservation fix pending")
     void wholeWords_wildcardReplacement() {
         setText("hallo Welt hallo Leute");
         FindReplaceEngine.FindOptions o = opts();
@@ -513,7 +524,6 @@ class FindReplaceEngineTest {
     }
 
     @Test
-    @Disabled("format preservation fix pending")
     void replaceSelection_preservesBoldDecoration() {
         setText("fett und normal");
         FxTestUtil.runAndWait(() -> {
@@ -535,7 +545,6 @@ class FindReplaceEngineTest {
     }
 
     @Test
-    @Disabled("format preservation fix pending")
     void replaceSelection_rejectsParagraphBoundary() {
         setText("abc\ndef");
         FxTestUtil.runAndWait(() -> {
@@ -551,21 +560,8 @@ class FindReplaceEngineTest {
     }
 
     @Test
-    @Disabled("format preservation fix pending")
     void replaceAll_preservesBoldDecoration() {
-        setText("fett und fett nochmals");
-        FxTestUtil.runAndWait(() -> {
-            var vm = ((RichTextAreaSkin) rta.getSkin()).getViewModel();
-            vm.setSelection(new Selection(0, 4));
-            rta.getActionFactory().decorate(
-                    TextDecoration.builder().presets().fontWeight(FontWeight.BOLD).build())
-                    .execute(new ActionEvent());
-            vm.setSelection(new Selection(9, 13));
-            rta.getActionFactory().decorate(
-                    TextDecoration.builder().presets().fontWeight(FontWeight.BOLD).build())
-                    .execute(new ActionEvent());
-        });
-        flush();
+        setText("**fett** und **fett** nochmals");
         assertEquals(FontWeight.BOLD, textDecorationAt(0).getFontWeight());
         assertEquals(FontWeight.BOLD, textDecorationAt(9).getFontWeight());
 
@@ -578,7 +574,6 @@ class FindReplaceEngineTest {
     }
 
     @Test
-    @Disabled("format preservation fix pending")
     void replaceAll_skipsParagraphBoundary() {
         setText("abc\ndef abc\ndef");
         int count = FxTestUtil.callAndWait(() -> engine.replaceAll("abc\ndef", "XYZ", opts()));
@@ -607,4 +602,100 @@ class FindReplaceEngineTest {
         }
         throw new AssertionError("no decoration at index " + index + " in " + doc);
     }
+
+    @Test
+    void formatFiltersRequireWholeCandidateAndFindAcrossDecorationRuns() {
+        setText("**bold** normal *italic* [linked](https://example.org) `code`\n\n# Heading");
+        FxTestUtil.runAndWait(() -> {
+            var options = opts();
+            options.setFormatFilter(FindReplaceEngine.FormatFilter.BOLD);
+            assertEquals(1, engine.findAll("bold", options).size());
+            assertEquals(0, engine.findAll("bold normal", options).size());
+            options.setFormatFilter(FindReplaceEngine.FormatFilter.ITALIC);
+            assertEquals(1, engine.findAll("italic", options).size());
+            options.setFormatFilter(FindReplaceEngine.FormatFilter.LINK);
+            assertEquals(1, engine.findAll("linked", options).size());
+            options.setFormatFilter(FindReplaceEngine.FormatFilter.CODE);
+            assertEquals(1, engine.findAll("code", options).size());
+            options.setFormatFilter(FindReplaceEngine.FormatFilter.HEADING);
+            assertEquals(1, engine.findAll("Heading", options).size());
+        });
+    }
+
+    @Test
+    void selectivePreviewPreservesFormattingAndIsOneUndoStep() {
+        setText("**one** two **one**");
+        String original = FxTestUtil.callAndWait(engine::getText);
+        FxTestUtil.runAndWait(() -> {
+            var previews = engine.previewReplacements("one", "changed", opts());
+            assertEquals(2, previews.size());
+            assertEquals(1, engine.applyPreview(original, List.of(previews.get(1))));
+        });
+        flush();
+        assertTrue(text().startsWith("one two changed"));
+        FxTestUtil.runAndWait(() -> rta.getActionFactory().undo().execute(new ActionEvent())); flush();
+        assertEquals(original, FxTestUtil.callAndWait(engine::getText));
+    }
+
+    @Test
+    void previewRejectsStaleOverlappingAndReadonlyInput() {
+        setText("one one");
+        FxTestUtil.runAndWait(() -> {
+            var previews = engine.previewReplacements("one", "two", opts());
+            org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+                    () -> engine.applyPreview("stale", previews));
+            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> engine.applyPreview(engine.getText(), List.of(previews.get(0), previews.get(0))));
+            rta.setEditable(false);
+            org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+                    () -> engine.applyPreview(engine.getText(), previews));
+        });
+    }
+
+    @Test
+    void previewRegexExpansionAndEmojiOffsetsAreCorrect() {
+        setText("😀 **one1** one2");
+        FxTestUtil.runAndWait(() -> {
+            var options = opts(); options.setRegex(true);
+            var previews = engine.previewReplacements("one([0-9])", "$1one", options);
+            assertEquals("1one", previews.get(0).replacement());
+            assertEquals(2, engine.applyPreview(engine.getText(), previews));
+        }); flush();
+        assertTrue(text().contains("😀 1one 2one"));
+    }
+    @Test void formatFilterUsesLiveUnsavedDecorations() {
+        setText("one two");
+        FxTestUtil.runAndWait(() -> {
+            var model = ((RichTextAreaSkin) rta.getSkin()).getViewModel();
+            model.getTextBuffer().decorate(0, 3, TextDecoration.builder().presets().fontWeight(FontWeight.BOLD).build());
+            var options = opts(); options.setFormatFilter(FindReplaceEngine.FormatFilter.BOLD);
+            assertEquals(1, engine.findAll("one", options).size());
+            assertEquals(0, engine.findAll("two", options).size());
+            model.getTextBuffer().decorate(0, 3, TextDecoration.builder().presets().build());
+            assertEquals(0, engine.findAll("one", options).size());
+        });
+    }
+    @Test void selectivePreviewRetainsCaretAndBackwardSelectionWithUndoRedo() {
+        setText("😀 one prefix one suffix");
+        final int[] expected = new int[3];
+        FxTestUtil.runAndWait(() -> {
+            var model = ((RichTextAreaSkin) rta.getSkin()).getViewModel();
+            String original = engine.getText();
+            int start = original.indexOf("suffix"), end = start + 4;
+            model.setCaretPosition(model.getTextBuffer().getInternalPosition(start));
+            model.setSelection(model.getTextBuffer().getInternalSelection(new Selection(start, end)));
+            var previews = engine.previewReplacements("one", "changed", opts());
+            expected[0] = start + 8; expected[1] = end + 8; expected[2] = start;
+            assertEquals(2, engine.applyPreview(original, previews));
+            assertEquals(expected[0], rta.getCaretPosition());
+            assertEquals(new Selection(expected[0], expected[1]),
+                    new Selection(model.getTextBuffer().getText(0, model.getSelection().getStart()).length(),
+                            model.getTextBuffer().getText(0, model.getSelection().getEnd()).length()));
+        }); flush();
+        FxTestUtil.runAndWait(() -> rta.getActionFactory().undo().execute(new ActionEvent())); flush();
+        assertEquals(expected[2], FxTestUtil.callAndWait(rta::getCaretPosition));
+        FxTestUtil.runAndWait(() -> rta.getActionFactory().redo().execute(new ActionEvent())); flush();
+        assertEquals(expected[0], FxTestUtil.callAndWait(rta::getCaretPosition));
+    }
+
 }

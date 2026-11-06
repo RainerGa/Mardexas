@@ -23,8 +23,10 @@ import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.ReadOnlyDoubleWrapper;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
@@ -74,6 +76,8 @@ public class ZoomController {
             new javafx.beans.property.ReadOnlyObjectWrapper<>(LineWrapMode.AUTOMATIC);
 
     private Slider slider;
+    private Button zoomOutButton;
+    private Button zoomInButton;
     private Label label;
     private HBox controls;
     /** Kleiner Strich, der die 100-%-Position auf dem Regler markiert. */
@@ -100,7 +104,7 @@ public class ZoomController {
         control.setMaxHeight(Region.USE_PREF_SIZE);
         control.prefWidthProperty().bind(Bindings.createDoubleBinding(
                 this::logicalWidth, viewport.widthProperty(),
-                zoom.getReadOnlyProperty(), wrapMode));
+                zoom.getReadOnlyProperty(), wrapMode, control.maxWidthProperty()));
         control.prefHeightProperty().bind(Bindings.createDoubleBinding(
                 this::logicalHeight, viewport.heightProperty(), zoom.getReadOnlyProperty()));
 
@@ -129,6 +133,19 @@ public class ZoomController {
      */
     public Region getViewport() {
         return viewport;
+    }
+
+    /**
+     * Zeigt eine alternative Dokumentdarstellung im Zoom-Viewport an.
+     *
+     * <p>Der RichTextArea behält seine eigenen Zoom-Bindungen und kann später
+     * wieder als Flow-Ansicht eingesetzt werden. Alternative Ansichten
+     * verwalten ihre Zoomskalierung selbst.
+     *
+     * @param view darzustellender Knoten
+     */
+    public void setView(Node view) {
+        viewport.setContent(view);
     }
 
     // ---------- Öffentliche API ----------
@@ -262,6 +279,42 @@ public class ZoomController {
     }
 
     /**
+     * Liefert die Schaltfläche zum Verkleinern neben dem Zoomregler.
+     *
+     * @return wiederverwendbare Minus-Schaltfläche
+     */
+    public Button createZoomOutButton() {
+        if (zoomOutButton == null) {
+            zoomOutButton = createZoomButton("-", "zoom.out");
+            zoomOutButton.setOnAction(event -> zoomOut());
+        }
+        return zoomOutButton;
+    }
+
+    /**
+     * Liefert die Schaltfläche zum Vergrößern neben dem Zoomregler.
+     *
+     * @return wiederverwendbare Plus-Schaltfläche
+     */
+    public Button createZoomInButton() {
+        if (zoomInButton == null) {
+            zoomInButton = createZoomButton("+", "zoom.in");
+            zoomInButton.setOnAction(event -> zoomIn());
+        }
+        return zoomInButton;
+    }
+
+    private Button createZoomButton(String text, String tooltipKey) {
+        Button button = new Button(text);
+        String tooltip = de.richmarkdown.i18n.I18n.text(tooltipKey);
+        button.setTooltip(new Tooltip(tooltip));
+        button.setAccessibleText(tooltip);
+        button.setFocusTraversable(false);
+        button.getStyleClass().add("zoom-step-button");
+        return button;
+    }
+
+    /**
      * Positioniert den 100-%-Strich auf der Reglerbahn.
      *
      * <p>Die Bahn läuft über {@code SliderBreite − DaumenBreite}; die
@@ -304,7 +357,8 @@ public class ZoomController {
      */
     public HBox createControls() {
         if (controls == null) {
-            controls = new HBox(4, createSlider(), createLabel());
+            controls = new HBox(3, createZoomOutButton(), createSlider(),
+                    createZoomInButton(), createLabel());
             controls.setAlignment(Pos.CENTER_LEFT);
             controls.getStyleClass().add("zoom-controls");
         }
@@ -314,7 +368,8 @@ public class ZoomController {
     // ---------- Interna ----------
 
     private double logicalWidth() {
-        return viewport.getWidth() / zoomFactor();
+        double available = viewport.getWidth() / zoomFactor();
+        return control.getMaxWidth() > 0 ? Math.min(available, control.getMaxWidth()) : available;
     }
 
     private double logicalHeight() {
@@ -343,16 +398,41 @@ public class ZoomController {
      */
     private static final class Viewport extends Region {
 
-        private final javafx.scene.Node child;
+        private final Node flowContent;
+        private Node content;
 
-        private Viewport(javafx.scene.Node child) {
-            getChildren().add(child);
-            this.child = child;
+        private Viewport(Node flowContent) {
+            this.flowContent = flowContent;
+            setContent(flowContent);
+        }
+
+        private void setContent(Node nextContent) {
+            if (nextContent == null) {
+                throw new IllegalArgumentException("The viewport content must not be null");
+            }
+            if (content == nextContent) {
+                return;
+            }
+            getChildren().setAll(nextContent);
+            content = nextContent;
+            requestLayout();
         }
 
         @Override
         protected void layoutChildren() {
-            child.resizeRelocate(0, 0, child.prefWidth(-1), child.prefHeight(-1));
+            if (content == null) {
+                return;
+            }
+            if (content == flowContent) {
+                double width = content.prefWidth(-1);
+                double scaledWidth = width * content.getTransforms().stream()
+                        .filter(Scale.class::isInstance).map(Scale.class::cast)
+                        .mapToDouble(Scale::getX).findFirst().orElse(1);
+                content.resizeRelocate(Math.max(0, (getWidth() - scaledWidth) / 2), 0,
+                        width, content.prefHeight(-1));
+            } else {
+                content.resizeRelocate(0, 0, getWidth(), getHeight());
+            }
         }
 
         @Override

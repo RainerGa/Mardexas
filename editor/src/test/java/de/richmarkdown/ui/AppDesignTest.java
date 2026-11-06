@@ -25,7 +25,6 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.scene.layout.BorderPane;
 import org.junit.jupiter.api.AfterEach;
@@ -218,56 +217,37 @@ class AppDesignTest {
     }
 
     @Test
-    void letterTogglesAreTypographic() {
+    void formatTogglesUseTheSameVectorMotifsAsMenusAndRibbon() {
         FxTestUtil.runAndWait(() -> {
-            FormatToolBar toolBar = window.getToolBar();
-            Text boldLetter = letterOf(toolBar.getBoldToggle());
-            assertEquals("B", boldLetter.getText(), "Fett-Toggle zeigt nicht B");
-            assertEquals("Bold", boldLetter.getFont().getStyle(), "Fett-Toggle nicht fett");
-            assertEquals(FormatToolBar.LETTER_TEXT_SIZE, boldLetter.getFont().getSize(),
-                    "Fett-Toggle hat nicht die Buchstaben-Schriftgröße");
-
-            Text italicLetter = letterOf(toolBar.getItalicToggle());
-            assertEquals("K", italicLetter.getText(), "Kursiv-Toggle zeigt nicht K");
-            assertEquals("Italic", italicLetter.getFont().getStyle(), "Kursiv-Toggle nicht kursiv");
-
-            assertTrue(letterOf(toolBar.getUnderlineToggle()).isUnderline(),
-                    "U-Toggle nicht unterstrichen");
-            assertTrue(letterOf(toolBar.getStrikethroughToggle()).isStrikethrough(),
-                    "S-Toggle nicht durchgestrichen");
-            assertFalse(letterOf(toolBar.getUnderlineToggle()).isStrikethrough(),
-                    "U-Toggle unerwartet durchgestrichen");
-            assertFalse(letterOf(toolBar.getStrikethroughToggle()).isUnderline(),
-                    "S-Toggle unerwartet unterstrichen");
+            FormatToolBar toolbar = window.getToolBar();
+            var toggles = java.util.List.of(toolbar.getBoldToggle(), toolbar.getItalicToggle(),
+                    toolbar.getUnderlineToggle(), toolbar.getStrikethroughToggle());
+            var commands = java.util.List.of("menu.bold", "menu.italic", "menu.underline", "menu.strikethrough");
+            for (int index = 0; index < toggles.size(); index++) {
+                var graphic = toggles.get(index).getGraphic();
+                assertEquals(commands.get(index), graphic.getProperties().get("commandId"));
+                assertTrue(ToolbarIcons.countOf(graphic, javafx.scene.shape.SVGPath.class) > 0);
+                assertEquals(0, ToolbarIcons.countOf(graphic, Text.class));
+                assertNotNull(toggles.get(index).getAccessibleText());
+            }
         });
     }
 
     @Test
-    void selectedTogglePaintsLetterWhite() {
+    void selectedTogglePaintsVectorWhite() {
         FxTestUtil.runAndWait(() -> {
-            FormatToolBar toolBar = window.getToolBar();
-            assertNotNull(toolBar.getScene(), "Toolbar ist keiner Szene zugeordnet");
-            toolBar.getBoldToggle().setSelected(false);
-            toolBar.getScene().getRoot().applyCss();
-            Paint restFill = letterOf(toolBar.getBoldToggle()).getFill();
-            assertEquals(Color.web("#202020"), restFill, "Ruhender Toggle färbt falsch");
-
-            toolBar.getBoldToggle().setSelected(true);
-            toolBar.getScene().getRoot().applyCss();
-            Paint selectedFill = letterOf(toolBar.getBoldToggle()).getFill();
-            assertEquals(Color.WHITE, selectedFill,
-                    "Aktives Toggle färbt den Buchstaben nicht weiß");
+            FormatToolBar toolbar = window.getToolBar();
+            assertNotNull(toolbar.getScene());
+            toolbar.getBoldToggle().setSelected(false);
+            toolbar.getScene().getRoot().applyCss();
+            var shape = findFirst((javafx.scene.Parent) toolbar.getBoldToggle().getGraphic(), javafx.scene.shape.SVGPath.class);
+            assertEquals(Color.web("#202020"), shape.getStroke());
+            toolbar.getBoldToggle().setSelected(true);
+            toolbar.getScene().getRoot().applyCss();
+            assertEquals(Color.WHITE, shape.getStroke());
         });
     }
 
-    // ---------- Hilfsmittel ----------
-
-    private Text letterOf(ToggleButton toggle) {
-        Object graphic = toggle.getGraphic();
-        assertInstanceOf(Text.class, graphic,
-                "Toggle ohne Buchstaben-Grafik: " + toggle.getTooltip());
-        return (Text) graphic;
-    }
     private boolean containsLightBackground(String css) {
         return css.contains("#ffffff") || css.contains("-fx-base");
     }

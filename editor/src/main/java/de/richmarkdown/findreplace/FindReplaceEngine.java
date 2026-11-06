@@ -38,6 +38,8 @@ public class FindReplaceEngine {
         NOT_FOUND
     }
 
+    public enum FormatFilter { ANY, BOLD, ITALIC, UNDERLINE, STRIKETHROUGH, LINK, HEADING, CODE }
+
     /** Suchoptionen analog zum LO-Dialog. */
     public static class FindOptions {
         private boolean matchCase;
@@ -47,6 +49,7 @@ public class FindReplaceEngine {
         private boolean backwards;
         private boolean selectionOnly;
         private boolean strikethroughOnly;
+        private FormatFilter formatFilter = FormatFilter.ANY;
 
         public boolean isMatchCase() { return matchCase; }
         public void setMatchCase(boolean v) { matchCase = v; }
@@ -64,6 +67,9 @@ public class FindReplaceEngine {
         public boolean isStrikethroughOnly() { return strikethroughOnly; }
         public void setStrikethroughOnly(boolean v) { strikethroughOnly = v; }
 
+        public FormatFilter getFormatFilter() { return formatFilter; }
+        public void setFormatFilter(FormatFilter value) { formatFilter = Objects.requireNonNull(value); }
+
         public FindOptions copy() {
             FindOptions c = new FindOptions();
             c.matchCase = matchCase;
@@ -73,6 +79,7 @@ public class FindReplaceEngine {
             c.backwards = backwards;
             c.selectionOnly = selectionOnly;
             c.strikethroughOnly = strikethroughOnly;
+            c.formatFilter = formatFilter;
             return c;
         }
     }
@@ -134,12 +141,25 @@ public class FindReplaceEngine {
     private int lastSkippedCount = 0;
 
     public FindReplaceEngine(RichTextArea control, RichTextAreaViewModel viewModel) {
-        this.control = Objects.requireNonNull(control);
-        this.viewModel = Objects.requireNonNull(viewModel);
+        Objects.requireNonNull(control, "control");
+        Objects.requireNonNull(viewModel, "viewModel");
+        this.control = control;
+        this.viewModel = viewModel;
     }
 
     public FindReplaceEngine(RichTextArea control) {
-        this(control, ((RichTextAreaSkin) control.getSkin()).getViewModel());
+        this(control, getViewModelFromControl(control));
+    }
+
+    /**
+     * Extrahiert das ViewModel aus einem Control.
+     *
+     * @param control das RichTextArea-Control
+     * @return das ViewModel des Controls
+     * @throws NullPointerException wenn control null ist
+     */
+    private static RichTextAreaViewModel getViewModelFromControl(RichTextArea control) {
+        return ((RichTextAreaSkin) Objects.requireNonNull(control, "control").getSkin()).getViewModel();
     }
 
     /**
@@ -357,7 +377,8 @@ public class FindReplaceEngine {
         if (range == null) {
             return matches;
         }
-        Matcher matcher = pattern.matcher(fullText);
+        List<DecorationModel> currentDecorations = formatDecorations(effective);
+        Matcher matcher = pattern.matcher(new BudgetText(fullText));
         matcher.region(range[0], range[1]);
         while (matcher.find()) {
             if (matcher.end() == matcher.start()) {
@@ -368,13 +389,14 @@ public class FindReplaceEngine {
                 continue;
             }
             Match candidate = new Match(matcher.start(), matcher.end());
-            if (effective.isStrikethroughOnly() && !isFullyStrikethrough(candidate)) {
+            if (!matchesFormat(candidate, effective, currentDecorations)) {
                 continue;
             }
             if (!respectsWholeWords(fullText, matcher.start(), matcher.end(), effective)) {
                 continue;
             }
             matches.add(candidate);
+            if (matches.size() > 10_000) throw new IllegalArgumentException("Trefferliste ist auf 10.000 Treffer begrenzt; Suche eingrenzen.");
         }
         return matches;
     }
@@ -423,7 +445,7 @@ public class FindReplaceEngine {
     private int caretForSearch(FindOptions options) {
         Selection selection = getSelection();
         if (selection == null || options == null) {
-            return toTextPosition(getCaretPosition());
+            return getCaretPosition();
         }
         if (options.isBackwards()) {
             return toTextPosition(selection.getStart());
@@ -435,7 +457,7 @@ public class FindReplaceEngine {
         if (from >= to) {
             return null;
         }
-        Matcher matcher = pattern.matcher(text);
+        Matcher matcher = pattern.matcher(new BudgetText(text));
         matcher.region(from, to);
         while (matcher.find()) {
             if (matcher.end() == matcher.start()) {
@@ -446,7 +468,7 @@ public class FindReplaceEngine {
                 continue;
             }
             Match candidate = new Match(matcher.start(), matcher.end());
-            if (options != null && options.isStrikethroughOnly() && !isFullyStrikethrough(candidate)) {
+            if (!matchesFormat(candidate, options)) {
                 continue;
             }
             if (!respectsWholeWords(text, matcher.start(), matcher.end(), options)) {
@@ -466,7 +488,7 @@ public class FindReplaceEngine {
         if (from >= to || start <= from) {
             return null;
         }
-        Matcher matcher = pattern.matcher(text);
+        Matcher matcher = pattern.matcher(new BudgetText(text));
         matcher.region(from, to);
         Match last = null;
         while (matcher.find()) {
@@ -479,7 +501,7 @@ public class FindReplaceEngine {
             }
             if (matcher.end() <= start) {
                 Match candidate = new Match(matcher.start(), matcher.end());
-                if (options != null && options.isStrikethroughOnly() && !isFullyStrikethrough(candidate)) {
+                if (!matchesFormat(candidate, options)) {
                     continue;
                 }
                 if (!respectsWholeWords(text, matcher.start(), matcher.end(), options)) {
@@ -497,7 +519,7 @@ public class FindReplaceEngine {
         if (from >= to) {
             return null;
         }
-        Matcher matcher = pattern.matcher(text);
+        Matcher matcher = pattern.matcher(new BudgetText(text));
         matcher.region(from, to);
         Match last = null;
         while (matcher.find()) {
@@ -509,7 +531,7 @@ public class FindReplaceEngine {
                 continue;
             }
             Match candidate = new Match(matcher.start(), matcher.end());
-            if (options != null && options.isStrikethroughOnly() && !isFullyStrikethrough(candidate)) {
+            if (!matchesFormat(candidate, options)) {
                 continue;
             }
             if (!respectsWholeWords(text, matcher.start(), matcher.end(), options)) {
@@ -538,23 +560,21 @@ public class FindReplaceEngine {
             return findNext(searchText, effective);
         }
         boolean replaced = false;
-        if (selection != null) {
-            Pattern pattern = compilePattern(searchText, effective);
-            String fullText = getText();
-            int start = Math.max(0, Math.min(toTextPosition(selection.getStart()), fullText.length()));
-            int end = Math.max(0, Math.min(toTextPosition(selection.getEnd()), fullText.length()));
-            if (pattern != null && end > start) {
-                String selected = fullText.substring(start, end);
-                boolean matches = selectionMatches(pattern, searchText, selected, effective);
-                if (matches) {
-                    String resolved = resolveReplacement(searchText, replacement, effective, selected);
-                    if (replaceMatchSafely(new Match(start, end), resolved)) {
-                        replaced = true;
-                        // Caret ans Ende des Ersatztexts setzen, damit die Folgesuche
-                        // hinter dem Ersatz weiterlaeuft (LO-Verhalten).
-                        viewModel.setCaretPosition(toEditorPosition(start + resolved.length(), true, getText().length()));
-                        viewModel.clearSelection();
-                    }
+        Pattern pattern = compilePattern(searchText, effective);
+        String fullText = getText();
+        int start = Math.max(0, Math.min(toTextPosition(selection.getStart()), fullText.length()));
+        int end = Math.max(0, Math.min(toTextPosition(selection.getEnd()), fullText.length()));
+        if (pattern != null && end > start) {
+            String selected = fullText.substring(start, end);
+            boolean matches = selectionMatches(pattern, searchText, selected, effective);
+            if (matches) {
+                String resolved = resolveReplacement(searchText, replacement, effective, selected);
+                if (replaceMatchSafely(new Match(start, end), resolved)) {
+                    replaced = true;
+                    // Caret ans Ende des Ersatztexts setzen, damit die Folgesuche
+                    // hinter dem Ersatz weiterlaeuft (LO-Verhalten).
+                    viewModel.setCaretPosition(toEditorPosition(start + resolved.length(), true, getText().length()));
+                    viewModel.clearSelection();
                 }
             }
         }
@@ -569,13 +589,13 @@ public class FindReplaceEngine {
         // Ersatz erfolgreich, aber kein weiterer Treffer: Aufrufer ueber
         // NOT_FOUND informieren (nicht null), damit keine irrefuehrende
         // „Keine Uebereinstimmung“-Meldung erscheint.
-        int caret = toTextPosition(getCaretPosition());
+        int caret = getCaretPosition();
         return new SearchResult(new Match(caret, caret), Wrap.NOT_FOUND);
     }
 
     private boolean selectionMatches(Pattern pattern, String searchText, String selected, FindOptions options) {
         if (options.isRegex() || options.isWildcards() || options.isWholeWords()) {
-            return pattern.matcher(selected).matches();
+            return pattern.matcher(new BudgetText(selected)).matches();
         }
         if (options.isMatchCase()) {
             return selected.equals(searchText);
@@ -709,33 +729,135 @@ public class FindReplaceEngine {
      * ist (Format-Durchstreichung analog LO). Leere Treffer zaehlen nie.
      */
     public boolean isFullyStrikethrough(Match match) {
-        if (match == null || match.length() <= 0) {
-            return false;
-        }
-        Document document = viewModel.getDocument();
-        if (document == null || document.getDecorations() == null) {
-            return false;
-        }
-        int start = match.getStart();
-        int end = match.getEnd();
-        for (DecorationModel model : document.getDecorations()) {
-            if (model == null) {
-                continue;
-            }
-            int fragStart = model.getStart();
-            int fragEnd = fragStart + model.getLength();
-            if (fragEnd <= start || fragStart >= end) {
-                continue;
-            }
-            if (!isStrikethrough(model.getDecoration())) {
-                return false;
-            }
-        }
-        return true;
+        FindOptions options = new FindOptions();
+        options.setStrikethroughOnly(true);
+        return matchesFormat(match, options);
     }
 
-    private static boolean isStrikethrough(Decoration decoration) {
-        return decoration instanceof TextDecoration td && Boolean.TRUE.equals(td.isStrikethrough());
+    /** Requires the entire candidate range to have every selected attribute. */
+    public boolean matchesFormat(Match match, FindOptions options) {
+        if (match == null || match.length() <= 0) return false;
+        if (options == null || !options.isStrikethroughOnly() && options.getFormatFilter() == FormatFilter.ANY) return true;
+        return matchesFormat(match, options, formatDecorations(options));
+    }
+    private List<DecorationModel> formatDecorations(FindOptions options) {
+        if (options == null || !options.isStrikethroughOnly() && options.getFormatFilter() == FormatFilter.ANY) return List.of();
+        TextBuffer buffer = viewModel.getTextBuffer();
+        return buffer.getDecorationModelList(0, buffer.getTextLength());
+    }
+    private boolean matchesFormat(Match match, FindOptions options, List<DecorationModel> decorations) {
+        if (match == null || match.length() <= 0) return false;
+        if (options == null || !options.isStrikethroughOnly() && options.getFormatFilter() == FormatFilter.ANY) return true;
+        int covered = match.getStart();
+        int low = 0, high = decorations.size();
+        while (low < high) {
+            int middle = (low + high) >>> 1;
+            var model = decorations.get(middle);
+            if (model.getStart() + model.getLength() <= covered) low = middle + 1; else high = middle;
+        }
+        for (int i = low; i < decorations.size(); i++) {
+            DecorationModel model = decorations.get(i);
+            if (model.getStart() >= match.getEnd()) break;
+            if (model.getStart() + model.getLength() <= covered) continue;
+            if (model.getStart() > covered || !(model.getDecoration() instanceof TextDecoration text)) return false;
+            if (options.isStrikethroughOnly() && !text.isStrikethrough()) return false;
+            boolean accepted = switch (options.getFormatFilter()) {
+                case ANY -> true;
+                case BOLD -> text.getFontWeight() == javafx.scene.text.FontWeight.BOLD;
+                case ITALIC -> text.getFontPosture() == javafx.scene.text.FontPosture.ITALIC;
+                case UNDERLINE -> text.isUnderline();
+                case STRIKETHROUGH -> text.isStrikethrough();
+                case LINK -> text.getURL() != null && !text.getURL().isBlank();
+                case HEADING -> de.richmarkdown.markdown.MarkdownStyles.isHeadingSize(text.getFontSize())
+                        && text.getFontWeight() == javafx.scene.text.FontWeight.BOLD;
+                case CODE -> de.richmarkdown.markdown.MarkdownStyles.MONOSPACED.equalsIgnoreCase(text.getFontFamily());
+            };
+            if (!accepted) return false;
+            covered = Math.max(covered, Math.min(match.getEnd(), model.getStart() + model.getLength()));
+            if (covered >= match.getEnd()) return true;
+        }
+        return false;
+    }
+
+    /** Immutable preview tied to the current text; stale previews are never applied. */
+    public record ReplacementPreview(String text, String replacement, Match match) { }
+
+    public List<ReplacementPreview> previewReplacements(String search, String replacement, FindOptions options) {
+        FindOptions effective = options == null ? new FindOptions() : options;
+        String text = getText();
+        List<ReplacementPreview> previews = new ArrayList<>();
+        for (Match match : findAll(search, effective)) {
+            if (previews.size() >= 10_000) throw new IllegalArgumentException("Ersetzungsvorschau ist auf 10.000 Treffer begrenzt");
+            previews.add(new ReplacementPreview(text.substring(match.getStart(), match.getEnd()),
+                    resolveReplacement(search, replacement == null ? "" : replacement, effective,
+                            text.substring(match.getStart(), match.getEnd())), match));
+        }
+        return List.copyOf(previews);
+    }
+
+    public int applyPreview(String expectedText, List<ReplacementPreview> selected) {
+        if (!getText().equals(expectedText)) throw new IllegalStateException("Dokument wurde inzwischen geändert. Vorschau erneut erstellen.");
+        List<ReplacementPreview> ordered = new ArrayList<>(selected);
+        ordered.sort(java.util.Comparator.comparingInt(value -> value.match().getStart()));
+        int previousEnd = -1;
+        for (ReplacementPreview preview : ordered) {
+            Match match = preview.match();
+            if (match.getStart() < previousEnd || match.getStart() < 0 || match.getEnd() > expectedText.length()
+                    || match.length() <= 0 || !expectedText.substring(match.getStart(), match.getEnd()).equals(preview.text())) {
+                throw new IllegalArgumentException("Ungültige oder überlappende Vorschau");
+            }
+            previousEnd = match.getEnd();
+        }
+        if (!control.isEditable()) throw new IllegalStateException("Dokument ist schreibgeschützt");
+        new com.gluonhq.richtextarea.viewmodel.ActionCmdFactory().save().apply(viewModel);
+        Document original = viewModel.getDocument();
+        var parts = new ArrayList<Document>();
+        int cursor = 0, replaced = 0, skipped = 0;
+        int caret = getCaretPosition();
+        Selection originalSelection = getSelection();
+        int selectionStart = originalSelection == null ? -1 : toTextPosition(originalSelection.getStart());
+        int selectionEnd = originalSelection == null ? -1 : toTextPosition(originalSelection.getEnd());
+        List<ReplacementPreview> applied = new ArrayList<>();
+        for (ReplacementPreview preview : ordered) {
+            Match match = preview.match();
+            String replacement = preview.replacement();
+            if (preview.text().contains("\n") || isParagraphWithTable(match.getStart())
+                    && (countTableSeparators(preview.text()) > 0 || countTableSeparators(replacement) > 0
+                    || replacement.contains("\n"))) { skipped++; continue; }
+            parts.add(de.richmarkdown.features.editing.DocumentEdits.slice(original, cursor, match.getStart()));
+            var decoration = captureTextDecoration(match.getStart());
+            ParagraphDecoration paragraph = original.getDecorations().stream()
+                    .filter(d -> d.getStart() <= match.getStart() && d.getStart() + d.getLength() > match.getStart())
+                    .map(DecorationModel::getParagraphDecoration).findFirst()
+                    .orElse(ParagraphDecoration.builder().presets().build());
+            parts.add(new Document(replacement, List.of(new DecorationModel(0, replacement.length(),
+                    decoration == null ? TextDecoration.builder().presets().build() : decoration, paragraph)), 0));
+            cursor = match.getEnd();
+            applied.add(preview);
+            replaced++;
+        }
+        if (replaced > 0) {
+            parts.add(de.richmarkdown.features.editing.DocumentEdits.slice(original, cursor, expectedText.length()));
+            Document result = de.richmarkdown.features.editing.DocumentEdits.join(original, parts, mapPreviewPosition(caret, applied));
+            Selection selection = originalSelection == null ? Selection.UNDEFINED
+                    : new Selection(mapPreviewPosition(selectionStart, applied), mapPreviewPosition(selectionEnd, applied));
+            viewModel.replaceDocument(result, selection);
+        }
+        lastReplacedCount = replaced;
+        lastSkippedCount = skipped;
+        return replaced;
+    }
+
+    private static int mapPreviewPosition(int position, List<ReplacementPreview> applied) {
+        int delta = 0;
+        for (ReplacementPreview preview : applied) {
+            Match match = preview.match();
+            if (position < match.getStart()) break;
+            if (position <= match.getEnd()) return match.getStart() + delta
+                    + Math.min(position - match.getStart(), preview.replacement().length());
+            delta += preview.replacement().length() - match.length();
+        }
+        return position + delta;
     }
 
     /**
@@ -764,7 +886,7 @@ public class FindReplaceEngine {
 
         // Alle Treffer sammeln (von vorne nach hinten).
         List<Match> candidates = new ArrayList<>();
-        Matcher matcher = pattern.matcher(fullText);
+        Matcher matcher = pattern.matcher(new BudgetText(fullText));
         matcher.region(scopeStart, scopeEnd);
         while (matcher.find()) {
             if (isEmptyMatchAtScopeEnd(matcher, scopeEnd)) {
@@ -774,7 +896,7 @@ public class FindReplaceEngine {
                 continue;
             }
             Match candidate = new Match(matcher.start(), matcher.end());
-            if (effective.isStrikethroughOnly() && !isFullyStrikethrough(candidate)) {
+            if (!matchesFormat(candidate, effective)) {
                 continue;
             }
             if (!respectsWholeWords(fullText, matcher.start(), matcher.end(), effective)) {
@@ -815,7 +937,7 @@ public class FindReplaceEngine {
         if (pattern == null) {
             return replaceText;
         }
-        Matcher matcher = pattern.matcher(matched);
+        Matcher matcher = pattern.matcher(new BudgetText(matched));
         if (!matcher.matches()) {
             return replaceText;
         }
@@ -841,7 +963,7 @@ public class FindReplaceEngine {
         // (Das Muster enthaelt KEINE \\b-Wrapper mehr – Wortgrenzen werden
         // als Nachfilter geprueft –, daher matcht es den Treffertext zuverlaessig.)
         try {
-            Matcher single = matcher.pattern().matcher(group0);
+            Matcher single = matcher.pattern().matcher(new BudgetText(group0));
             StringBuffer buffer = new StringBuffer();
             if (single.find()) {
                 single.appendReplacement(buffer, prepared);
@@ -880,5 +1002,20 @@ public class FindReplaceEngine {
 
     public void clearMatchSelection() {
         viewModel.clearSelection();
+    }
+
+    /** Bounds regex work without copying the document or starting another thread. */
+    private static final class BudgetText implements CharSequence {
+        private final String value;
+        private int reads;
+        BudgetText(String value) { this.value = value; }
+        @Override public int length() { return value.length(); }
+        @Override public char charAt(int index) {
+            if (++reads > Math.max(8_000_000L, value.length() * 8L) || Thread.currentThread().isInterrupted())
+                throw new IllegalArgumentException("Suchbudget überschritten. Bitte Suchausdruck eingrenzen.");
+            return value.charAt(index);
+        }
+        @Override public CharSequence subSequence(int start, int end) { return value.subSequence(start, end); }
+        @Override public String toString() { return value; }
     }
 }

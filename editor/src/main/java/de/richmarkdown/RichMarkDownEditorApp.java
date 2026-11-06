@@ -66,8 +66,10 @@ public class RichMarkDownEditorApp extends Application {
         // System-Stylesheet aktivieren, um Betriebssystem-Schriftgrößen zu übernehmen
         Application.setUserAgentStylesheet(Application.STYLESHEET_MODENA);
 
-        EditorWindow window = new EditorWindow();
+        de.richmarkdown.ui.WorkspaceWindow window = new de.richmarkdown.ui.WorkspaceWindow();
+        window.restoreSession();
         window.show();
+        de.richmarkdown.ui.dialogs.CreditsDialog.showOnFirstStart(window);
         if (Boolean.getBoolean("mardexas.trace.exit-after-start")) {
             PauseTransition traceDuration = new PauseTransition(Duration.seconds(3));
             traceDuration.setOnFinished(event -> Platform.exit());
@@ -121,7 +123,12 @@ public class RichMarkDownEditorApp extends Application {
      * @param args Startargumente der Anwendung
      */
     public static void main(String[] args) {
+        FxRuntimeOptions.configure();
         ensureJavaHomeForNativeImage();
+        if (args.length == 2 && "--verify-package".equals(args[0])) {
+            PackageVerification.run(args[1]);
+            return;
+        }
         launch(RichMarkDownEditorApp.class, args);
     }
 

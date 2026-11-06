@@ -79,4 +79,19 @@ class I18nConfigTest {
         I18n.resetSettingsStore();
         I18n.setZoomPercent(100d);
     }
+
+    @Test
+    void autoSaveIntervalReadsValidSettingAndFallsBackForInvalidValues() {
+        ApplicationSettings custom = new ApplicationSettings(tempDir);
+        I18n.setSettingsStore(custom);
+
+        custom.save("autosave.interval", "12000");
+        assertEquals(12_000, I18n.autoSaveIntervalMillis());
+
+        custom.save("autosave.interval", "invalid");
+        assertEquals(300_000, I18n.autoSaveIntervalMillis());
+
+        custom.save("autosave.interval", "9999");
+        assertEquals(300_000, I18n.autoSaveIntervalMillis());
+    }
 }

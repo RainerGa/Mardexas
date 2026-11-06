@@ -99,8 +99,10 @@ class EditorWindowFeaturesTest {
         List<String> labels = FxTestUtil.callAndWait(() -> extras.getItems().stream()
                 .map(MenuItem::getText)
                 .toList());
-        assertEquals(List.of(I18n.text("menu.statistics")), labels,
-                "Unter „Extras“ gibt es nur noch die Statistik, keinen Platzhalter mehr");
+        assertTrue(labels.containsAll(List.of(I18n.text("menu.statistics"), I18n.text("menu.tools.checkIssues"),
+                "Schreibstatistik und Ziele …", "Lesbarkeit und Bedienung …", "Vorlesen",
+                "Ordner durchsuchen und ersetzen …", "Links verwalten", "Befehle und Tastenkürzel …")));
+        assertFalse(labels.contains("Einstellungen…"), "Kein früherer funktionsloser Platzhalter");
     }
 
     @Test

@@ -23,11 +23,16 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * TDD: Zurück-/Vorwärts-Navigation (AddFeatures #4, Vorbild LO-
- * Navigationsleiste „Zurück zur letzten Änderungsstelle“).
+ * TDD: Zur\u00fcck-/Vorw\u00e4rts-Navigation (AddFeatures #4, Vorbild LO-
+ * Navigationsleiste "Zur\u00fcck zur letzten \u00c4nderungsstelle").
+ *
+ * <p>Die \u00fcberarbeitete Historie speichert benannte Sprungziele
+ * ({@link NavigationHistory.JumpTarget}) statt roher Positionen.
  */
 class NavigationHistoryTest {
 
@@ -37,8 +42,8 @@ class NavigationHistoryTest {
     void nothingNavigableInitially() {
         assertFalse(history.canGoBack());
         assertFalse(history.canGoForward());
-        assertEquals(Optional.empty(), history.goBack(0));
-        assertEquals(Optional.empty(), history.goForward(0));
+        assertTrue(history.goBack(0).isEmpty());
+        assertTrue(history.goForward(0).isEmpty());
     }
 
     @Test
@@ -46,7 +51,11 @@ class NavigationHistoryTest {
         history.jumpPerformed(10);
         assertTrue(history.canGoBack());
         assertFalse(history.canGoForward());
-        assertEquals(Optional.of(10), history.goBack(30));
+        Optional<NavigationHistory.JumpTarget> back = history.goBack(30);
+        assertTrue(back.isPresent());
+        assertEquals(10, back.get().position());
+        assertEquals(NavigationHistory.JumpType.POSITION, back.get().type());
+        assertNull(back.get().label());
     }
 
     @Test
@@ -55,14 +64,16 @@ class NavigationHistoryTest {
         history.goBack(30);
         assertFalse(history.canGoBack());
         assertTrue(history.canGoForward());
-        assertEquals(Optional.of(30), history.goForward(10));
+        Optional<NavigationHistory.JumpTarget> forward = history.goForward(10);
+        assertTrue(forward.isPresent());
+        assertEquals(30, forward.get().position());
     }
 
     @Test
     void forwardRestoresAndResetsForwardStack() {
         history.jumpPerformed(10);
         history.goBack(30);
-        assertEquals(Optional.of(30), history.goForward(10));
+        assertEquals(30, history.goForward(10).get().position());
         assertFalse(history.canGoForward());
         assertTrue(history.canGoBack());
     }
@@ -70,7 +81,7 @@ class NavigationHistoryTest {
     @Test
     void newJumpClearsForwardStack() {
         history.jumpPerformed(10);
-        history.goBack(30); // Vorwärts: 30
+        history.goBack(30); // Vorw\u00e4rts: 30
         history.jumpPerformed(5); // neuer Sprung von 10 aus
         assertFalse(history.canGoForward());
     }
@@ -88,9 +99,9 @@ class NavigationHistoryTest {
         history.jumpPerformed(1);
         history.jumpPerformed(2);
         history.jumpPerformed(3);
-        assertEquals(Optional.of(3), history.goBack(99));
-        assertEquals(Optional.of(2), history.goBack(3));
-        assertEquals(Optional.of(1), history.goBack(2));
+        assertEquals(3, history.goBack(99).get().position());
+        assertEquals(2, history.goBack(3).get().position());
+        assertEquals(1, history.goBack(2).get().position());
         assertFalse(history.canGoBack());
     }
 
@@ -113,5 +124,28 @@ class NavigationHistoryTest {
         assertTrue(history.canGoBackProperty().get());
         history.goBack(2);
         assertTrue(history.canGoForwardProperty().get());
+    }
+
+    @Test
+    void jumpWithLabelAndTypeIsPreserved() {
+        history.jumpPerformed(5, "Erste \u00dcberschrift", NavigationHistory.JumpType.HEADING);
+        Optional<NavigationHistory.JumpTarget> target = history.goBack(99);
+        assertTrue(target.isPresent());
+        assertNotNull(target.get().label());
+        assertEquals("Erste \u00dcberschrift", target.get().label());
+        assertEquals(NavigationHistory.JumpType.HEADING, target.get().type());
+        assertEquals(5, target.get().position());
+    }
+
+    @Test
+    void goBackRecordsCurrentOnForwardStack() {
+        history.jumpPerformed(10, "Quelle", NavigationHistory.JumpType.SEARCH);
+        Optional<NavigationHistory.JumpTarget> target = history.goBack(40);
+        assertTrue(target.isPresent());
+        assertEquals(10, target.get().position());
+        Optional<NavigationHistory.JumpTarget> forward = history.goForward(10);
+        assertTrue(forward.isPresent());
+        assertEquals(40, forward.get().position());
+        assertEquals(NavigationHistory.JumpType.POSITION, forward.get().type());
     }
 }

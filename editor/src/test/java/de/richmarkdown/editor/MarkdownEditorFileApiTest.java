@@ -21,6 +21,7 @@ import de.richmarkdown.FxTestUtil;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import com.gluonhq.richtextarea.model.TextDecoration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -79,6 +80,83 @@ class MarkdownEditorFileApiTest {
         assertEquals("# Title\n\ntext", FxTestUtil.callAndWait(editor::getMarkdown));
         assertEquals(file, FxTestUtil.callAndWait(() -> editor.getCurrentFile().orElseThrow()));
         assertFalse(FxTestUtil.callAndWait(editor::isModified));
+    }
+
+    @Test
+    void openResolvesHtmlImageAgainstMarkdownDirectoryAndKeepsRelativePath() throws IOException {
+        Path imagePath = tempDir.resolve("src/Gui/Icons/freecad.png");
+        Files.createDirectories(imagePath.getParent());
+        Files.write(imagePath, java.util.Base64.getDecoder().decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pE8AAAAASUVORK5CYII="));
+        File file = tempDir.resolve("README.md").toFile();
+        Files.writeString(file.toPath(),
+                "<a href=\"https://freecad.org\"><img src=\"/src/Gui/Icons/freecad.png\"></a>",
+                StandardCharsets.UTF_8);
+        MarkdownEditor editor = newEditorInScene();
+
+        FxTestUtil.runAndWait(() -> {
+            try {
+                editor.open(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        flush();
+
+        assertEquals("<a href=\"https://freecad.org\"><img "
+                + "src=\"src/Gui/Icons/freecad.png\"></a>",
+                FxTestUtil.callAndWait(editor::getMarkdown));
+    }
+
+    @Test
+    void openShowsPlaceholderForMissingLocalImageWithoutLosingMarkup() throws IOException {
+        File file = tempDir.resolve("README.md").toFile();
+        String html = "<a href=\"https://freecad.org\"><img "
+                + "src=\"/src/Gui/Icons/freecad.svg\"></a>";
+        Files.writeString(file.toPath(), html, StandardCharsets.UTF_8);
+        MarkdownEditor editor = newEditorInScene();
+
+        FxTestUtil.runAndWait(() -> {
+            try {
+                editor.open(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        flush();
+
+        assertTrue(FxTestUtil.callAndWait(() -> editor.getControl().getDocument().getText()
+                .contains("[Bild nicht gefunden: /src/Gui/Icons/freecad.svg]")));
+        assertEquals(html, FxTestUtil.callAndWait(editor::getMarkdown));
+    }
+
+    @Test
+    void openRendersFreecadBadgeImageSyntaxAsLabeledHyperlinks() throws IOException {
+        File file = tempDir.resolve("README.md").toFile();
+        Files.writeString(file.toPath(),
+                "![Release](https://github.com/freecad/freecad/releases/latest)\n"
+                        + "![Crowdin](https://crowdin.com/project/freecad)",
+                StandardCharsets.UTF_8);
+        MarkdownEditor editor = newEditorInScene();
+
+        FxTestUtil.runAndWait(() -> {
+            try {
+                editor.open(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        flush();
+
+        FxTestUtil.runAndWait(() -> {
+            assertEquals("Release\nCrowdin", editor.getControl().getDocument().getText());
+            assertEquals("https://github.com/freecad/freecad/releases/latest",
+                    ((TextDecoration) editor.getControl().getDocument().getDecorations().get(0)
+                            .getDecoration()).getURL());
+            assertEquals("https://crowdin.com/project/freecad",
+                    ((TextDecoration) editor.getControl().getDocument().getDecorations().get(1)
+                            .getDecoration()).getURL());
+        });
     }
 
     @Test
@@ -157,4 +235,63 @@ class MarkdownEditorFileApiTest {
         assertEquals("", FxTestUtil.callAndWait(editor::getMarkdown));
         assertTrue(FxTestUtil.callAndWait(() -> editor.getCurrentFile().isEmpty()));
     }
+    @Test
+    void replacingWithReviewedDocumentIsDirtyUndoableAndPreservesFile() throws IOException {
+        File file = tempDir.resolve("reviewed.md").toFile();
+        Files.writeString(file.toPath(), "original");
+        MarkdownEditor editor = newEditorInScene();
+        FxTestUtil.runAndWait(() -> {
+            try { editor.open(file); } catch (IOException failure) { throw new RuntimeException(failure); }
+        });
+        flush();
+        FxTestUtil.runAndWait(() -> editor.replaceDocument(
+                new de.richmarkdown.markdown.MarkdownParser().parseInto("**reviewed**")));
+        flush();
+        assertEquals("**reviewed**", FxTestUtil.callAndWait(editor::getMarkdownSource));
+        assertTrue(FxTestUtil.callAndWait(editor::isModified));
+        assertEquals(file, FxTestUtil.callAndWait(() -> editor.getCurrentFile().orElseThrow()));
+        assertEquals("original", Files.readString(file.toPath()));
+        FxTestUtil.runAndWait(() -> editor.getControl().getActionFactory().undo().execute(new javafx.event.ActionEvent()));
+        flush();
+        assertEquals("original", FxTestUtil.callAndWait(editor::getMarkdownSource));
+        assertFalse(FxTestUtil.callAndWait(editor::isModified));
+    }
+
+    @Test
+    void readOnlySnapshotIncludesUnpublishedEditsWithoutClearingDirtyFlag() {
+        MarkdownEditor editor = newEditorInScene();
+        FxTestUtil.runAndWait(() -> editor.setMarkdown("original"));
+        flush();
+        FxTestUtil.runAndWait(() -> {
+            editor.goToPosition("original".length());
+            editor.getControl().getActionFactory().insertText("new ").execute(new javafx.event.ActionEvent());
+        });
+        flush();
+        assertTrue(FxTestUtil.callAndWait(editor::isModified));
+        assertEquals("originalnew ", FxTestUtil.callAndWait(editor::getMarkdownSource));
+        assertTrue(FxTestUtil.callAndWait(editor::isModified));
+    }
+
+    @Test
+    void reviewedReplacementPreservesParagraphsImagesAndRedo() throws IOException {
+        Path image = tempDir.resolve("pixel.png");
+        Files.write(image, java.util.Base64.getDecoder().decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pE8AAAAASUVORK5CYII="));
+        MarkdownEditor editor = newEditorInScene();
+        FxTestUtil.runAndWait(() -> editor.setMarkdown("before"));
+        flush();
+        String markdown = "# Heading\n\n- one\n- **two**\n\n| A | B |\n| --- | --- |\n| x | y |\n\n![image](" + image.toUri() + ")";
+        var parsed = new de.richmarkdown.markdown.MarkdownParser().parseInto(markdown);
+        String canonical = new de.richmarkdown.markdown.MarkdownWriter().write(parsed);
+        FxTestUtil.runAndWait(() -> editor.replaceDocument(parsed));
+        flush();
+        assertEquals(canonical, FxTestUtil.callAndWait(editor::getMarkdownSource));
+        FxTestUtil.runAndWait(() -> editor.getControl().getActionFactory().undo().execute(new javafx.event.ActionEvent()));
+        flush();
+        assertEquals("before", FxTestUtil.callAndWait(editor::getMarkdownSource));
+        FxTestUtil.runAndWait(() -> editor.getControl().getActionFactory().redo().execute(new javafx.event.ActionEvent()));
+        flush();
+        assertEquals(canonical, FxTestUtil.callAndWait(editor::getMarkdownSource));
+    }
+
 }

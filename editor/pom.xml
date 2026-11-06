@@ -15,6 +15,8 @@
   </licenses>
 
   <properties>
+    <!-- Override for isolated GUI checks while Eclipse builds target/classes. -->
+    <mardexas.build.directory>${project.basedir}/target</mardexas.build.directory>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>25</maven.compiler.release>
     <javafx.version>25.0.4</javafx.version>
@@ -23,7 +25,7 @@
     <testfx.version>4.0.19-gluon</testfx.version>
     <monocle.version>21.0.2</monocle.version>
     <surefire.version>3.2.5</surefire.version>
-    <mainClass>de.richmarkdown.RichMarkDownEditorApp</mainClass>
+    <mainClass>de.richmarkdown.Launcher</mainClass>
   </properties>
 
   <!-- Gluon-Nexus: Quelle der "-gluon"-TestFX-Artefakte (testfx-core /
@@ -59,6 +61,16 @@
       <groupId>com.gluonhq</groupId>
       <artifactId>rich-text-area</artifactId>
       <version>${richtextarea.version}</version>
+      <exclusions>
+        <!-- Also reject the old artifacts when a stale fork is installed locally. -->
+        <exclusion><groupId>com.gluonhq.emoji</groupId><artifactId>emoji</artifactId></exclusion>
+        <exclusion><groupId>com.gluonhq.emoji</groupId><artifactId>offline</artifactId></exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>de.richmarkdown</groupId>
+      <artifactId>emoji-noto</artifactId>
+      <version>1.1.0-mardexas-1</version>
     </dependency>
 
     <!-- Test: JUnit 5 -->
@@ -91,6 +103,7 @@
   </dependencies>
 
   <build>
+    <directory>${mardexas.build.directory}</directory>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -111,6 +124,10 @@
         <configuration>
           <!-- Tests laufen auf dem Classpath (TestFX/Monocle sind Automatic-Modules) -->
           <useModulePath>false</useModulePath>
+          <!-- Parallele Testausführung über mehrere JVM-Forks (JavaFX/TestFX nicht threadsicher,
+               daher forkCount statt parallel=methods/classes) -->
+          <forkCount>4</forkCount>
+          <reuseForks>true</reuseForks>
           <systemPropertyVariables>
             <prism.order>sw</prism.order>
             <prism.text>t2k</prism.text>
@@ -118,12 +135,14 @@
             <testfx.robot>glass</testfx.robot>
             <glass.platform>Monocle</glass.platform>
             <monocle.platform>Headless</monocle.platform>
+            <!-- Render office-sized windows inside an explicit virtual desktop. -->
+            <headless.geometry>1600x1000-32</headless.geometry>
             <!-- JavaFX-Cache in ein beschreibbares Verzeichnis lenken -->
             <javafx.cachedir>${project.build.directory}/javafx-cache</javafx.cachedir>
             <java.util.prefs.userRoot>${project.build.directory}/test-prefs</java.util.prefs.userRoot>
             <rme.config.dir>${project.build.directory}/test-config</rme.config.dir>
           </systemPropertyVariables>
-          <argLine>-Djava.io.tmpdir=${project.build.directory}</argLine>
+          <argLine>@{argLine} -Djava.io.tmpdir=${project.build.directory}</argLine>
         </configuration>
       </plugin>
       <!-- Statische Codeanalyse: Codierungsstandards (Checkstyle), Bug-Muster (SpotBugs) und
@@ -155,11 +174,12 @@
       <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>4.9.1</version>
+        <version>4.10.5.0</version>
         <configuration>
           <failOnError>false</failOnError>
           <threshold>Medium</threshold>
           <effort>Default</effort>
+          <excludeFilterFile>spotbugs-suppressions.xml</excludeFilterFile>
         </configuration>
         <executions>
           <execution>
@@ -174,7 +194,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.12</version>
+        <version>0.8.14</version>
         <executions>
           <execution>
             <id>jacoco-prepare-agent</id>
@@ -200,9 +220,9 @@
                 <rule>
                   <element>BUNDLE</element>
                   <limits>
-                    <limit>
+                    <limit implementation="org.jacoco.report.check.Limit">
                       <counter>LINE</counter>
-                      <value>0.75</value>
+                      <minimum>0.75</minimum>
                     </limit>
                   </limits>
                 </rule>

@@ -21,6 +21,7 @@ import com.gluonhq.richtextarea.model.Document;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * TDD Phase 4: Round-Trip-Testmatrix (PROJEKTPLAN 6.2, 7.1).
@@ -304,6 +305,35 @@ class RoundTripTest {
             String next = writer.write(parser.parseInto(previous));
             assertEquals(previous, next, "instability at iteration " + i);
             previous = next;
+        }
+    }
+
+    @Test
+    void inlineImageSyntaxToWebpageRoundTripsStably() {
+        String[] inputs = {
+                "see ![link](https://example.org) here",
+                "# Heading with ![link](https://example.org)",
+        };
+        for (String markdown : inputs) {
+            Document first = parser.parseInto(markdown);
+            String written = writer.write(first);
+            Document second = parser.parseInto(written);
+            String rewritten = writer.write(second);
+            assertEquals(written, rewritten, "round trip not stable for: " + markdown);
+            assertFalse(written.contains("!["), "stray '!' should be stripped for: " + markdown);
+        }
+    }
+
+    @Test
+    void quotedMultilineLanguageCodeAndLiteralMarkersRoundTrip() {
+        String markdown = "> ```java\n> var a = 1;\n> **literal**\n> ```";
+        assertEquals(markdown, writer.write(parser.parseInto(markdown)));
+        String deep = "> > ```text\n> > a * b\n> > two\n> > ```";
+        assertEquals(deep, writer.write(parser.parseInto(deep)));
+        for (String literal : java.util.List.of("a * b", "a _ b", "a ~ b", "**literal**", "[text](url)", "```")) {
+            var document = new Document(literal);
+            String written = writer.write(document);
+            assertEquals(literal, parser.parseInto(written).getText());
         }
     }
 }

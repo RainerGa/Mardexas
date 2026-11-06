@@ -143,23 +143,23 @@ class ZoomControllerTest {
 
     @Test
     void setZoomAppliesScale() {
-        zoom.setZoom(150);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(150));
         assertEquals(1.5d, scaleTransform().getX(), 0.001);
         assertEquals(1.5d, scaleTransform().getY(), 0.001);
     }
 
     @Test
     void setZoomBelow50Shrinks() {
-        zoom.setZoom(50);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(50));
         assertEquals(0.5d, scaleTransform().getX(), 0.001);
     }
 
     @Test
     void zoomIsClampedToRange() {
-        zoom.setZoom(1000);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(1000));
         assertEquals(ZoomController.MAX_ZOOM, zoom.getZoom(), 0.001);
 
-        zoom.setZoom(1);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(1));
         assertEquals(ZoomController.MIN_ZOOM, zoom.getZoom(), 0.001);
     }
 
@@ -168,7 +168,7 @@ class ZoomControllerTest {
     @Test
     void controlIsResizedInverselyToZoom() {
         resizeViewport(600, 400);
-        zoom.setZoom(200);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(200));
 
         // Logische Breite = Viewport / Zoom → skaliert passt es ins Viewport
         assertEquals(300d, FxTestUtil.callAndWait(control::getPrefWidth), 0.5);
@@ -178,7 +178,7 @@ class ZoomControllerTest {
     @Test
     void controlFillsViewportAt100Percent() {
         resizeViewport(600, 400);
-        zoom.setZoom(100);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(100));
 
         assertEquals(600d, FxTestUtil.callAndWait(control::getPrefWidth), 0.5);
         assertEquals(400d, FxTestUtil.callAndWait(control::getPrefHeight), 0.5);
@@ -187,7 +187,7 @@ class ZoomControllerTest {
     @Test
     void controlResizingFollowsViewportChanges() {
         resizeViewport(800, 600);
-        zoom.setZoom(100);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(100));
         assertEquals(800d, FxTestUtil.callAndWait(control::getPrefWidth), 0.5);
 
         resizeViewport(400, 300);
@@ -259,36 +259,46 @@ class ZoomControllerTest {
 
     @Test
     void zoomInIncreasesByStep() {
-        zoom.setZoom(100);
-        zoom.zoomIn();
+        FxTestUtil.runAndWait(() -> zoom.setZoom(100));
+        FxTestUtil.runAndWait(zoom::zoomIn);
         assertEquals(110d, zoom.getZoom(), 0.001);
     }
 
     @Test
     void zoomOutDecreasesByStep() {
-        zoom.setZoom(100);
-        zoom.zoomOut();
+        FxTestUtil.runAndWait(() -> zoom.setZoom(100));
+        FxTestUtil.runAndWait(zoom::zoomOut);
         assertEquals(90d, zoom.getZoom(), 0.001);
     }
 
     @Test
     void zoomInStopsAtMaximum() {
-        zoom.setZoom(ZoomController.MAX_ZOOM);
-        zoom.zoomIn();
+        FxTestUtil.runAndWait(() -> zoom.setZoom(ZoomController.MAX_ZOOM));
+        FxTestUtil.runAndWait(zoom::zoomIn);
         assertEquals(ZoomController.MAX_ZOOM, zoom.getZoom(), 0.001);
     }
 
     @Test
     void zoomOutStopsAtMinimum() {
-        zoom.setZoom(ZoomController.MIN_ZOOM);
-        zoom.zoomOut();
+        FxTestUtil.runAndWait(() -> zoom.setZoom(ZoomController.MIN_ZOOM));
+        FxTestUtil.runAndWait(zoom::zoomOut);
         assertEquals(ZoomController.MIN_ZOOM, zoom.getZoom(), 0.001);
     }
 
     @Test
     void resetZoomRestores100() {
-        zoom.setZoom(250);
-        zoom.resetZoom();
+        FxTestUtil.runAndWait(() -> zoom.setZoom(250));
+        FxTestUtil.runAndWait(zoom::resetZoom);
+        assertEquals(100d, zoom.getZoom(), 0.001);
+    }
+
+    @Test
+    void zoomButtonsChangeZoomByOneStep() {
+        FxTestUtil.runAndWait(() -> {
+            zoom.createZoomInButton().fire();
+            assertEquals(110d, zoom.getZoom(), 0.001);
+            zoom.createZoomOutButton().fire();
+        });
         assertEquals(100d, zoom.getZoom(), 0.001);
     }
 
@@ -296,21 +306,21 @@ class ZoomControllerTest {
 
     @Test
     void ctrlWheelUpZoomsIn() {
-        zoom.setZoom(100);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(100));
         fireCtrlScroll(10);
         assertEquals(110d, zoom.getZoom(), 0.001);
     }
 
     @Test
     void ctrlWheelDownZoomsOut() {
-        zoom.setZoom(100);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(100));
         fireCtrlScroll(-10);
         assertEquals(90d, zoom.getZoom(), 0.001);
     }
 
     @Test
     void wheelWithoutCtrlDoesNotZoom() {
-        zoom.setZoom(100);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(100));
         FxTestUtil.runAndWait(() -> control.fireEvent(new ScrollEvent(
                 ScrollEvent.SCROLL,
                 0, 0, 0, 0,
@@ -329,7 +339,7 @@ class ZoomControllerTest {
     @Test
     void sliderReflectsZoom() {
         Slider slider = zoom.createSlider();
-        zoom.setZoom(175);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(175));
         assertEquals(175d, slider.getValue(), 0.001);
     }
 
@@ -353,7 +363,7 @@ class ZoomControllerTest {
         Slider slider = zoom.createSlider();
         FxTestUtil.runAndWait(() -> stage.setScene(new Scene(slider, 200, 40)));
         FxTestUtil.flushFxEvents();
-        zoom.setZoom(250);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(250));
         FxTestUtil.runAndWait(() -> slider.fireEvent(new MouseEvent(
                 MouseEvent.MOUSE_CLICKED, 40, 10, 40, 10, javafx.scene.input.MouseButton.PRIMARY,
                 2, false, false, false, false, false, false, false, false, false, false, false, true, null)));
@@ -365,7 +375,7 @@ class ZoomControllerTest {
         Slider slider = zoom.createSlider();
         FxTestUtil.runAndWait(() -> stage.setScene(new Scene(slider, 200, 40)));
         FxTestUtil.flushFxEvents();
-        zoom.setZoom(250);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(250));
         FxTestUtil.runAndWait(() -> slider.fireEvent(new MouseEvent(
                 MouseEvent.MOUSE_CLICKED, 40, 10, 40, 10, javafx.scene.input.MouseButton.PRIMARY,
                 1, false, false, false, false, false, false, false, false, false, false, false, true, null)));
@@ -400,7 +410,7 @@ class ZoomControllerTest {
     @Test
     void zoomLabelShowsPercentage() {
         javafx.scene.control.Label label = zoom.createLabel();
-        zoom.setZoom(140);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(140));
         assertEquals("140%", FxTestUtil.callAndWait(label::getText));
     }
 
@@ -429,10 +439,22 @@ class ZoomControllerTest {
     }
 
     @Test
+    void zoomButtonsSitOnBothSidesOfSlider() {
+        javafx.scene.Parent controls = zoom.createControls();
+        FxTestUtil.runAndWait(() -> {
+            var children = ((javafx.scene.layout.HBox) controls).getChildren();
+            assertTrue(children.indexOf(zoom.createZoomOutButton())
+                    < children.indexOf(zoom.createSlider()));
+            assertTrue(children.indexOf(zoom.createZoomInButton())
+                    > children.indexOf(zoom.createSlider()));
+        });
+    }
+
+    @Test
     void zoomPropertyIsObservable() {
         javafx.beans.property.DoubleProperty observed = new javafx.beans.property.SimpleDoubleProperty();
         observed.bind(zoom.zoomProperty());
-        zoom.setZoom(130);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(130));
         assertEquals(130d, observed.get(), 0.001);
     }
 
@@ -443,10 +465,23 @@ class ZoomControllerTest {
             control.getActionFactory().insertText("text").execute(new javafx.event.ActionEvent());
             return "text";
         });
-        zoom.setZoom(300);
-        zoom.setZoom(50);
+        FxTestUtil.runAndWait(() -> zoom.setZoom(300));
+        FxTestUtil.runAndWait(() -> zoom.setZoom(50));
         assertEquals("text", before);
         assertFalse(control.getTransforms().isEmpty());
         assertTrue(scaleTransform().getX() < 1d);
     }
+    @Test
+    void readingWidthConstrainsActualLayoutAndRestoresAtEveryZoom() {
+        FxTestUtil.runAndWait(() -> {
+            viewport.resize(1200, 600); control.setMaxWidth(820); viewport.layout();
+            assertEquals(820, control.getWidth(), .1);
+            assertEquals(190, control.getLayoutX(), .1);
+            zoom.setZoom(200); viewport.layout();
+            assertEquals(600, control.getWidth(), .1); assertEquals(0, control.getLayoutX(), .1);
+            zoom.setZoom(100); control.setMaxWidth(javafx.scene.layout.Region.USE_PREF_SIZE); viewport.layout();
+            assertEquals(1200, control.getWidth(), .1); assertEquals(0, control.getLayoutX(), .1);
+        });
+    }
+
 }

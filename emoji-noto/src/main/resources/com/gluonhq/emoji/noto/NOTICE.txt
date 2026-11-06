@@ -1,0 +1,23 @@
+Mardexas Noto emoji distribution
+
+Noto Emoji v2.038: Google LLC and Noto Emoji contributors.
+Image resources are under Apache License 2.0; the upstream flag notice identifies
+region flags as public domain or otherwise exempt from copyright.
+Full original notices: LICENSE-NOTO-APACHE-2.0.txt and LICENSE-NOTO-FLAGS.txt.
+Source: https://github.com/googlefonts/noto-emoji/tree/v2.038
+
+The unmodified Google-only clean sheets (20, 32 and 64 px) are from emoji-data
+commit 063f328d7951cb2e2a6678b06dcbdf8dd599fad7. These clean sheets contain
+Google artwork only, without Apple, Facebook or Twitter fallback artwork.
+Source: https://github.com/iamcal/emoji-data/tree/063f328d7951cb2e2a6678b06dcbdf8dd599fad7/sheets-clean
+emoji-data: Copyright (c) 2013 Cal Henderson. MIT License.
+The matching Unicode/coordinate data is retained in ../emoji.csv, as converted
+by Gluon Emoji 1.1.0; see LICENSE-EMOJI-DATA-MIT.txt.
+
+Gluon Emoji 1.1.0 code: Copyright (c) 2023, 2024, Gluon.
+GPL-3.0-or-later, full license in LICENSE-GLUON-GPL-3.0.txt.
+Original source: https://github.com/gluonhq/emoji
+Original source archive and hashes: emoji-noto/upstream-source-sha256.json.
+Mardexas modifications (2026): local-only loader/factory, removed downloadable
+loader, bulk pixel crop in EmojiImageUtils. Unicode parsing and public API remain
+compatible. The former Gluon offline artifact is not used or distributed.

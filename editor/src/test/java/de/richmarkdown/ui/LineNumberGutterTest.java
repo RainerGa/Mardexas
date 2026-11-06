@@ -202,7 +202,7 @@ class LineNumberGutterTest {
         });
         flushFully();
         // Sicherstellen, dass die Gutter-Positionen nach dem Scroll neu berechnet werden
-        gutter.requestSync();
+        gutter.refresh();
         flushFully();
 
         List<String> after = numbers();

@@ -129,6 +129,10 @@ public class LineNumberGutter extends Region {
 
     /** Synchronisation anstoßen (sofort plus einmalig nach dem Layout-Pulse). */
     void requestSync() {
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(this::requestSync);
+            return;
+        }
         if (!isVisible() || control.getScene() == null) {
             return;
         }

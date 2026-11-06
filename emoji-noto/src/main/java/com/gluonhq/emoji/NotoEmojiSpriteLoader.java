@@ -1,0 +1,74 @@
+/*
+ * Mardexas modifications: Copyright (C) 2026 Rainer Garbotz.
+ * Local Noto artwork loading / bulk glyph crop; see bundled noto/NOTICE.txt.
+ *
+ * Copyright (c) 2024, Gluon
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL GLUON BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+package com.gluonhq.emoji;
+
+import java.io.InputStream;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import javafx.scene.image.Image;
+
+/** Mardexas modification: synchronously load only bundled, audited Noto clean sheets.
+ * No network access, disk cache, worker threads or alternate artwork providers.
+ * Pixel images are cached by EmojiImageUtils only when actually displayed.
+ */
+final class NotoEmojiSpriteLoader implements EmojiSpriteLoader {
+    @Override
+    public boolean isInitialized() {
+        return true;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> initialize() {
+        return CompletableFuture.completedFuture(true);
+    }
+
+    @Override
+    public Image loadEmojiSprite(int size) {
+        if (size != 20 && size != 32 && size != 64) {
+            throw new IllegalArgumentException("Unsupported Noto emoji size: " + size);
+        }
+        String resource = "noto/sheet_google_" + size + "_clean.png";
+        var url = Objects.requireNonNull(NotoEmojiSpriteLoader.class.getResource(resource),
+                "Missing bundled Noto emoji resource: " + resource);
+        Image image = new Image(url.toExternalForm(), false);
+        if (image.isError()) {
+            throw new IllegalStateException("Invalid bundled Noto emoji resource: " + resource,
+                    image.getException());
+        }
+        return image;
+    }
+
+    @Override
+    public InputStream loadCSV() {
+        return Objects.requireNonNull(NotoEmojiSpriteLoader.class.getResourceAsStream("emoji.csv"),
+                "Missing bundled emoji Unicode data");
+    }
+}

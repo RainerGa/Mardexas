@@ -1,0 +1,1259 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="2600" viewBox="0 0 900 2600"><rect width="100%" height="100%" fill="#f8fafc"/>
+<g transform="translate(56,10) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 9a2 2 0 1 1 2 -2v10a2 2 0 1 1 -2 -2h10a2 2 0 1 1 -2 2v-10a2 2 0 1 1 2 2h-10" />
+</g>
+<text x="4" y="67" font-size="9" font-family="sans-serif">commands.search</text>
+<text x="4" y="80" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,10) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M17.5 15.5m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 19v-10.5a3.5 3.5 0 0 1 7 0v10.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 13h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 12v7" />
+</g>
+<text x="154" y="67" font-size="9" font-family="sans-serif">edit.capitalizeSentences</text>
+<text x="154" y="80" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,10) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M17 15l4 4m0 -4l-4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M7 6v-1h11v1" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M7 19l4 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 5l-4 14" />
+</g>
+<text x="304" y="67" font-size="9" font-family="sans-serif">edit.clearTextFormatting</text>
+<text x="304" y="80" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,10) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4.012 16.737a2 2 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 14h6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 11v6" />
+</g>
+<text x="454" y="67" font-size="9" font-family="sans-serif">edit.duplicateParagraph</text>
+<text x="454" y="80" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,10) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M6.5 15.5m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 12v7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17.5 15.5m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 12v7" />
+</g>
+<text x="604" y="67" font-size="9" font-family="sans-serif">edit.lowercase</text>
+<text x="604" y="80" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,10) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 11v10" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 18l3 3l3 -3" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+</g>
+<text x="754" y="67" font-size="9" font-family="sans-serif">edit.moveParagraphDown</text>
+<text x="754" y="80" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,110) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 13v-10" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 6l3 -3l3 3" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 17a2 2 0 1 1 0 4a2 2 0 0 1 0 -4z" />
+</g>
+<text x="4" y="167" font-size="9" font-family="sans-serif">edit.moveParagraphUp</text>
+<text x="4" y="180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M13 4v16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 4v16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19 4h-9.5a4.5 4.5 0 0 0 0 9h3.5" />
+</g>
+<g transform="translate(225,129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M5 12l14 0" />
+</g>
+<text x="154" y="167" font-size="9" font-family="sans-serif">edit.ordinaryParagraph</text>
+<text x="154" y="180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" />
+</g>
+<g transform="translate(375,129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 8l-4 4l4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 8l4 4l-4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 4l-4 16" />
+</g>
+<text x="304" y="167" font-size="9" font-family="sans-serif">edit.pasteLiteralMarkdown</text>
+<text x="304" y="180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" />
+</g>
+<g transform="translate(525,129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M7 15v-6l2 2l2 -2v6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 13l2 2l2 -2m-2 2v-6" />
+</g>
+<text x="454" y="167" font-size="9" font-family="sans-serif">edit.pasteMarkdown</text>
+<text x="454" y="180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,110) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 12h6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 16h6" />
+</g>
+<text x="604" y="167" font-size="9" font-family="sans-serif">edit.pastePlainText</text>
+<text x="604" y="180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,110) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M17 22v-2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 15l6 -6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 17h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M2 7h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M7 2v2" />
+</g>
+<text x="754" y="167" font-size="9" font-family="sans-serif">edit.removeLinks</text>
+<text x="754" y="180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,210) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 3m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 11l3 3l3 -3" />
+</g>
+<text x="4" y="267" font-size="9" font-family="sans-serif">edit.selectParagraph</text>
+<text x="4" y="280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,210) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M15 10v-5c0 -1.38 .62 -2 2 -2s2 .62 2 2v5m0 -3h-4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19 21h-4l4 -7h-4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 15l3 3l3 -3" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M7 6v12" />
+</g>
+<text x="154" y="267" font-size="9" font-family="sans-serif">edit.sortLines</text>
+<text x="154" y="280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,210) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3.5 5.5l1.5 1.5l2.5 -2.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3.5 11.5l1.5 1.5l2.5 -2.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3.5 17.5l1.5 1.5l2.5 -2.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6l9 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 12l9 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18l9 0" />
+</g>
+<text x="304" y="267" font-size="9" font-family="sans-serif">edit.uniqueLines</text>
+<text x="304" y="280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,210) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 19v-10.5a3.5 3.5 0 0 1 7 0v10.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 13h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 19v-10.5a3.5 3.5 0 0 1 7 0v10.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 13h7" />
+</g>
+<text x="454" y="267" font-size="9" font-family="sans-serif">edit.uppercase</text>
+<text x="454" y="280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,210) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M14 3v4a1 1 0 0 0 1 1h4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 21h-3a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 20h5a2 2 0 0 0 2 -2v-5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 22l-2 -2l2 -2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 15l2 -2l2 2" />
+</g>
+<text x="604" y="267" font-size="9" font-family="sans-serif">file.printLayout</text>
+<text x="604" y="280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,210) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 12h6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 9v6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6 19a2 2 0 0 1 -2 -2v-4l-1 -1l1 -1v-4a2 2 0 0 1 2 -2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 19a2 2 0 0 0 2 -2v-4l1 -1l-1 -1v-4a2 2 0 0 0 -2 -2" />
+</g>
+<text x="754" y="267" font-size="9" font-family="sans-serif">insert.codeAssistant</text>
+<text x="754" y="280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,310) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 3v4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M7 3v4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 11h16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 16.496v1.504l1 1" />
+</g>
+<text x="4" y="367" font-size="9" font-family="sans-serif">insert.dateTime</text>
+<text x="4" y="380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,310) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 7h3a1 1 0 0 0 1 -1v-1a2 2 0 0 1 4 0v1a1 1 0 0 0 1 1h3a1 1 0 0 1 1 1v3a1 1 0 0 0 1 1h1a2 2 0 0 1 0 4h-1a1 1 0 0 0 -1 1v3a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-1a2 2 0 0 0 -4 0v1a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1h1a2 2 0 0 0 0 -4h-1a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1" />
+</g>
+<g transform="translate(225,329) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11" />
+</g>
+<text x="154" y="367" font-size="9" font-family="sans-serif">insert.insertShortcut</text>
+<text x="154" y="380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,310) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 7h3a1 1 0 0 0 1 -1v-1a2 2 0 0 1 4 0v1a1 1 0 0 0 1 1h3a1 1 0 0 1 1 1v3a1 1 0 0 0 1 1h1a2 2 0 0 1 0 4h-1a1 1 0 0 0 -1 1v3a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-1a2 2 0 0 0 -4 0v1a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1h1a2 2 0 0 0 0 -4h-1a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1" />
+</g>
+<text x="304" y="367" font-size="9" font-family="sans-serif">insert.manageSnippets</text>
+<text x="304" y="380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,310) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 4m0 1a1 1 0 0 1 1 -1h14a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-14a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 12l6 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 16l6 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 20l6 0" />
+</g>
+<g transform="translate(525,329) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+</g>
+<text x="454" y="367" font-size="9" font-family="sans-serif">insert.manageTemplates</text>
+<text x="454" y="380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,310) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 7h3a1 1 0 0 0 1 -1v-1a2 2 0 0 1 4 0v1a1 1 0 0 0 1 1h3a1 1 0 0 1 1 1v3a1 1 0 0 0 1 1h1a2 2 0 0 1 0 4h-1a1 1 0 0 0 -1 1v3a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-1a2 2 0 0 0 -4 0v1a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1h1a2 2 0 0 0 0 -4h-1a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1" />
+</g>
+<g transform="translate(675,329) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 4l0 4l-6 0l0 -4" />
+</g>
+<text x="604" y="367" font-size="9" font-family="sans-serif">insert.saveSnippet</text>
+<text x="604" y="380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,310) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 4m0 1a1 1 0 0 1 1 -1h14a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-14a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 12l6 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 16l6 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 20l6 0" />
+</g>
+<g transform="translate(825,329) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 4l0 4l-6 0l0 -4" />
+</g>
+<text x="754" y="367" font-size="9" font-family="sans-serif">insert.saveTemplate</text>
+<text x="754" y="380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 19h5v-1a7.35 7.35 0 1 1 6 0v1h5" />
+</g>
+<text x="4" y="467" font-size="9" font-family="sans-serif">insert.specialCharacter</text>
+<text x="4" y="480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,410) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 15l6 -6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" />
+</g>
+<g transform="translate(225,429) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M11 19h-6a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 19l2 2l4 -4" />
+</g>
+<text x="154" y="467" font-size="9" font-family="sans-serif">links.checkLocal</text>
+<text x="154" y="480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,410) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 15l6 -6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" />
+</g>
+<g transform="translate(375,429) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M20.946 12.99a9 9 0 1 0 -9.46 7.995" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3.6 9h16.8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3.6 15h13.9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11.5 3a17 17 0 0 0 0 18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12.5 3a16.997 16.997 0 0 1 2.311 12.001" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 19l2 2l4 -4" />
+</g>
+<text x="304" y="467" font-size="9" font-family="sans-serif">links.checkWeb</text>
+<text x="304" y="480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M13 5h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 9h5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 15h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 19h5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+</g>
+<text x="454" y="467" font-size="9" font-family="sans-serif">links.inventory</text>
+<text x="454" y="480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,410) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 15l6 -6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" />
+</g>
+<g transform="translate(675,429) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 3m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 15m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 11v-3a2 2 0 0 0 -2 -2h-6l3 3m0 -6l-3 3" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 13v3a2 2 0 0 0 2 2h6l-3 -3m0 6l3 -3" />
+</g>
+<text x="604" y="467" font-size="9" font-family="sans-serif">links.replaceDestination</text>
+<text x="604" y="480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 9h.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 12h1v4h1" />
+</g>
+<text x="754" y="467" font-size="9" font-family="sans-serif">menu.about</text>
+<text x="754" y="480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 21h-7a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.001 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.001 15.5v1.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.001 21v1.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M22.032 17.25l-1.299 .75" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17.27 20l-1.3 .75" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15.97 17.25l1.3 .75" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20.733 20l1.3 .75" />
+</g>
+<text x="4" y="567" font-size="9" font-family="sans-serif">menu.advancedTables</text>
+<text x="4" y="580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M13 4v16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 4v16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19 4h-9.5a4.5 4.5 0 0 0 0 9h3.5" />
+</g>
+<text x="154" y="567" font-size="9" font-family="sans-serif">menu.body</text>
+<text x="154" y="580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 5h6a3.5 3.5 0 0 1 0 7h-6z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 12h1a3.5 3.5 0 0 1 0 7h-7v-7" />
+</g>
+<text x="304" y="567" font-size="9" font-family="sans-serif">menu.bold</text>
+<text x="304" y="580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6l11 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 12l11 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 18l11 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 6l0 .01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 12l0 .01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 18l0 .01" />
+</g>
+<text x="454" y="567" font-size="9" font-family="sans-serif">menu.bulletList</text>
+<text x="454" y="580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M8.59 4.581c.362 -.359 .86 -.581 1.41 -.581h8a2 2 0 0 1 2 2v8c0 .556 -.227 1.06 -.594 1.422m-3.406 .578h-6a2 2 0 0 1 -2 -2v-6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 16v2a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-8a2 2 0 0 1 2 -2h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 3l18 18" />
+</g>
+<text x="604" y="567" font-size="9" font-family="sans-serif">menu.closeAll</text>
+<text x="604" y="580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M14.5 4h2.5a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6 5l-2 2l2 2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 9l2 -2l-2 -2" />
+</g>
+<text x="754" y="567" font-size="9" font-family="sans-serif">menu.codeBlock</text>
+<text x="754" y="580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,610) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 9l16 0" />
+</g>
+<text x="4" y="667" font-size="9" font-family="sans-serif">menu.commandSurface</text>
+<text x="4" y="680" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,610) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" />
+</g>
+<text x="154" y="667" font-size="9" font-family="sans-serif">menu.copy</text>
+<text x="154" y="680" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,610) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9.15 14.85l8.85 -10.85" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6 4l8.85 10.85" />
+</g>
+<text x="304" y="667" font-size="9" font-family="sans-serif">menu.cut</text>
+<text x="304" y="680" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,610) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6h11" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 18h5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 6v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 12v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18v.01" />
+</g>
+<text x="454" y="667" font-size="9" font-family="sans-serif">menu.documentStructure</text>
+<text x="454" y="680" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,610) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 8h16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 4v4" />
+</g>
+<text x="604" y="667" font-size="9" font-family="sans-serif">menu.documentTabs</text>
+<text x="604" y="680" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,610) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 5l3 3" />
+</g>
+<text x="754" y="667" font-size="9" font-family="sans-serif">menu.edit</text>
+<text x="754" y="680" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,710) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 21h4l13 -13a1.5 1.5 0 0 0 -4 -4l-13 13v4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14.5 5.5l4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 8l-5 -5l-4 4l5 5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M7 8l-1.5 1.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 12l5 5l-4 4l-5 -5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 17l-1.5 1.5" />
+</g>
+<text x="4" y="767" font-size="9" font-family="sans-serif">menu.extras</text>
+<text x="4" y="780" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,710) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M14 3v4a1 1 0 0 0 1 1h4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+</g>
+<text x="154" y="767" font-size="9" font-family="sans-serif">menu.file</text>
+<text x="154" y="780" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,710) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M14 3v4a1 1 0 0 0 1 1h4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 10l0 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 12l4 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 17l4 0" />
+</g>
+<text x="304" y="767" font-size="9" font-family="sans-serif">menu.file.compareWith</text>
+<text x="304" y="780" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,710) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 21l-6 -6" />
+</g>
+<g transform="translate(525,729) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M5 12l14 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 18l6 -6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 6l6 6" />
+</g>
+<text x="454" y="767" font-size="9" font-family="sans-serif">menu.findNext</text>
+<text x="454" y="780" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,710) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 3m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 15m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 11v-3a2 2 0 0 0 -2 -2h-6l3 3m0 -6l-3 3" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 13v3a2 2 0 0 0 2 2h6l-3 -3m0 6l3 -3" />
+</g>
+<text x="604" y="767" font-size="9" font-family="sans-serif">menu.findReplace</text>
+<text x="604" y="780" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,710) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 20l3 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 20l7 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.9 15l6.9 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10.2 6.3l5.8 13.7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 20l6 -16l2 0l7 16" />
+</g>
+<text x="754" y="767" font-size="9" font-family="sans-serif">menu.format</text>
+<text x="754" y="780" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,810) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M19 18v-8l-2 2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6v12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 6v12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 18h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 6h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6h2" />
+</g>
+<text x="4" y="867" font-size="9" font-family="sans-serif">menu.heading1</text>
+<text x="4" y="880" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,810) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M17 12a2 2 0 1 1 4 0c0 .591 -.417 1.318 -.816 1.858l-3.184 4.143l4 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6v12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 6v12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 18h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 6h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6h2" />
+</g>
+<text x="154" y="867" font-size="9" font-family="sans-serif">menu.heading2</text>
+<text x="154" y="880" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,810) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M19 14a2 2 0 1 0 -2 -2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 16a2 2 0 1 0 2 -2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6v12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 6v12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 18h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 6h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6h2" />
+</g>
+<text x="304" y="867" font-size="9" font-family="sans-serif">menu.heading3</text>
+<text x="304" y="880" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,810) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M20 18v-8l-4 6h5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6v12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 6v12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 18h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 6h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6h2" />
+</g>
+<text x="454" y="867" font-size="9" font-family="sans-serif">menu.heading4</text>
+<text x="454" y="880" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,810) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M17 18h2a2 2 0 1 0 0 -4h-2v-4h4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6v12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 6v12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 18h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 6h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6h2" />
+</g>
+<text x="604" y="867" font-size="9" font-family="sans-serif">menu.heading5</text>
+<text x="604" y="880" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,810) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M19 14a2 2 0 1 0 0 4a2 2 0 0 0 0 -4z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 12a2 2 0 1 0 -4 0v4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6v12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 6v12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 18h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 6h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6h2" />
+</g>
+<text x="754" y="867" font-size="9" font-family="sans-serif">menu.heading6</text>
+<text x="754" y="880" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,910) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 17l0 .01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 13.5a1.5 1.5 0 0 1 1 -1.5a2.6 2.6 0 1 0 -3 -4" />
+</g>
+<text x="4" y="967" font-size="9" font-family="sans-serif">menu.help</text>
+<text x="4" y="980" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,910) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 12l16 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 8l4 -4l4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 16l-4 4l-4 -4" />
+</g>
+<text x="154" y="967" font-size="9" font-family="sans-serif">menu.horizontalRule</text>
+<text x="154" y="980" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,910) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M15 8h.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" />
+</g>
+<text x="304" y="967" font-size="9" font-family="sans-serif">menu.image</text>
+<text x="304" y="980" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,910) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M20 6l-11 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 12l-7 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 18l-11 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 8l4 4l-4 4" />
+</g>
+<text x="454" y="967" font-size="9" font-family="sans-serif">menu.indent</text>
+<text x="454" y="980" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,910) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 8l-4 4l4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 8l4 4l-4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 4l-4 16" />
+</g>
+<text x="604" y="967" font-size="9" font-family="sans-serif">menu.inlineCode</text>
+<text x="604" y="980" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,910) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 12h6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 9v6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+</g>
+<text x="754" y="967" font-size="9" font-family="sans-serif">menu.insert</text>
+<text x="754" y="980" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,1010) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12.5 21h-7.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v7.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 19h6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19 16v6" />
+</g>
+<text x="4" y="1067" font-size="9" font-family="sans-serif">menu.insertTable</text>
+<text x="4" y="1080" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,1010) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M11 5l6 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M7 19l6 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 5l-4 14" />
+</g>
+<text x="154" y="1067" font-size="9" font-family="sans-serif">menu.italic</text>
+<text x="154" y="1080" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,1010) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6.371h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 9c0 2.144 2.252 3.908 6 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20l4 -9l4 9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.1 18h-6.2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.694 3l.793 .582" />
+</g>
+<text x="304" y="1067" font-size="9" font-family="sans-serif">menu.language</text>
+<text x="304" y="1080" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,1010) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6.371h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 9c0 2.144 2.252 3.908 6 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20l4 -9l4 9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.1 18h-6.2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.694 3l.793 .582" />
+</g>
+<g transform="translate(525,1029) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 4h6a5 5 0 0 1 5 5v6a5 5 0 0 1 -5 5h-6v-16" />
+</g>
+<text x="454" y="1067" font-size="9" font-family="sans-serif">menu.language.de</text>
+<text x="454" y="1080" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,1010) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6.371h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 9c0 2.144 2.252 3.908 6 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20l4 -9l4 9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.1 18h-6.2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.694 3l.793 .582" />
+</g>
+<g transform="translate(675,1029) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M17 4h-10v16h10" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M7 12l8 0" />
+</g>
+<text x="604" y="1067" font-size="9" font-family="sans-serif">menu.language.en</text>
+<text x="604" y="1080" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,1010) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6.371h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 9c0 2.144 2.252 3.908 6 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20l4 -9l4 9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.1 18h-6.2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.694 3l.793 .582" />
+</g>
+<g transform="translate(825,1029) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M17 8a4 4 0 0 0 -4 -4h-2a4 4 0 0 0 0 8h2a4 4 0 0 1 0 8h-2a4 4 0 0 1 -4 -4" />
+</g>
+<text x="754" y="1067" font-size="9" font-family="sans-serif">menu.language.es</text>
+<text x="754" y="1080" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,1110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6.371h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 9c0 2.144 2.252 3.908 6 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20l4 -9l4 9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.1 18h-6.2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.694 3l.793 .582" />
+</g>
+<g transform="translate(75,1129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M17 4h-10v16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M7 12l8 0" />
+</g>
+<text x="4" y="1167" font-size="9" font-family="sans-serif">menu.language.fr</text>
+<text x="4" y="1180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,1110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6.371h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 9c0 2.144 2.252 3.908 6 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20l4 -9l4 9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.1 18h-6.2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.694 3l.793 .582" />
+</g>
+<g transform="translate(225,1129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 4l0 16" />
+</g>
+<text x="154" y="1167" font-size="9" font-family="sans-serif">menu.language.it</text>
+<text x="154" y="1180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,1110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6.371h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 9c0 2.144 2.252 3.908 6 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20l4 -9l4 9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.1 18h-6.2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.694 3l.793 .582" />
+</g>
+<g transform="translate(375,1129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M17 4v12a4 4 0 0 1 -4 4h-2a4 4 0 0 1 -4 -4" />
+</g>
+<text x="304" y="1167" font-size="9" font-family="sans-serif">menu.language.ja</text>
+<text x="304" y="1180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,1110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6.371h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 9c0 2.144 2.252 3.908 6 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20l4 -9l4 9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.1 18h-6.2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.694 3l.793 .582" />
+</g>
+<g transform="translate(525,1129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 4l0 16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M7 12h2l8 -8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 12l8 8" />
+</g>
+<text x="454" y="1167" font-size="9" font-family="sans-serif">menu.language.ko</text>
+<text x="454" y="1180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,1110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6.371h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 9c0 2.144 2.252 3.908 6 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20l4 -9l4 9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.1 18h-6.2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.694 3l.793 .582" />
+</g>
+<g transform="translate(675,1129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 20v-16l10 16v-16" />
+</g>
+<text x="604" y="1167" font-size="9" font-family="sans-serif">menu.language.nl</text>
+<text x="604" y="1180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,1110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6.371h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 9c0 2.144 2.252 3.908 6 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20l4 -9l4 9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.1 18h-6.2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.694 3l.793 .582" />
+</g>
+<g transform="translate(825,1129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 20v-16h5.5a4 4 0 0 1 0 9h-5.5" />
+</g>
+<text x="754" y="1167" font-size="9" font-family="sans-serif">menu.language.pt-BR</text>
+<text x="754" y="1180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,1210) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 6.371h7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 9c0 2.144 2.252 3.908 6 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20l4 -9l4 9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19.1 18h-6.2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.694 3l.793 .582" />
+</g>
+<g transform="translate(75,1229) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 4h10l-10 16h10" />
+</g>
+<text x="4" y="1267" font-size="9" font-family="sans-serif">menu.language.zh-CN</text>
+<text x="4" y="1280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,1210) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M15 21h-9a3 3 0 0 1 -3 -3v-1h10v2a2 2 0 0 0 4 0v-14a2 2 0 1 1 2 2h-2m2 -4h-11a3 3 0 0 0 -3 3v11" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 7l4 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 11l4 0" />
+</g>
+<text x="154" y="1267" font-size="9" font-family="sans-serif">menu.licensing</text>
+<text x="154" y="1280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,1210) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 10l2 -2v8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 8h3a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 0 -1 1v2a1 1 0 0 0 1 1h3" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 8h2.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-1.5h1.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-2.5" />
+</g>
+<text x="304" y="1267" font-size="9" font-family="sans-serif">menu.lineNumbers</text>
+<text x="304" y="1280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,1210) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 6l16 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 18l5 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12h13a3 3 0 0 1 0 6h-4l2 -2m0 4l-2 -2" />
+</g>
+<text x="454" y="1267" font-size="9" font-family="sans-serif">menu.lineWrap</text>
+<text x="454" y="1280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,1210) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 6l16 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 18l5 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12h13a3 3 0 0 1 0 6h-4l2 -2m0 4l-2 -2" />
+</g>
+<g transform="translate(675,1229) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M14 3v4a1 1 0 0 0 1 1h4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+</g>
+<text x="604" y="1267" font-size="9" font-family="sans-serif">menu.lineWrap.AUTOMATIC</text>
+<text x="604" y="1280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,1210) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 9h7a3 3 0 0 1 0 6h-4l2 -2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 17l-2 -2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 3v18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 3v18" />
+</g>
+<text x="754" y="1267" font-size="9" font-family="sans-serif">menu.lineWrap.CONTINUOUS</text>
+<text x="754" y="1280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,1310) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 15l6 -6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" />
+</g>
+<text x="4" y="1367" font-size="9" font-family="sans-serif">menu.link</text>
+<text x="4" y="1380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,1310) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 15l6 -6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 6l.463 -.536a5 5 0 0 1 7.072 0a4.993 4.993 0 0 1 -.001 7.072" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12.603 18.534a5.07 5.07 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 19h6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19 16v6" />
+</g>
+<text x="154" y="1367" font-size="9" font-family="sans-serif">menu.links</text>
+<text x="154" y="1380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,1310) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M11 6h9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 12h9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 18h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 16a2 2 0 1 1 4 0c0 .591 -.5 1 -1 1.5l-3 2.5h4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6 10v-6l-2 2" />
+</g>
+<g transform="translate(375,1329) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 5l3 3" />
+</g>
+<text x="304" y="1367" font-size="9" font-family="sans-serif">menu.listStartNumber</text>
+<text x="304" y="1380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,1310) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 16m0 1a1 1 0 0 1 1 -1h3a1 1 0 0 1 1 1v3a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12v-6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 8h4v4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 8l-5 5" />
+</g>
+<text x="454" y="1367" font-size="9" font-family="sans-serif">menu.maximize</text>
+<text x="454" y="1380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,1310) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 16m0 1a1 1 0 0 1 1 -1h3a1 1 0 0 1 1 1v3a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12v-6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 13h-4v-4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 13l5 -5" />
+</g>
+<text x="604" y="1367" font-size="9" font-family="sans-serif">menu.minimize</text>
+<text x="604" y="1380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,1310) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M14 3v4a1 1 0 0 0 1 1h4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 11l0 6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 14l6 0" />
+</g>
+<text x="754" y="1367" font-size="9" font-family="sans-serif">menu.new</text>
+<text x="754" y="1380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,1410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 4m0 1a1 1 0 0 1 1 -1h14a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-14a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 12l6 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 16l6 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 20l6 0" />
+</g>
+<text x="4" y="1467" font-size="9" font-family="sans-serif">menu.newFromTemplate</text>
+<text x="4" y="1480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,1410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M11 6h9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 12h9" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 18h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 16a2 2 0 1 1 4 0c0 .591 -.5 1 -1 1.5l-3 2.5h4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6 10v-6l-2 2" />
+</g>
+<text x="154" y="1467" font-size="9" font-family="sans-serif">menu.numberedList</text>
+<text x="154" y="1480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,1410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M5 19l2.757 -7.351a1 1 0 0 1 .936 -.649h12.307a1 1 0 0 1 .986 1.164l-.996 5.211a2 2 0 0 1 -1.964 1.625h-14.026a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v2" />
+</g>
+<text x="304" y="1467" font-size="9" font-family="sans-serif">menu.open</text>
+<text x="304" y="1480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,1410) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2" />
+</g>
+<g transform="translate(525,1429) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 11v-4a4 4 0 1 1 8 0v4" />
+</g>
+<text x="454" y="1467" font-size="9" font-family="sans-serif">menu.openReadOnly</text>
+<text x="454" y="1480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,1410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M20 6l-7 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 12l-9 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 18l-7 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 8l-4 4l4 4" />
+</g>
+<text x="604" y="1467" font-size="9" font-family="sans-serif">menu.outdent</text>
+<text x="604" y="1480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,1410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" />
+</g>
+<text x="754" y="1467" font-size="9" font-family="sans-serif">menu.paste</text>
+<text x="754" y="1480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,1510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" />
+</g>
+<text x="4" y="1567" font-size="9" font-family="sans-serif">menu.print</text>
+<text x="4" y="1580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,1510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 12h12l-3 -3" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 15l3 -3" />
+</g>
+<text x="154" y="1567" font-size="9" font-family="sans-serif">menu.quit</text>
+<text x="154" y="1580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,1510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M6 15h15" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 19h-15" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 11h6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 7h-6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 9h1a1 1 0 1 1 -1 1v-2.5a2 2 0 0 1 2 -2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 9h1a1 1 0 1 1 -1 1v-2.5a2 2 0 0 1 2 -2" />
+</g>
+<text x="304" y="1567" font-size="9" font-family="sans-serif">menu.quote</text>
+<text x="304" y="1580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,1510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 8l0 4l2 2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" />
+</g>
+<text x="454" y="1567" font-size="9" font-family="sans-serif">menu.recentFiles</text>
+<text x="454" y="1580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,1510) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 8l0 4l2 2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" />
+</g>
+<g transform="translate(675,1529) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 7l16 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 11l0 6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 11l0 6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+</g>
+<text x="604" y="1567" font-size="9" font-family="sans-serif">menu.recentFiles.clear</text>
+<text x="604" y="1580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,1510) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 8l0 4l2 2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" />
+</g>
+<g transform="translate(825,1529) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M5 12l14 0" />
+</g>
+<text x="754" y="1567" font-size="9" font-family="sans-serif">menu.recentFiles.empty</text>
+<text x="754" y="1580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,1610) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M15 14l4 -4l-4 -4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19 10h-11a4 4 0 1 0 0 8h1" />
+</g>
+<text x="4" y="1667" font-size="9" font-family="sans-serif">menu.redo</text>
+<text x="4" y="1680" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,1610) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 4l0 4l-6 0l0 -4" />
+</g>
+<text x="154" y="1667" font-size="9" font-family="sans-serif">menu.save</text>
+<text x="154" y="1680" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,1610) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 4l0 4l-6 0l0 -4" />
+</g>
+<g transform="translate(375,1629) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 5l3 3" />
+</g>
+<text x="304" y="1667" font-size="9" font-family="sans-serif">menu.saveAs</text>
+<text x="304" y="1680" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,1610) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M8 8m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 20v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 20v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 20v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 16v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 8v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 4v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 4v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 4v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 4v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 4v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 8v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 12v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 16v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 20v.01" />
+</g>
+<text x="454" y="1667" font-size="9" font-family="sans-serif">menu.selectAll</text>
+<text x="454" y="1680" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,1610) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 16v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 13a2 2 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483" />
+</g>
+<text x="604" y="1667" font-size="9" font-family="sans-serif">menu.showHelp</text>
+<text x="604" y="1680" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,1610) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M15 8a5 5 0 0 1 0 8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17.7 5a9 9 0 0 1 0 14" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5" />
+</g>
+<text x="754" y="1667" font-size="9" font-family="sans-serif">menu.speech</text>
+<text x="754" y="1680" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,1710) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 20h14" />
+</g>
+<text x="4" y="1767" font-size="9" font-family="sans-serif">menu.statistics</text>
+<text x="4" y="1780" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,1710) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M5 12l14 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 6.5a4 2 0 0 0 -4 -1.5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1.5a4 2 0 0 1 -4 -1.5" />
+</g>
+<text x="154" y="1767" font-size="9" font-family="sans-serif">menu.strikethrough</text>
+<text x="154" y="1780" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,1710) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+</g>
+<text x="304" y="1767" font-size="9" font-family="sans-serif">menu.table</text>
+<text x="304" y="1780" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,1710) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 7v-2h13v2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 5v14" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 19h-4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 13v-1h6v1" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 12v7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 19h2" />
+</g>
+<text x="454" y="1767" font-size="9" font-family="sans-serif">menu.textParagraphs</text>
+<text x="454" y="1780" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,1710) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M14 3v4a1 1 0 0 0 1 1h4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 17l.01 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 11l0 3" />
+</g>
+<text x="604" y="1767" font-size="9" font-family="sans-serif">menu.tools.checkIssues</text>
+<text x="604" y="1780" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,1710) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 5v5a5 5 0 0 0 10 0v-5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 19h14" />
+</g>
+<text x="754" y="1767" font-size="9" font-family="sans-serif">menu.underline</text>
+<text x="754" y="1780" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,1810) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 14l-4 -4l4 -4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 10h11a4 4 0 1 1 0 8h-1" />
+</g>
+<text x="4" y="1867" font-size="9" font-family="sans-serif">menu.undo</text>
+<text x="4" y="1880" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,1810) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
+</g>
+<text x="154" y="1867" font-size="9" font-family="sans-serif">menu.view</text>
+<text x="154" y="1880" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,1810) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6 8h.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 8h.01" />
+</g>
+<text x="454" y="1867" font-size="9" font-family="sans-serif">menu.window</text>
+<text x="454" y="1880" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,1810) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M20 17v-12c0 -1.121 -.879 -2 -2 -2s-2 .879 -2 2v12l2 2l2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 7h4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 19h-13a2 2 0 1 1 0 -4h4a2 2 0 1 0 0 -4h-3" />
+</g>
+<text x="604" y="1867" font-size="9" font-family="sans-serif">menu.writingAssist</text>
+<text x="604" y="1880" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,1810) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11.192 17.966c-3.242 -.28 -5.972 -2.269 -8.192 -5.966c2.4 -4 5.4 -6 9 -6c3.326 0 6.14 1.707 8.442 5.122" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18.42 15.61a2.1 2.1 0 0 1 2.97 2.97l-3.39 3.42h-3v-3l3.42 -3.39z" />
+</g>
+<text x="754" y="1867" font-size="9" font-family="sans-serif">menu.writingView</text>
+<text x="754" y="1880" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,1910) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M11 19h-6a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v2.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M20.2 20.2l1.8 1.8" />
+</g>
+<text x="4" y="1967" font-size="9" font-family="sans-serif">search.folder</text>
+<text x="4" y="1980" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,1910) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 4v16l13 -8z" />
+</g>
+<text x="154" y="1967" font-size="9" font-family="sans-serif">speech.read</text>
+<text x="154" y="1980" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,1910) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M5 5m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" />
+</g>
+<text x="304" y="1967" font-size="9" font-family="sans-serif">speech.stop</text>
+<text x="304" y="1980" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,1910) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6h11" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 18h5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 6v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 12v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18v.01" />
+</g>
+<g transform="translate(525,1929) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M5 12l14 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 18l6 -6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 6l6 6" />
+</g>
+<text x="454" y="1967" font-size="9" font-family="sans-serif">structure.demote</text>
+<text x="454" y="1980" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,1910) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6h11" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 18h5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 6v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 12v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18v.01" />
+</g>
+<g transform="translate(675,1929) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M6 15l6 -6l6 6" />
+</g>
+<text x="604" y="1967" font-size="9" font-family="sans-serif">structure.fold</text>
+<text x="604" y="1980" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,1910) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6h11" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 18h5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 6v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 12v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18v.01" />
+</g>
+<g transform="translate(825,1929) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 5l0 14" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 13l-6 6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6 13l6 6" />
+</g>
+<text x="754" y="1967" font-size="9" font-family="sans-serif">structure.moveDown</text>
+<text x="754" y="1980" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,2010) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6h11" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 18h5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 6v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 12v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18v.01" />
+</g>
+<g transform="translate(75,2029) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 5l0 14" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 11l-6 -6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6 11l6 -6" />
+</g>
+<text x="4" y="2067" font-size="9" font-family="sans-serif">structure.moveUp</text>
+<text x="4" y="2080" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,2010) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6h11" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 18h5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 6v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 12v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18v.01" />
+</g>
+<g transform="translate(225,2029) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M5 12l14 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 12l6 6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 12l6 -6" />
+</g>
+<text x="154" y="2067" font-size="9" font-family="sans-serif">structure.promote</text>
+<text x="154" y="2080" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,2010) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 6h11" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 12h8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 18h5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 6v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 12v.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 18v.01" />
+</g>
+<g transform="translate(375,2029) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M6 9l6 6l6 -6" />
+</g>
+<text x="304" y="2067" font-size="9" font-family="sans-serif">structure.unfold</text>
+<text x="304" y="2080" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,2010) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 10h11" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 3l-6 6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 7l-7 7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 12l-7 7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 17l-4 4" />
+</g>
+<g transform="translate(525,2029) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M18 16v2a1 1 0 0 1 -1 1h-11l6 -7l-6 -7h11a1 1 0 0 1 1 1v2" />
+</g>
+<text x="454" y="2067" font-size="9" font-family="sans-serif">table.calculateColumn</text>
+<text x="454" y="2080" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,2010) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+</g>
+<g transform="translate(675,2029) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" />
+</g>
+<text x="604" y="2067" font-size="9" font-family="sans-serif">table.copyRegion</text>
+<text x="604" y="2080" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,2010) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 10h11" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 3l-6 6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 7l-7 7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 12l-7 7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 17l-4 4" />
+</g>
+<g transform="translate(825,2029) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" />
+</g>
+<text x="754" y="2067" font-size="9" font-family="sans-serif">table.duplicateColumn</text>
+<text x="754" y="2080" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,2110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 3l-6 6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 3l-7 7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19 3l-7 7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 6l-4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 10v11" />
+</g>
+<g transform="translate(75,2129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" />
+</g>
+<text x="4" y="2167" font-size="9" font-family="sans-serif">table.duplicateRow</text>
+<text x="4" y="2180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,2110) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12.5 21h-7.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v7.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 19h6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19 16l3 3l-3 3" />
+</g>
+<text x="154" y="2167" font-size="9" font-family="sans-serif">table.exportDelimited</text>
+<text x="154" y="2180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,2110) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 21h-7a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v8" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19 22v-6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M22 19l-3 -3l-3 3" />
+</g>
+<text x="304" y="2167" font-size="9" font-family="sans-serif">table.importDelimited</text>
+<text x="304" y="2180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,2110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+</g>
+<g transform="translate(525,2129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 7h5l3.5 5h9.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 17h5l3.495 -5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 15l3 -3l-3 -3" />
+</g>
+<text x="454" y="2167" font-size="9" font-family="sans-serif">table.joinNext</text>
+<text x="454" y="2180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,2110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 10h11" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 3l-6 6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 7l-7 7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 12l-7 7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 17l-4 4" />
+</g>
+<g transform="translate(675,2129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 8l-4 4l4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 8l4 4l-4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 12l18 0" />
+</g>
+<text x="604" y="2167" font-size="9" font-family="sans-serif">table.moveColumn</text>
+<text x="604" y="2180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,2110) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 3l-6 6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 3l-7 7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19 3l-7 7" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 6l-4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 10v11" />
+</g>
+<g transform="translate(825,2129) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M8 7l4 -4l4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 17l4 4l4 -4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 3l0 18" />
+</g>
+<text x="754" y="2167" font-size="9" font-family="sans-serif">table.moveRow</text>
+<text x="754" y="2180" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,2210) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+</g>
+<g transform="translate(75,2229) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 17v-4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 17v-1" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 17v-2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 17v-1" />
+</g>
+<text x="4" y="2267" font-size="9" font-family="sans-serif">table.pasteRegion</text>
+<text x="4" y="2280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,2210) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+</g>
+<g transform="translate(225,2229) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" />
+</g>
+<text x="154" y="2267" font-size="9" font-family="sans-serif">table.pasteTsv</text>
+<text x="154" y="2280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,2210) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+</g>
+<g transform="translate(375,2229) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 6l7 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 12l7 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 18l9 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M15 9l3 -3l3 3" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 6l0 12" />
+</g>
+<text x="304" y="2267" font-size="9" font-family="sans-serif">table.sortColumns</text>
+<text x="304" y="2280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,2210) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+</g>
+<g transform="translate(525,2229) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M21 17h-8l-3.5 -5h-6.5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M21 7h-8l-3.495 5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 10l3 -3l-3 -3" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M18 20l3 -3l-3 -3" />
+</g>
+<text x="454" y="2267" font-size="9" font-family="sans-serif">table.split</text>
+<text x="454" y="2280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,2210) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 10h18" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 3v18" />
+</g>
+<g transform="translate(675,2229) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M16 20l4 0l0 -4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 14l6 6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 4l-4 0l0 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 4l6 6" />
+</g>
+<text x="604" y="2267" font-size="9" font-family="sans-serif">table.transpose</text>
+<text x="604" y="2280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,2210) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 4m0 1a1 1 0 0 1 1 -1h14a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-14a1 1 0 0 1 -1 -1z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 8h16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 4v4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 16l4 -4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 16l-4 -4" />
+</g>
+<text x="754" y="2267" font-size="9" font-family="sans-serif">tabs.close</text>
+<text x="754" y="2280" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,2310) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 4l0 16" />
+</g>
+<g transform="translate(75,2329) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M18 6l-12 12" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6 6l12 12" />
+</g>
+<text x="4" y="2367" font-size="9" font-family="sans-serif">tabs.closeSideView</text>
+<text x="4" y="2380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,2310) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 8h16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 20h-6a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 4v4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M16 19h6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19 16v6" />
+</g>
+<text x="154" y="2367" font-size="9" font-family="sans-serif">tabs.new</text>
+<text x="154" y="2380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,2310) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 8h16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 4v4" />
+</g>
+<g transform="translate(375,2329) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M5 12l14 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 18l6 -6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13 6l6 6" />
+</g>
+<text x="304" y="2367" font-size="9" font-family="sans-serif">tabs.next</text>
+<text x="304" y="2380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,2310) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 8h16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 4v4" />
+</g>
+<g transform="translate(525,2329) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M5 12l14 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 12l6 6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M5 12l6 -6" />
+</g>
+<text x="454" y="2367" font-size="9" font-family="sans-serif">tabs.previous</text>
+<text x="454" y="2380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,2310) scale(1.0833333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 8h16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M8 4v4" />
+</g>
+<g transform="translate(675,2329) scale(0.6666666666666666)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3.06 13a9 9 0 1 0 .49 -4.087" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 4.001v5h5" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+</g>
+<text x="604" y="2367" font-size="9" font-family="sans-serif">tabs.reopenClosed</text>
+<text x="604" y="2380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,2310) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 4l0 16" />
+</g>
+<text x="754" y="2367" font-size="9" font-family="sans-serif">tabs.sideBySide</text>
+<text x="754" y="2380" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,2410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 16.5l2 -3l2 3m-2 -3v-2l3 -1m-6 0l3 1" />
+  <circle xmlns="http://www.w3.org/2000/svg" cx="12" cy="7.5" r=".5" fill="currentColor" />
+</g>
+<text x="4" y="2467" font-size="9" font-family="sans-serif">tools.accessibility</text>
+<text x="4" y="2480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,2410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M12 13m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M13.45 11.55l2.05 -2.05" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M6.4 20a9 9 0 1 1 11.2 0z" />
+</g>
+<text x="154" y="2467" font-size="9" font-family="sans-serif">tools.writingDashboard</text>
+<text x="154" y="2480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,2410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 14m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+</g>
+<text x="304" y="2467" font-size="9" font-family="sans-serif">ui.mode.classic</text>
+<text x="304" y="2480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,2410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 18v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 9h16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 14l2 2l2 -2" />
+</g>
+<text x="454" y="2467" font-size="9" font-family="sans-serif">ui.mode.ribbon</text>
+<text x="454" y="2480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(656,2410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M8 4a2 2 0 0 1 2 2m-1.162 2.816a1.993 1.993 0 0 1 -.838 .184h-2a2 2 0 0 1 -2 -2v-1c0 -.549 .221 -1.046 .58 -1.407" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 13m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v3a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M14 10v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v10m-.595 3.423a2 2 0 0 1 -1.405 .577h-2a2 2 0 0 1 -2 -2v-4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 3l18 18" />
+</g>
+<text x="604" y="2467" font-size="9" font-family="sans-serif">view.distractionFree</text>
+<text x="604" y="2480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(806,2410) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle xmlns="http://www.w3.org/2000/svg" cx="12" cy="12" r=".5" fill="currentColor" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 12m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 3l0 2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 12l2 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 19l0 2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M19 12l2 0" />
+</g>
+<text x="754" y="2467" font-size="9" font-family="sans-serif">view.focusParagraph</text>
+<text x="754" y="2480" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(56,2510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M7 8l-4 4l4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M17 8l4 4l-4 4" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M3 12l18 0" />
+</g>
+<text x="4" y="2567" font-size="9" font-family="sans-serif">view.readingWidth</text>
+<text x="4" y="2580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(206,2510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M4 18v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M4 9h16" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 16l2 -2l2 2" />
+</g>
+<text x="154" y="2567" font-size="9" font-family="sans-serif">view.ribbonCollapse</text>
+<text x="154" y="2580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(356,2510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path xmlns="http://www.w3.org/2000/svg" d="M3 19v-14a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 15h2" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M9 12h6" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M10 9h4" />
+</g>
+<text x="304" y="2567" font-size="9" font-family="sans-serif">view.typewriter</text>
+<text x="304" y="2580" font-size="9" font-family="sans-serif"></text>
+<g transform="translate(506,2510) scale(1.3333333333333333)" fill="none" stroke="#24354b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="scale(0.72)"><path xmlns="http://www.w3.org/2000/svg" d="M4 7h3a1 1 0 0 0 1 -1v-1a2 2 0 0 1 4 0v1a1 1 0 0 0 1 1h3a1 1 0 0 1 1 1v3a1 1 0 0 0 1 1h1a2 2 0 0 1 0 4h-1a1 1 0 0 0 -1 1v3a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-1a2 2 0 0 0 -4 0v1a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1h1a2 2 0 0 0 0 -4h-1a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1" />
+</g><g transform="translate(13,13) scale(0.44)"><path xmlns="http://www.w3.org/2000/svg" d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M12 9h.01" />
+  <path xmlns="http://www.w3.org/2000/svg" d="M11 12h1v4h1" />
+</g></g>
+<text x="454" y="2567" font-size="9" font-family="sans-serif">menu.thanks</text>
+</svg>

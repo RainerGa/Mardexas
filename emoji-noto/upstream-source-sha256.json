@@ -1,0 +1,17 @@
+{
+  "source": "https://repo.maven.apache.org/maven2/com/gluonhq/emoji/emoji/1.1.0/emoji-1.1.0-sources.jar",
+  "sha256": "0236077a258f8d73be688c10036fe6888fa64ab167d59f7781bf8b84f295a068",
+  "files": {
+    "com/gluonhq/emoji/DownloadableEmojiSpriteLoader.java": "50a3ba4209ae6161680a5cee24f6ccd7e53b096714e75db4a3dacf0ec1fcc092",
+    "com/gluonhq/emoji/util/EmojiImageUtils.java": "91d3550f19da712269f2f53f8831dd2e1544656bec03939622cc04826ddaa5bf",
+    "com/gluonhq/emoji/util/TextUtils.java": "e40a1003ef35340b59be87483f8234cd8fd5b56ef3a6bf13f6024094803848fe",
+    "com/gluonhq/emoji/Emoji.java": "45b5d08263ae6b9d959a710f97ecf82bc5aa9fe89668f379cff1504e773db40f",
+    "com/gluonhq/emoji/EmojiData.java": "be6dcd37b6859e1090a1d8ba1eb2812d07fe074c108ab208932ba8551a54586c",
+    "com/gluonhq/emoji/EmojiLoaderFactory.java": "5dab99a83b3146ce81ace7e5b8a44dab3358605db3da9f902d0fa87005627905",
+    "com/gluonhq/emoji/EmojiCategory.java": "428b57a67eb1ab0f556333e89ca1156ff259f1ce92efd9581f078466cfe0f32e",
+    "com/gluonhq/emoji/EmojiSpriteLoader.java": "2cac82a55f9369c8bbab950d81813df2923f2c6948ce737ac9bd39c684fd1d84",
+    "com/gluonhq/emoji/EmojiSkinTone.java": "fadeabb6957f6fda64d751b910b7c8e8d6e31d6234857a4a6561ece4377d11a6",
+    "module-info.java": "84a3a24a073ec346758fb50f49686d783a39376aae8bf4680308ccf1dc46d56b",
+    "com/gluonhq/emoji/emoji.csv": "53dac7d677b5df9e1ffef66067ffdc2a20e34ddc6fabda93ccd0b4764db610c8"
+  }
+}

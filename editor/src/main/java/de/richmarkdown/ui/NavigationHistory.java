@@ -22,54 +22,107 @@ import javafx.beans.property.ReadOnlyBooleanWrapper;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Optional;
 
 /**
- * Positionsstack für die Zurück-/Vorwärts-Navigation (AddFeatures #4,
- * Vorbild LibreOffice Writer: „Zurück zur letzten Änderungsstelle“).
+ * Sprungverlauf f\u00fcr die Zur\u00fcck-/Vorw\u00e4rts-Navigation (AddFeatures #4,
+ * Vorbild LibreOffice Writer: "Zur\u00fcck zur letzten \u00c4nderungsstelle").
  *
  * <p>Die Klasse ist reine Logik ohne JavaFX-Szenenbezug und damit ohne
- * Toolkit startbar testbar. Sie merkt sich Caret-Positionen, zu denen
- * gesprungen wurde, und erlaubt das Navigieren hin und zurück wie in einem
- * Browser bzw. in der LO-Navigationsleiste:
+ * Toolkit startbar testbar. Sie merkt sich Sprungziele (Label + Position +
+ * Typ), zu denen gesprungen wurde, und erlaubt das Navigieren hin und zur\u00fcck
+ * wie in einem Browser bzw. in der LO-Navigationsleiste:
  *
  * <ul>
  *   <li>{@link #jumpPerformed(int)} meldet einen Sprung zur Zielposition;
- *       die vorherige Position wird auf dem Zurück-Stack gemerkt, der
- *       Vorwärts-Stack wird geleert.</li>
- *   <li>{@link #goBack(int)} liefert die letzte Sprungquelle; die aktuelle
- *       Position wird dafür auf den Vorwärts-Stack gelegt.</li>
+ *       die vorherige Position wird auf dem Zur\u00fcck-Stack gemerkt, der
+ *       Vorw\u00e4rts-Stack wird geleert.</li>
+ *   <li>{@link #jumpPerformed(int, String, JumpType)} erweitert den Sprung um
+ *       ein beschriftendes Label und einen Typ (z. B. {@code HEADING} oder
+ *       {@code ISSUE}), damit der Verlauf f\u00fcr TOC- und
+ *       Pr\u00fcf-Ergebnis-Sprunge aufgezeichnet werden kann.</li>
+ *   <li>{@link #goBack(int)} liefert das letzte Sprungziel; die aktuelle
+ *       Position wird daf\u00fcr auf den Vorw\u00e4rts-Stack gelegt.</li>
  *   <li>{@link #goForward(int)} spiegelt {@link #goBack(int)}.</li>
  * </ul>
  *
- * <p>Die verfügbaren Richtungen werden als JavaFX-Properties veröffentlicht,
- * damit Menüeinträge und Toolbar-Schaltflächen ihre Disable-Bindings direkt
- * anbinden können.
+ * <p>Die verf\u00fcgbaren Richtungen werden als JavaFX-Properties ver\u00f6ffentlicht,
+ * damit Men\u00fceintr\u00e4ge und Toolbar-Schaltfl\u00e4chen ihre Disable-Bindings
+ * direkt anbinden k\u00f6nnen.
  */
 public class NavigationHistory {
 
-    /** Maximale Tiefe des Zurück-/Vorwärts-Stacks (LO-artig begrenzt). */
+    /** Maximale Tiefe des Zur\u00fcck-/Vorw\u00e4rts-Stacks (LO-artig begrenzt). */
     public static final int MAX_DEPTH = 50;
 
-    private final Deque<Integer> back = new ArrayDeque<>();
-    private final Deque<Integer> forward = new ArrayDeque<>();
+    private final Deque<JumpTarget> back = new ArrayDeque<>();
+    private final Deque<JumpTarget> forward = new ArrayDeque<>();
     private final ReadOnlyBooleanWrapper canGoBack = new ReadOnlyBooleanWrapper(false);
     private final ReadOnlyBooleanWrapper canGoForward = new ReadOnlyBooleanWrapper(false);
 
     /**
-     * Meldet einen Sprung zur Zielposition.
+     * Ein benannter Sprungverlaufseintrag: Label, Zielposition und Sprungtyp.
      *
-     * <p>Die bislang aktuelle Position wird auf dem Zurück-Stack gemerkt;
+     * @param label  beschriftendes Label des Sprungziels (kann {@code null} sein)
+     * @param position Caret-Position des Sprungziels
+     * @param type   Typ des Sprungziels
+     */
+    public record JumpTarget(String label, int position, JumpType type) {
+        public JumpTarget {
+            if (position < 0) {
+                throw new IllegalArgumentException("Position darf nicht negativ sein, war: " + position);
+            }
+            if (type == null) {
+                throw new NullPointerException("Sprungtyp darf nicht null sein");
+            }
+        }
+    }
+
+    /**
+     * Art eines Sprungziels im Navigationsverlauf.
+     */
+    public enum JumpType {
+        /** Roher Caret-Sprung (R\u00fcckgabe/Navigation ohne speziellen Kontext). */
+        POSITION,
+        /** Sprung zu einer Dokument-\u00dcberschrift (Dokumentstruktur-Ansicht). */
+        HEADING,
+        /** Sprung zu einem vom Formatierungspr\u00fcf melde Fundort. */
+        ISSUE,
+        /** Sprung zu einem Suchtreffer. */
+        SEARCH
+    }
+
+    /**
+     * Meldet einen Sprung zur Zielposition (R\u00fcckwärtskompatibilit\u00e4t).
+     *
+     * <p>Die bislang aktuelle Position wird auf dem Zur\u00fcck-Stack gemerkt;
      * ein erneuter Sprung von derselben Position aus wird nicht doppelt
-     * gemerkt. Der Vorwärts-Stack wird wie in Browsern geleert, da die
-     * alte Vorwärtskette dann gegenstandslos ist.
+     * gemerkt. Der Vorw\u00e4rts-Stack wird wie in Browsern geleert, da die
+     * alte Vorw\u00e4rtskette dann gegenstandslos ist.
      *
      * @param currentPosition Caret-Position, von der aus gesprungen wurde
      */
     public void jumpPerformed(int currentPosition) {
-        if (!back.isEmpty() && back.peek() == currentPosition) {
+        jumpPerformed(currentPosition, null, JumpType.POSITION);
+    }
+
+    /**
+     * Meldet einen Sprung zur Zielposition mit benanntem Ziel.
+     *
+     * <p>Die bislang aktuelle Position wird auf dem Zur\u00fcck-Stack gemerkt;
+     * ein erneuter Sprung von derselben Position aus wird nicht doppelt
+     * gemerkt. Der Vorw\u00e4rts-Stack wird wie in Browsern geleert, da die
+     * alte Vorw\u00e4rtskette dann gegenstandslos ist.
+     *
+     * @param currentPosition Caret-Position, von der aus gesprungen wurde
+     * @param label           beschriftendes Label des Sprungziels
+     * @param type            Typ des Sprungziels
+     */
+    public void jumpPerformed(int currentPosition, String label, JumpType type) {
+        if (!back.isEmpty() && back.peek().position() == currentPosition) {
             return;
         }
-        back.push(currentPosition);
+        back.push(new JumpTarget(label, currentPosition, type));
         while (back.size() > MAX_DEPTH) {
             back.removeLast();
         }
@@ -78,41 +131,41 @@ public class NavigationHistory {
     }
 
     /**
-     * Springt zurück zur letzten Sprungquelle.
+     * Springt zur\u00fcck zur letzten Sprungquelle.
      *
-     * @param currentPosition aktuelle Caret-Position (wird für die
-     *                        Vorwärts-Navigation gemerkt)
-     * @return Zielposition oder leer, wenn kein Zurück-Sprung möglich ist
+     * @param currentPosition aktuelle Caret-Position (wird f\u00fcr die
+     *                        Vorw\u00e4rts-Navigation gemerkt)
+     * @return Zielsprung oder leer, wenn kein Zur\u00fcck-Sprung m\u00f6glich ist
      */
-    public java.util.Optional<Integer> goBack(int currentPosition) {
+    public Optional<JumpTarget> goBack(int currentPosition) {
         if (back.isEmpty()) {
-            return java.util.Optional.empty();
+            return Optional.empty();
         }
-        int target = back.pop();
-        forward.push(currentPosition);
+        JumpTarget target = back.pop();
+        forward.push(new JumpTarget(null, currentPosition, JumpType.POSITION));
         updateProperties();
-        return java.util.Optional.of(target);
+        return Optional.of(target);
     }
 
     /**
-     * Springt vorwärts zur nächsten gemerkten Position.
+     * Springt vorw\u00e4rts zur n\u00e4chsten gemerkten Position.
      *
-     * @param currentPosition aktuelle Caret-Position (wird für die
-     *                        Zurück-Navigation gemerkt)
-     * @return Zielposition oder leer, wenn kein Vorwärts-Sprung möglich ist
+     * @param currentPosition aktuelle Caret-Position (wird f\u00fcr die
+     *                        Zur\u00fcck-Navigation gemerkt)
+     * @return Zielsprung oder leer, wenn kein Vorw\u00e4rts-Sprung m\u00f6glich ist
      */
-    public java.util.Optional<Integer> goForward(int currentPosition) {
+    public Optional<JumpTarget> goForward(int currentPosition) {
         if (forward.isEmpty()) {
-            return java.util.Optional.empty();
+            return Optional.empty();
         }
-        int target = forward.pop();
-        back.push(currentPosition);
+        JumpTarget target = forward.pop();
+        back.push(new JumpTarget(null, currentPosition, JumpType.POSITION));
         updateProperties();
-        return java.util.Optional.of(target);
+        return Optional.of(target);
     }
 
     /**
-     * Gibt an, ob ein Zurück-Sprung möglich ist.
+     * Gibt an, ob ein Zur\u00fcck-Sprung m\u00f6glich ist.
      *
      * @return {@code true}, wenn mindestens eine Sprungquelle gemerkt ist
      */
@@ -121,33 +174,33 @@ public class NavigationHistory {
     }
 
     /**
-     * Gibt an, ob ein Vorwärts-Sprung möglich ist.
+     * Gibt an, ob ein Vorw\u00e4rts-Sprung m\u00f6glich ist.
      *
-     * @return {@code true}, wenn mindestens eine Vorwärtsposition gemerkt ist
+     * @return {@code true}, wenn mindestens eine Vorw\u00e4rtsposition gemerkt ist
      */
     public boolean canGoForward() {
         return canGoForward.get();
     }
 
     /**
-     * Property für die Disable-Bindings von Zurück-Schaltflächen.
+     * Property f\u00fcr die Disable-Bindings von Zur\u00fcck-Schaltfl\u00e4chen.
      *
-     * @return lesbare Property des Zurück-Sprung-Zustands
+     * @return lesbare Property des Zur\u00fcck-Sprung-Zustands
      */
     public ReadOnlyBooleanProperty canGoBackProperty() {
         return canGoBack.getReadOnlyProperty();
     }
 
     /**
-     * Property für die Disable-Bindings von Vorwärts-Schaltflächen.
+     * Property f\u00fcr die Disable-Bindings von Vorw\u00e4rts-Schaltfl\u00e4chen.
      *
-     * @return lesbare Property des Vorwärts-Sprung-Zustands
+     * @return lesbare Property des Vorw\u00e4rts-Sprung-Zustands
      */
     public ReadOnlyBooleanProperty canGoForwardProperty() {
         return canGoForward.getReadOnlyProperty();
     }
 
-    /** Veröffentlicht die Stack-Zustände an die gebundenen UI-Elemente. */
+    /** Ver\u00f6ffentlicht die Stack-Zust\u00e4nde an die gebundenen UI-Elemente. */
     private void updateProperties() {
         canGoBack.set(!back.isEmpty());
         canGoForward.set(!forward.isEmpty());

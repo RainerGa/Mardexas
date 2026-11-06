@@ -159,10 +159,62 @@
     -fx-text-fill: #404040;
 }
 
+.rme-view-mode-controls {
+    -fx-spacing: 0.15em;
+    -fx-alignment: center;
+}
+
+.rme-view-mode-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 2;
+    -fx-border-color: transparent;
+    -fx-border-radius: 2;
+    -fx-padding: 0.1em 0.2em;
+    -fx-min-width: 2em;
+    -fx-min-height: 1.8em;
+    -fx-cursor: hand;
+}
+
+.rme-view-mode-button:hover {
+    -fx-background-color: #e7e7e7;
+}
+
+.rme-view-mode-button:selected {
+    -fx-background-color: #dce8f7;
+    -fx-border-color: #9eb7d7;
+}
+
+.rme-view-icon-outline {
+    -fx-fill: white;
+    -fx-stroke: #4a4a4a;
+    -fx-stroke-width: 1;
+}
+
+.rme-view-icon-line {
+    -fx-fill: #5a5a5a;
+}
+
 /* ---------- Zoom-Steuerung in der Statusleiste ---------- */
 
 .rme-status-bar .zoom-controls .label {
     -fx-text-fill: #404040;
+}
+
+.zoom-step-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 2;
+    -fx-border-color: transparent;
+    -fx-padding: 0 0.2em;
+    -fx-min-width: 1.4em;
+    -fx-min-height: 1.6em;
+    -fx-font-size: 0.9em;
+    -fx-font-weight: bold;
+    -fx-text-fill: #404040;
+    -fx-cursor: hand;
+}
+
+.zoom-step-button:hover {
+    -fx-background-color: #e7e7e7;
 }
 
 /* Kleiner Strich auf der Bahn des Zoom-Reglers, der die 100-%-Position
@@ -217,3 +269,262 @@
 .rme-find-replace .combo-box {
     -fx-background-color: white;
 }
+
+/* ---------- Track Changes View (Word/LibreOffice Writer style) ---------- */
+
+.rme-track-changes-view {
+    -fx-background-color: white;
+}
+
+.rme-track-changes-toolbar {
+    -fx-background-color: #f9f9f9;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0.5em 0.75em 0.5em 0.75em;
+    -fx-spacing: 1em;
+}
+
+.rme-track-changes-title {
+    -fx-font-size: 1.1em;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2b579a;
+}
+
+.rme-view-mode-combo {
+    -fx-background-color: white;
+    -fx-background-radius: 4;
+    -fx-border-color: #c8c8c8;
+    -fx-border-radius: 4;
+    -fx-padding: 0.2em 0.5em 0.2em 0.5em;
+    -fx-font-size: 0.95em;
+    -fx-min-width: 140px;
+}
+
+.rme-view-mode-combo .list-cell {
+    -fx-padding: 0.2em 0.5em 0.2em 0.5em;
+    -fx-font-size: 0.95em;
+}
+
+.rme-inline-doc {
+    -fx-background-color: white;
+    -fx-border-color: #c8c8c8;
+    -fx-border-width: 1;
+    -fx-padding: 0.5em;
+}
+
+.rme-review-pane {
+    -fx-background-color: #fafafa;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 0 0 0 1;
+    -fx-min-width: 280px;
+    -fx-pref-width: 320px;
+    -fx-max-width: 400px;
+}
+
+.rme-review-toolbar {
+    -fx-padding: 0.25em 0 0.25em 0;
+    -fx-spacing: 0.25em;
+}
+
+.rme-review-nav-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 3;
+    -fx-border-color: transparent;
+    -fx-border-radius: 3;
+    -fx-padding: 0.15em 0.4em;
+    -fx-min-width: 1.8em;
+    -fx-min-height: 1.8em;
+    -fx-cursor: hand;
+    -fx-font-size: 1.1em;
+}
+
+.rme-review-nav-btn:hover {
+    -fx-background-color: #e4eefc;
+    -fx-border-color: #b7cdf0;
+}
+
+.rme-review-action-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 3;
+    -fx-border-color: transparent;
+    -fx-border-radius: 3;
+    -fx-padding: 0.15em 0.4em;
+    -fx-min-width: 1.8em;
+    -fx-min-height: 1.8em;
+    -fx-cursor: hand;
+    -fx-font-size: 1.1em;
+    -fx-font-weight: bold;
+}
+
+.rme-review-action-btn.accept {
+    -fx-text-fill: #27ae60;
+}
+
+.rme-review-action-btn.accept:hover {
+    -fx-background-color: #e8f8ee;
+    -fx-border-color: #27ae60;
+}
+
+.rme-review-action-btn.reject {
+    -fx-text-fill: #e74c3c;
+}
+
+.rme-review-action-btn.reject:hover {
+    -fx-background-color: #fceaea;
+    -fx-border-color: #e74c3c;
+}
+
+.rme-review-action-btn.accept-all {
+    -fx-text-fill: #1e8a49;
+}
+
+.rme-review-action-btn.reject-all {
+    -fx-text-fill: #c0392b;
+}
+
+.rme-change-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 0.25em 0.5em;
+}
+
+.rme-change-cell:filled:hover {
+    -fx-background-color: #f0f4f8;
+}
+
+.rme-change-cell:filled:selected {
+    -fx-background-color: #dce8f7;
+}
+
+.rme-change-preview {
+    -fx-font-size: 0.9em;
+    -fx-text-fill: #333;
+    -fx-wrap-text: true;
+}
+
+.rme-change-meta {
+    -fx-text-fill: #777;
+    -fx-font-size: 0.75em;
+}
+
+.rme-change-action-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 2;
+    -fx-border-color: transparent;
+    -fx-border-radius: 2;
+    -fx-padding: 0.1em 0.25em;
+    -fx-min-width: 1.5em;
+    -fx-min-height: 1.5em;
+    -fx-cursor: hand;
+    -fx-font-size: 0.85em;
+}
+
+.rme-change-action-btn.accept {
+    -fx-text-fill: #27ae60;
+}
+
+.rme-change-action-btn.accept:hover {
+    -fx-background-color: #e8f8ee;
+}
+
+.rme-change-action-btn.reject {
+    -fx-text-fill: #e74c3c;
+}
+
+.rme-change-action-btn.reject:hover {
+    -fx-background-color: #fceaea;
+}
+
+.rme-comment-dialog .dialog-pane {
+    -fx-min-width: 400px;
+}
+
+.rme-comment-dialog .text-field {
+    -fx-pref-width: 350px;
+}
+
+/* Numbered review markers include images without altering document styling. */
+.rme-change-margin .list-cell:empty {
+    -fx-background-color: white;
+}
+.rme-change-margin .list-cell {
+    -fx-padding: 4px;
+}
+
+/* View-only themes: the printable document keeps its paper and text colors. */
+.rme-editor-root { -rme-panel: #f8f9fb; -rme-ink: #202020; -rme-hover: #e3ebf7; }
+.rme-dark { -rme-panel: #303238; -rme-ink: #eeeeee; -rme-hover: #444b58; }
+.rme-high-contrast { -rme-panel: black; -rme-ink: white; -rme-hover: #333333; }
+.rme-dark .rme-menu-bar, .rme-dark .rme-toolbar, .rme-dark .rme-status-bar,
+.rme-dark .rme-structure-view, .rme-dark .rme-line-number-gutter,
+.rme-high-contrast .rme-menu-bar, .rme-high-contrast .rme-toolbar, .rme-high-contrast .rme-status-bar,
+.rme-high-contrast .rme-structure-view, .rme-high-contrast .rme-line-number-gutter {
+    -fx-background-color: -rme-panel;
+}
+.rme-dark .rme-menu-bar .label, .rme-dark .rme-toolbar .label, .rme-dark .rme-status-bar .label,
+.rme-dark .rme-toolbar-button, .rme-dark .zoom-step-button, .rme-dark .rme-structure-view .label,
+.rme-dark .rme-line-number-gutter .line-number,
+.rme-high-contrast .rme-menu-bar .label, .rme-high-contrast .rme-toolbar .label, .rme-high-contrast .rme-status-bar .label,
+.rme-high-contrast .rme-toolbar-button, .rme-high-contrast .zoom-step-button, .rme-high-contrast .rme-structure-view .label,
+.rme-high-contrast .rme-line-number-gutter .line-number { -fx-text-fill: -rme-ink; }
+.rme-dark .rme-toolbar-button:hover, .rme-dark .rme-menu-bar .menu:showing,
+.rme-high-contrast .rme-toolbar-button:hover, .rme-high-contrast .rme-menu-bar .menu:showing { -fx-background-color: -rme-hover; }
+
+/* Both command surfaces inherit one theme palette and use local vector icons. */
+.rme-toolbar-button { -fx-text-base-color: #202020; }
+.rme-toolbar-button:selected { -fx-text-base-color: white; }
+.rme-ribbon {
+    -fx-background-color: -rme-panel; -fx-text-base-color: -rme-ink;
+    -fx-border-color: derive(-rme-panel, -15%); -fx-border-width: 0 0 1 0;
+}
+.rme-ribbon .tab-pane { -fx-tab-min-height: 29; -fx-tab-max-height: 29; }
+.rme-ribbon .tab-header-area { -fx-padding: 0 30 0 6; }
+.rme-ribbon .tab-header-background { -fx-background-color: -rme-panel; }
+.rme-ribbon .tab {
+    -fx-background-color: transparent; -fx-padding: 5 12 5 12;
+    -fx-border-color: transparent; -fx-border-width: 0 0 2 0;
+}
+.rme-ribbon .tab:hover { -fx-background-color: -rme-hover; }
+.rme-ribbon .tab:selected { -fx-background-color: -rme-hover; -fx-border-color: #3877c5; }
+.rme-ribbon .tab .tab-label { -fx-text-fill: -rme-ink; }
+.rme-ribbon .tab .focus-indicator { -fx-border-color: transparent; }
+.rme-ribbon .scroll-pane, .rme-ribbon .viewport {
+    -fx-background-color: -rme-panel; -fx-background-insets: 0; -fx-padding: 0;
+}
+.rme-ribbon-groups { -fx-padding: 7 8 8 8; -fx-alignment: top-left; }
+.rme-ribbon-group {
+    -fx-padding: 0 9 0 3; -fx-spacing: 4; -fx-alignment: top-center;
+    -fx-border-width: 0 1 0 0; -fx-border-color: derive(-rme-panel, -15%);
+}
+.rme-ribbon-group-body, .rme-ribbon-group-actions { -fx-alignment: top-left; -fx-spacing: 3; }
+.rme-ribbon-action-columns { -fx-spacing: 3; -fx-alignment: top-left; }
+.rme-ribbon-column { -fx-spacing: 2; -fx-alignment: top-left; }
+.rme-ribbon-group-title {
+    -fx-text-fill: -rme-ink; -fx-opacity: 0.85; -fx-font-size: 12px;
+    -fx-alignment: center; -fx-padding: 4 4 0 4;
+}
+.rme-ribbon .button, .rme-ribbon .toggle-button, .rme-ribbon .menu-button {
+    -fx-background-color: transparent; -fx-background-radius: 3; -fx-text-fill: -rme-ink;
+    -fx-text-base-color: -rme-ink; -fx-padding: 3 6; -fx-graphic-text-gap: 5;
+    -fx-border-color: transparent; -fx-border-radius: 3; -fx-border-width: 1;
+}
+.rme-ribbon .rme-ribbon-large-command, .rme-ribbon .rme-ribbon-large {
+    -fx-alignment: top-center; -fx-padding: 6 7 3 7; -fx-graphic-text-gap: 6;
+}
+.rme-ribbon .rme-ribbon-small-command, .rme-ribbon .rme-ribbon-small { -fx-alignment: center-left; }
+.rme-ribbon .rme-ribbon-icon-command, .rme-ribbon .rme-ribbon-icon {
+    -fx-padding: 4; -fx-graphic-text-gap: 0; -fx-alignment: center;
+}
+.rme-ribbon .rme-ribbon-overflow, .rme-ribbon .rme-ribbon-more { -fx-alignment: center-left; }
+.rme-ribbon .rme-ribbon-compact-group { -fx-content-display: graphic-only; -fx-graphic-text-gap: 0; -fx-padding: 3; }
+.rme-ribbon .rme-ribbon-compact-group > .arrow-button { -fx-padding: 0 1 0 2; }
+.rme-ribbon .rme-ribbon-compact-label { -fx-text-fill: -rme-ink; -fx-font-size: 11px; }
+.rme-ribbon .rme-ribbon-collapse { -fx-padding: 3; }
+.rme-ribbon .button:hover, .rme-ribbon .toggle-button:hover, .rme-ribbon .menu-button:hover {
+    -fx-background-color: -rme-hover; -fx-border-color: derive(-rme-panel, -20%);
+}
+.rme-ribbon .toggle-button:selected { -fx-background-color: #2b579a; -fx-text-fill: white; -fx-text-base-color: white; }
+.rme-ribbon .button:focused, .rme-ribbon .toggle-button:focused, .rme-ribbon .menu-button:focused {
+    -fx-border-color: #2b579a; -fx-border-radius: 4;
+}
+.rme-dark .rme-toolbar-button, .rme-high-contrast .rme-toolbar-button { -fx-text-base-color: -rme-ink; }
+.rme-dark .rme-toolbar-button:selected, .rme-high-contrast .rme-toolbar-button:selected { -fx-text-base-color: white; }

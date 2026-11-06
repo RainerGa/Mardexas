@@ -71,6 +71,8 @@ class FormatToolBarTest {
         FxTestUtil.flushFxEvents();
     }
 
+    @org.junit.jupiter.api.AfterEach void closeStage() { FxTestUtil.runAndWait(stage::close); }
+
     private void type(String text) {
         FxTestUtil.runAndWait(() -> {
             for (char c : text.toCharArray()) {

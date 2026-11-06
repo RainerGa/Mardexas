@@ -162,10 +162,10 @@ Folgende Funktionen aus `AddFeatures.md` und früheren Plänen sind bereits voll
 10. **Generics aufgeräumt:** Unchecked Cast `ListView<?>` → `ListView<Node>` in `PrintSupport.java` entfernt; `ListView<?>` verwendet.
 11. **Dokumentation:** `SECURITY.md` hinzugefügt; API-Javadoc in `MarkdownEditor` und `I18n` geprüft und als vollständig bestätigt (@param/@return vorhanden wo nötig).
 
-### Phase 4: Feature-Erweiterungen (Folgeversionen) — offen
-12. **Autosave & Wiederherstellung:** gemäß `AddFeatures.md` #15 (nicht umgesetzt).
-13. **Listen-Startnummern & verschachtelte Zitate:** Features #9/#10 aus `IMPLEMENTATION_PLAN.md` (nicht umgesetzt).
-14. **Vorlagen-System:** Basisvorlagen im Datei-Menü (nicht umgesetzt).
+### Phase 4: Feature-Erweiterungen (Folgeversionen) — ✅ erledigt
+12. **Autosave & Crash Recovery:** `AutoSaveService` (`editor/src/main/java/de/richmarkdown/io/AutoSaveService.java`) speichert periodisch (Default 5 Min.) in ein Wiederherstellungsverzeichnis; beim Start wird über `showRecoveryDialog()` angeboten, den nicht gespeicherten Stand wiederherzustellen (`EditorWindow.java`). Nach erfolgreichem Save wird die Wiederherstellungsdatei gelöscht.
+13. **Vorlagen-System:** `TemplateDialog` (`editor/src/main/java/de/richmarkdown/ui/dialogs/TemplateDialog.java`) lädt Vorlagen aus `/templates/` (Klassenpfad) und liefert den Markdown-Inhalt zurück. Datei → „Neu aus Vorlage…" (`EditorWindow.newFromTemplate()`, `MenuBarFactory`) öffnet den Dialog und setzt den Inhalt als neues Dokument. Vier Basisvorlagen: `article.md`, `letter.md`, `meeting-notes.md`, `readme.md` in `editor/src/main/resources/templates/`.
+14. **Listen-Startnummern & verschachtelte Blockzitate:** Bereits vollständig umgesetzt (Modell `ParagraphDecoration.startNumber` / `ListItemBlock.startNumber`, Parser/Writter mit Startnummer und nested `QuoteBlock`, UI-Dialog für Startnummer, indent/outdent für Zitate, Round-Trip-Tests grün).
 
 ---
 
@@ -173,4 +173,4 @@ Folgende Funktionen aus `AddFeatures.md` und früheren Plänen sind bereits voll
 
 Der RichMarkDownEditor (Mardexas) ist architektonisch sauber aufgebaut und verfügt über eine umfangreiche Testsuite und vollständige Kernfeatures. Die zuvor formulierten „Blocker“ beruhten weitgehend auf überholten Dokumentationsständen oder isolierten Test-Konfigurationsdetails.
 
-Mit der Umsetzung der **Phasen 1–3** (Test-Isolierung, PR-CI-Workflow & statische Analyse, Code-Qualität) erreicht das Projekt vollständige Teststabilität und professionelle Qualitätsstandards für Releases und Weiterentwicklungen. **Phase 4** (Feature-Erweiterungen: Autosave, Listen-Startnummern, Vorlagen-System) bleibt für Folgeversionen offen.
+Mit der Umsetzung der **Phasen 1–4** (Test-Isolierung, PR-CI-Workflow & statische Analyse, Code-Qualität, Autosave, Vorlagen-System) erreicht das Projekt vollständige Teststabilität und professionelle Qualitätsstandards für Releases und Weiterentwicklungen.

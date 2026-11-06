@@ -251,6 +251,14 @@ class MarkdownWriterTest {
         assertEquals("[link](https://example.com)", writer.write(document));
     }
 
+    @Test
+    void writesBareUrlAsAngleBracketAutolink() {
+        Document document = doc("https://example.com",
+                dm(0, 17, TextDecoration.builder().presets()
+                        .url("https://example.com").build(), paragraph()));
+        assertEquals("<https://example.com>", writer.write(document));
+    }
+
     // ---------- Listen ----------
 
     @Test
@@ -377,10 +385,30 @@ class MarkdownWriterTest {
     // ---------- Escaping ----------
 
     @Test
-    void unmatchedMarkersAreNotEscaped() {
-        // Ungematchte Inline-Marker round-trippen identisch (kein Escaping nötig)
-        Document document = doc("a * b _ c", dm(0, 9, normal(), paragraph()));
-        assertEquals("a * b _ c", writer.write(document));
+    void isolatedLiteralMarkersNeedNoEscapes() {
+        String literal = "a * b _ c";
+        Document document = doc(literal, dm(0, literal.length(), normal(), paragraph()));
+        assertEquals(literal, writer.write(document));
+        assertEquals(literal, new MarkdownParser().parseInto(writer.write(document)).getText());
+    }
+
+    @Test
+    void formatProducingLiteralMarkersStayPlainAfterSaveAndReload() {
+        for (String literal : List.of("**bold**", "*italic*", "~~strike~~", "[label](https://example.org)", "https://example.org", "http://example.org", "`code`")) {
+            Document original = doc(literal, dm(0, literal.length(), normal(), paragraph()));
+            String written = writer.write(original);
+            Document reloaded = new MarkdownParser().parseInto(written);
+            assertEquals(literal, reloaded.getText());
+            for (var model : reloaded.getDecorations()) {
+                if (model.getDecoration() instanceof TextDecoration decoration) {
+                    assertEquals(FontWeight.NORMAL, decoration.getFontWeight());
+                    assertEquals(FontPosture.REGULAR, decoration.getFontPosture());
+                    assertTrue(!decoration.isStrikethrough());
+                    assertTrue(decoration.getURL() == null || decoration.getURL().isEmpty(), "Literal URL became a link: " + literal);
+                    assertTrue(!MarkdownStyles.MONOSPACED.equalsIgnoreCase(decoration.getFontFamily()));
+                }
+            }
+        }
     }
 
     @Test

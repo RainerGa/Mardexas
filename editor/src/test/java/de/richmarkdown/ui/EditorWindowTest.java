@@ -134,7 +134,7 @@ class EditorWindowTest {
     }
 
     @Test
-    void helpMenuOffersHelpAboutAndLicensing() {
+    void helpMenuOffersHelpAboutLicensingAndThanks() {
         EditorWindow window = FxTestUtil.callAndWait(EditorWindow::new);
         var helpItems = FxTestUtil.callAndWait(() -> {
             var root = (javafx.scene.layout.BorderPane) window.getScene().getRoot();
@@ -150,7 +150,7 @@ class EditorWindowTest {
         });
 
         assertEquals(List.of("Hilfe anzeigen", "Über Mardexas", "Lizenzierung",
-                "Sprache"), helpItems);
+                "Danke", "Sprache"), helpItems);
     }
 
     @Test
@@ -190,8 +190,9 @@ class EditorWindowTest {
                 .filter(item -> !(item instanceof javafx.scene.control.SeparatorMenuItem))
                 .map(item -> item.getText())
                 .toList();
-        assertEquals(1, labels.size());
+        assertEquals(2, labels.size());
         assertTrue(labels.contains("Tabelle einfügen..."));
+        assertTrue(labels.contains("Erweiterte Tabellenfunktionen"));
     }
 
     @Test
@@ -205,9 +206,10 @@ class EditorWindowTest {
                     .map(item -> item.getText())
                     .toList();
         });
-        // Datei-Reihenfolge wie in LibreOffice Writer: … Speichern unter…, Drucken…, Beenden
-        assertEquals(List.of("Neu", "Öffnen...", "Öffnen (schreibgeschützt)...",
-                "Zuletzt geöffnet", "Speichern", "Speichern unter...", "Drucken...", "Beenden"), labels);
+        // Datei-Reihenfolge wie in LibreOffice Writer: … Speichern unter…, Dateivergleich, Drucken…, Beenden
+        assertEquals(List.of("Neu", "Neu aus Vorlage…", "Öffnen...", "Öffnen (schreibgeschützt)...",
+                "Zuletzt geöffnet", "Speichern", "Speichern unter...", I18n.text("menu.file.compareWith"),
+                "Drucken...", "Beenden", "Druckbereich und Gestaltung …"), labels);
     }
 
     @Test
@@ -378,7 +380,7 @@ class EditorWindowTest {
         EditorWindow window = FxTestUtil.callAndWait(EditorWindow::new);
         boolean left = FxTestUtil.callAndWait(() -> {
             var root = (javafx.scene.layout.BorderPane) window.getScene().getRoot();
-            return root.getLeft() == window.getStructureView();
+            return window.getStructureView() == root.getLeft();
         });
         assertTrue(left, "structure view expected on the left");
     }
@@ -435,6 +437,33 @@ class EditorWindowTest {
     }
 
     @Test
+    void statusBarSwitchesBetweenFlowAndPageViews() {
+        EditorWindow window = FxTestUtil.callAndWait(EditorWindow::new);
+
+        FxTestUtil.runAndWait(() -> window.getStatusBar().getPageViewButton().fire());
+        assertTrue(FxTestUtil.callAndWait(
+                () -> window.getViewModeController().isShowingPages()));
+        assertTrue(FxTestUtil.callAndWait(
+                () -> window.getViewModeController().getPageView().getEditor()
+                        == window.getEditorControl()));
+        assertTrue(FxTestUtil.callAndWait(
+                () -> window.getZoomController().getViewport()
+                        .getChildrenUnmodifiable().contains(window.getViewModeController().getPageView())));
+        FxTestUtil.runAndWait(() -> window.getZoomController().setZoom(150));
+        assertEquals(1.5, FxTestUtil.callAndWait(
+                () -> window.getViewModeController().getPageView().getZoom()), 0.001);
+
+        FxTestUtil.runAndWait(() -> window.getStatusBar().getFlowViewButton().fire());
+        assertFalse(FxTestUtil.callAndWait(
+                () -> window.getViewModeController().isShowingPages()));
+        assertTrue(FxTestUtil.callAndWait(
+                () -> window.getZoomController().getViewport()
+                        .getChildrenUnmodifiable().contains(window.getEditorControl())));
+        assertTrue(FxTestUtil.callAndWait(
+                () -> window.getStatusBar().getFlowViewButton().isSelected()));
+    }
+
+    @Test
     void zoomSliderInWindowScalesEditor() {
         EditorWindow window = FxTestUtil.callAndWait(() -> {
             EditorWindow created = new EditorWindow();
@@ -485,9 +514,9 @@ class EditorWindowTest {
         FxTestUtil.flushFxEvents();
         String before = FxTestUtil.callAndWait(window.getEditor()::getMarkdown);
 
-        window.getZoomController().setZoom(250);
-        window.getZoomController().setZoom(50);
-        window.getZoomController().resetZoom();
+        FxTestUtil.runAndWait(() -> window.getZoomController().setZoom(250));
+        FxTestUtil.runAndWait(() -> window.getZoomController().setZoom(50));
+        FxTestUtil.runAndWait(window.getZoomController()::resetZoom);
 
         assertEquals(before, FxTestUtil.callAndWait(window.getEditor()::getMarkdown));
     }

@@ -283,5 +283,22 @@ class FindReplaceDialogTest {
         assertEquals(I18n.text("dialog.findReplace.noMatch"), status,
                 "Status soll 'Keine Übereinstimmung gefunden' anzeigen: " + status);
     }
+
+    @Test
+    void formattingOptionsAndSavedPresetLoadAreApplied() {
+        setText("**bold** text"); openDialog();
+        FxTestUtil.runAndWait(() -> {
+            var options = new FindReplaceEngine.FindOptions(); options.setMatchCase(true);
+            options.setFormatFilter(FindReplaceEngine.FormatFilter.BOLD);
+            dialog.applyPreset(new de.richmarkdown.io.SearchPresetStore.Preset("id", "name", "bold", "new", options));
+            assertEquals("bold", dialog.findText()); assertEquals("new", dialog.replaceText());
+            assertTrue(dialog.buildOptions().isMatchCase());
+            assertEquals(FindReplaceEngine.FormatFilter.BOLD, dialog.buildOptions().getFormatFilter());
+            assertNotNull(dialog.getScene().lookup("#search-results"));
+            assertNotNull(dialog.getScene().lookup("#search-replacement-preview"));
+            for (var button : dialog.getScene().getRoot().lookupAll(".button"))
+                assertNotNull(((javafx.scene.control.Button) button).getTooltip());
+        });
+    }
 }
 

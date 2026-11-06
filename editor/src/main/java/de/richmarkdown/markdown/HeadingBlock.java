@@ -39,11 +39,21 @@ public class HeadingBlock extends Block {
      * @throws IllegalArgumentException wenn {@code level} außerhalb 1 bis 6 liegt
      */
     public HeadingBlock(int level, List<Inline> inlines) {
+        validateLevel(level);
+        this.level = level;
+        this.inlines = List.copyOf(inlines != null ? inlines : List.of());
+    }
+
+    /**
+     * Validiert die Überschriftenebene.
+     *
+     * @param level zu prüfende Ebene
+     * @throws IllegalArgumentException wenn die Ebene ungültig ist
+     */
+    private static void validateLevel(int level) {
         if (level < 1 || level > 6) {
             throw new IllegalArgumentException("Invalid heading level: " + level);
         }
-        this.level = level;
-        this.inlines = List.copyOf(inlines);
     }
 
     /**

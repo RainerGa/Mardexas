@@ -16,13 +16,17 @@ fi
 
 cd "$PROJECT_DIR"
 mvn --batch-mode --no-transfer-progress \
-    -DskipTests \
+    -Dmaven.test.skip=true \
     -pl editor -am package -Pfatjar
 
 if [[ ! -f "$BUILT_JAR" ]]; then
     echo "FAT-JAR wurde nicht erzeugt: $BUILT_JAR" >&2
     exit 1
 fi
+
+# Retain the complete MIT attribution and all reviewed icon resources.
+python3 "$PROJECT_DIR/packaging/audit-icons.py" --jar "$BUILT_JAR"
+python3 "$PROJECT_DIR/packaging/audit-emoji.py" --jar "$BUILT_JAR"
 
 # Strukturprüfung: Manifest, Launcher, App-Ressourcen, JavaFX-Natives je OS.
 MAIN_CLASS="$(unzip -p "$BUILT_JAR" META-INF/MANIFEST.MF | tr -d '\r' | sed -n 's/^Main-Class: //p')"

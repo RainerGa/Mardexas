@@ -17,10 +17,7 @@
 
 package de.richmarkdown.ui;
 
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -30,8 +27,6 @@ import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -41,8 +36,7 @@ import java.util.List;
  * <p>Die Listen-, Einzugs- und Inline-Code-Icons werden bewusst ohne externe
  * Bilddateien aus JavaFX-Shapes aufgebaut – sie sind damit auflösungsunabhängig,
  * skalieren mit der Schriftgröße und lassen sich über CSS einfärben
- * (Style-Klasse {@value #SHAPE_STYLE_CLASS}). Die Datei-Icons („Neu“, „Öffnen“,
- * „Speichern“) werden aus der PNG-Ressource {@code file-icons.png} geladen.
+ * (Style-Klasse {@value #SHAPE_STYLE_CLASS}). Die Datei-Icons stammen aus dem lokalen MIT-lizenzierten Tabler-Vektorkatalog.
  *
  * <p>Alle Icons liegen auf einem {@value #ICON_SIZE}×{@value #ICON_SIZE}-Raster.
  */
@@ -63,30 +57,7 @@ public final class ToolbarIcons {
             "rme-icon-bullet-list", "rme-icon-numbered-list",
             "rme-icon-indent", "rme-icon-outdent", "rme-icon-inline-code");
 
-    /** Geladenes Sprite-Bild mit den drei Datei-Icons nebeneinander. */
-    private static final Image FILE_ICONS_IMAGE = loadFileIconsImage();
-
-    private ToolbarIcons() {
-    }
-
-    /**
-     * Lädt das Sprite-Bild mit den Datei-Icons aus den Klassenressourcen.
-     *
-     * @return das geladene Bild oder wirft eine Ausnahme, wenn es fehlt
-     */
-    private static Image loadFileIconsImage() {
-        try (InputStream is = ToolbarIcons.class.getResourceAsStream(
-                "/de/richmarkdown/ui/icons/file-icons.png")) {
-            if (is == null) {
-                throw new IllegalStateException(
-                        "Icon-Ressource nicht gefunden: /de/richmarkdown/ui/icons/file-icons.png");
-            }
-            return new Image(is);
-        } catch (IOException e) {
-            throw new IllegalStateException(
-                    "Icon-Ressource konnte nicht geladen werden: /de/richmarkdown/ui/icons/file-icons.png", e);
-        }
-    }
+    private ToolbarIcons() { }
 
     /**
      * Erstellt ein Vektor-Icon mit drei Aufzählungspunkten und Textzeilen.
@@ -221,12 +192,8 @@ public final class ToolbarIcons {
      * @return JavaFX-Knotengruppe im Icon-Raster
      */
     public static Node newDocumentIcon() {
-        ImageView icon = new ImageView(FILE_ICONS_IMAGE);
-        icon.getStyleClass().addAll(ICON_STYLE_CLASS, "rme-icon-new-document");
-        double third = FILE_ICONS_IMAGE.getWidth() / 3.0;
-        icon.setViewport(new Rectangle2D(0, 0, third, FILE_ICONS_IMAGE.getHeight()));
-        icon.setFitWidth(ICON_SIZE);
-        icon.setFitHeight(ICON_SIZE);
+        Node icon = CommandIcons.create("menu.new", ICON_SIZE);
+        icon.getStyleClass().add("rme-icon-new-document");
         return icon;
     }
 
@@ -236,12 +203,8 @@ public final class ToolbarIcons {
      * @return JavaFX-Knotengruppe im Icon-Raster
      */
     public static Node openFileIcon() {
-        ImageView icon = new ImageView(FILE_ICONS_IMAGE);
-        icon.getStyleClass().addAll(ICON_STYLE_CLASS, "rme-icon-open-file");
-        double third = FILE_ICONS_IMAGE.getWidth() / 3.0;
-        icon.setViewport(new Rectangle2D(third, 0, third, FILE_ICONS_IMAGE.getHeight()));
-        icon.setFitWidth(ICON_SIZE);
-        icon.setFitHeight(ICON_SIZE);
+        Node icon = CommandIcons.create("menu.open", ICON_SIZE);
+        icon.getStyleClass().add("rme-icon-open-file");
         return icon;
     }
 
@@ -251,12 +214,8 @@ public final class ToolbarIcons {
      * @return JavaFX-Knotengruppe im Icon-Raster
      */
     public static Node saveFileIcon() {
-        ImageView icon = new ImageView(FILE_ICONS_IMAGE);
-        icon.getStyleClass().addAll(ICON_STYLE_CLASS, "rme-icon-save-file");
-        double third = FILE_ICONS_IMAGE.getWidth() / 3.0;
-        icon.setViewport(new Rectangle2D(2 * third, 0, third, FILE_ICONS_IMAGE.getHeight()));
-        icon.setFitWidth(ICON_SIZE);
-        icon.setFitHeight(ICON_SIZE);
+        Node icon = CommandIcons.create("menu.save", ICON_SIZE);
+        icon.getStyleClass().add("rme-icon-save-file");
         return icon;
     }
 

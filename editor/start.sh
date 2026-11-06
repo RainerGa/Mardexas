@@ -57,5 +57,5 @@ echo "Maven: $MVN_BIN"
 echo "Starte Anwendung ..."
 echo
 
-"$MVN_BIN" -f "$PROJECT_DIR/pom.xml" -pl editor -am -DskipTests install
+"$MVN_BIN" -f "$PROJECT_DIR/pom.xml" -pl editor -am -Dmaven.test.skip=true clean install
 exec "$MVN_BIN" -f "$PROJECT_DIR/editor/pom.xml" javafx:run

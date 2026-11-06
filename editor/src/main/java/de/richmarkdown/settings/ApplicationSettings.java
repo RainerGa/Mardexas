@@ -118,6 +118,14 @@ public final class ApplicationSettings {
         return readProperties().getProperty(key);
     }
 
+    /** One immutable settings snapshot; avoids reopening the profile for every command. */
+    public java.util.Map<String, String> snapshot() {
+        Properties properties = readProperties();
+        var values = new java.util.HashMap<String, String>();
+        for (String key : properties.stringPropertyNames()) values.put(key, properties.getProperty(key));
+        return java.util.Map.copyOf(values);
+    }
+
     /**
      * Liest einen booleschen Wert und verwendet bei fehlendem Schlüssel den Default.
      *
@@ -172,7 +180,10 @@ public final class ApplicationSettings {
 
     private void writeProperties(Properties properties) {
         try {
-            Files.createDirectories(settingsFile.getParent());
+            Path parent = settingsFile.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
             try (Writer writer = Files.newBufferedWriter(settingsFile, StandardCharsets.UTF_8)) {
                 properties.store(writer, "RichMarkDownEditor settings");
             }

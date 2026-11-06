@@ -36,7 +36,6 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
 
 /**
  * Formatierungs-Toolbar des Editors mit Textformaten, Absatzstilen,
@@ -47,9 +46,9 @@ import javafx.scene.text.Text;
  * Bedienaktionen werden an {@link MarkdownEditor} delegiert.
  *
  * <ul>
- *   <li>F/K/U/S-Toggles mit Caret-Zustand (bidirektionale Bindung über
- *       {@link TextDecorateAction} der Bibliothek); die Buchstaben sind
- *       typografisch ausgezeichnet (fett, kursiv, …)</li>
+ *   <li>Format-Toggles mit Caret-Zustand (bidirektionale Bindung über
+ *       {@link TextDecorateAction} der Bibliothek) und denselben Vektormotiven
+ *       wie klassische Menüs und Ribbon</li>
  *   <li>Styles-Dropdown: Absatz, H1–H6, Zitat</li>
  *   <li>Listen-Buttons (Aufzählung/Nummerierung) mit Vektor-Icons über
  *       {@link ParagraphDecorateAction}</li>
@@ -110,26 +109,21 @@ public class FormatToolBar extends ToolBar {
     private final MarkdownEditor editor;
     private final RichTextArea control;
 
-    private final ToggleButton boldToggle = createLetterToggle("B", "toolbar.bold",
-            FontWeight.BOLD, FontPosture.REGULAR, false, false, "rme-toggle-bold");
-    private final ToggleButton italicToggle = createLetterToggle(
-            "de".equals(I18n.locale().getLanguage()) ? "K" : "I", "toolbar.italic",
-            FontWeight.NORMAL, FontPosture.ITALIC, false, false, "rme-toggle-italic");
-    private final ToggleButton underlineToggle = createLetterToggle("U", "toolbar.underline",
-            FontWeight.NORMAL, FontPosture.REGULAR, true, false, "rme-toggle-underline");
-    private final ToggleButton strikethroughToggle = createLetterToggle("S", "toolbar.strikethrough",
-            FontWeight.NORMAL, FontPosture.REGULAR, false, true, "rme-toggle-strikethrough");
+    private final ToggleButton boldToggle = createCommandToggle("menu.bold", "toolbar.bold", "rme-toggle-bold");
+    private final ToggleButton italicToggle = createCommandToggle("menu.italic", "toolbar.italic", "rme-toggle-italic");
+    private final ToggleButton underlineToggle = createCommandToggle("menu.underline", "toolbar.underline", "rme-toggle-underline");
+    private final ToggleButton strikethroughToggle = createCommandToggle("menu.strikethrough", "toolbar.strikethrough", "rme-toggle-strikethrough");
     private final ToggleButton inlineCodeToggle = createIconToggle(
-            ToolbarIcons.inlineCodeIcon(), I18n.text("toolbar.inlineCode"));
+            commandIcon("menu.inlineCode", "rme-icon-inline-code"), I18n.text("toolbar.inlineCode"));
     private final ToggleButton bulletListToggle = createIconToggle(
-            ToolbarIcons.bulletListIcon(), I18n.text("toolbar.bulletList"));
+            commandIcon("menu.bulletList", "rme-icon-bullet-list"), I18n.text("toolbar.bulletList"));
     private final ToggleButton numberedListToggle = createIconToggle(
-            ToolbarIcons.numberedListIcon(), I18n.text("toolbar.numberedList"));
+            commandIcon("menu.numberedList", "rme-icon-numbered-list"), I18n.text("toolbar.numberedList"));
     private final ChoiceBox<ParagraphStyle> styleChoice = new ChoiceBox<>();
     private final Button indentButton = createIconButton(
-            ToolbarIcons.indentIcon(), I18n.text("toolbar.indent"));
+            commandIcon("menu.indent", "rme-icon-indent"), I18n.text("toolbar.indent"));
     private final Button outdentButton = createIconButton(
-            ToolbarIcons.outdentIcon(), I18n.text("toolbar.outdent"));
+            commandIcon("menu.outdent", "rme-icon-outdent"), I18n.text("toolbar.outdent"));
 
     private boolean applyingStyle;
 
@@ -384,31 +378,18 @@ public class FormatToolBar extends ToolBar {
         return separator;
     }
 
-    /**
-     * Buchstaben-Toggle (F/K/U/S) mit echter Typografie: der Buchstabe wird als
-     * {@link Text} gesetzt, damit Schnitt (fett/kursiv) sowie Unterstrich und
-     * Durchstrich so gerendert werden wie in Word/LibreOffice – unabhängig von
-     * CSS-Textfarbe.
-     */
-    private ToggleButton createLetterToggle(String letter, String tooltipKey, FontWeight weight,
-                                            FontPosture posture, boolean underline,
-                                            boolean strikethrough, String extraStyleClass) {
-        Text text = new Text(letter);
-        text.setFont(fontOf(weight, posture));
-        text.setUnderline(underline);
-        text.setStrikethrough(strikethrough);
-        text.getStyleClass().add("rme-toggle-letter");
-        ToggleButton button = new ToggleButton();
-        button.setGraphic(text);
-        button.getStyleClass().addAll("rme-toolbar-button", extraStyleClass);
-        button.setTooltip(new Tooltip(I18n.text(tooltipKey)));
-        button.setFocusTraversable(false);
+    /** Uses exactly the same independently rendered vector motif as menus and ribbon. */
+    private ToggleButton createCommandToggle(String commandId, String tooltipKey, String extraStyleClass) {
+        ToggleButton button = createIconToggle(commandIcon(commandId, "rme-toggle-letter"), I18n.text(tooltipKey));
+        button.getStyleClass().add(extraStyleClass);
+        button.setAccessibleText(I18n.text(tooltipKey));
         return button;
     }
 
-    private javafx.scene.text.Font fontOf(FontWeight weight, FontPosture posture) {
-        return javafx.scene.text.Font.font(
-                javafx.scene.text.Font.getDefault().getFamily(), weight, posture, LETTER_TEXT_SIZE);
+    private Node commandIcon(String commandId, String legacyStyle) {
+        Node graphic = CommandIcons.create(commandId, ToolbarIcons.ICON_SIZE);
+        graphic.getStyleClass().add(legacyStyle);
+        return graphic;
     }
 
     private ToggleButton createIconToggle(Node icon, String tooltip) {

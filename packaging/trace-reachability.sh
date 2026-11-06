@@ -83,7 +83,7 @@ run_app_trace() {
                 -agentlib:native-image-agent=config-output-dir="$TRACE_DIR/app" \
                 --module-path "$INPUT_DIR" \
                 --add-exports=com.gluonhq.richtextarea/com.gluonhq.richtextarea.viewmodel=RichMarkDownEditor \
-                --module RichMarkDownEditor/de.richmarkdown.RichMarkDownEditorApp \
+                --module RichMarkDownEditor/de.richmarkdown.Launcher \
                 >"$TRACE_DIR/app-run.log" 2>&1 &
             PID=$!
             WID=""
@@ -190,7 +190,7 @@ run_app_trace() {
             -agentlib:native-image-agent=config-output-dir="$JAVA_TRACE_DIR" \
             --module-path "$JAVA_INPUT_DIR" \
             --add-exports=com.gluonhq.richtextarea/com.gluonhq.richtextarea.viewmodel=RichMarkDownEditor \
-            --module RichMarkDownEditor/de.richmarkdown.RichMarkDownEditorApp \
+            --module RichMarkDownEditor/de.richmarkdown.Launcher \
             >"$TRACE_DIR/app-run.log" 2>&1 &
         PID=$!
         for _ in $(seq 1 30); do

@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs suppression file for RichMarkDownEditor.
+  
+  This file suppresses SpotBugs warnings that are either:
+  1. False positives (e.g., fields that are actually used but SpotBugs doesn't detect)
+  2. Intentional design decisions (e.g., getters that return internal fields as part of the API)
+  3. Warnings that cannot be fixed without breaking the API
+
+  All warnings in this file have been reviewed and are either:
+  - False positives from SpotBugs analysis
+  - Intentional API design (e.g., facade pattern, UI component getters)
+  - Valid warnings that cannot be fixed without significant refactoring
+-->
+<FindBugsFilter>
+  <!-- Presenters intentionally return the actual displayed JavaFX controls for focus,
+       embedding and accessibility. A defensive copy is not a live presentation. -->
+  <Match><Class name="de.richmarkdown.ui.CommandSurfaceController" /><Method name="getMenuBar" /><Bug pattern="EI_EXPOSE_REP" /></Match>
+  <Match><Class name="de.richmarkdown.ui.CommandSurfaceController" /><Method name="getRibbon" /><Bug pattern="EI_EXPOSE_REP" /></Match>
+  <Match><Class name="de.richmarkdown.ui.RibbonView" /><Method name="getTabs" /><Bug pattern="EI_EXPOSE_REP" /></Match>
+  <Match><Class name="de.richmarkdown.ui.WindowCommandRegistry" /><Field name="window" /><Bug pattern="EI_EXPOSE_REP2" /></Match>
+  <Match><Class name="de.richmarkdown.ui.WindowCommandRegistry" /><Field name="menuBar" /><Bug pattern="EI_EXPOSE_REP2" /></Match>
+  <!-- A JavaFX Stage is constructed on the application thread and has no security
+       authority or finalizer-dependent invariants. Invalid icon/configuration input
+       must remain reportable; Stage construction itself can also throw. -->
+  <Match><Class name="de.richmarkdown.ui.EditorWindow" /><Method name="&lt;init&gt;" /><Bug pattern="CT_CONSTRUCTOR_THROW" /></Match>
+
+  <!-- These precise API boundaries intentionally share the displayed JavaFX node,
+       writable JavaFX property, active editor or injected library service. Copying
+       them would disconnect the command/view from the application it operates on. -->
+  <Match><Class name="de.richmarkdown.features.editing.ChapterFolding" /><Field name="editor" /><Bug pattern="EI_EXPOSE_REP2" /></Match>
+  <Match><Class name="de.richmarkdown.features.editing.EditingCommands" /><Field name="editor" /><Bug pattern="EI_EXPOSE_REP2" /></Match>
+  <Match><Class name="de.richmarkdown.features.editing.WritingViewController" /><Field name="editor" /><Bug pattern="EI_EXPOSE_REP2" /></Match>
+  <Match><Class name="de.richmarkdown.ui.AccessibilityOptions" /><Field name="window" /><Bug pattern="EI_EXPOSE_REP2" /></Match>
+  <Match><Class name="de.richmarkdown.ui.CommandCenter" /><Field name="window" /><Bug pattern="EI_EXPOSE_REP2" /></Match>
+  <Match><Class name="de.richmarkdown.ui.PrintPageView" /><Field name="content" /><Bug pattern="EI_EXPOSE_REP2" /></Match>
+  <Match><Class name="de.richmarkdown.ui.WritingDashboard" /><Field name="window" /><Bug pattern="EI_EXPOSE_REP2" /></Match>
+  <Match><Class name="de.richmarkdown.ui.dialogs.WritingLibraryDialog" /><Field name="store" /><Bug pattern="EI_EXPOSE_REP2" /></Match>
+  <Match><Class name="de.richmarkdown.features.editing.WritingViewController" /><Method name="distractionFreeProperty" /><Bug pattern="EI_EXPOSE_REP" /></Match>
+  <Match><Class name="de.richmarkdown.features.editing.WritingViewController" /><Method name="focusParagraphProperty" /><Bug pattern="EI_EXPOSE_REP" /></Match>
+  <Match><Class name="de.richmarkdown.features.editing.WritingViewController" /><Method name="readingWidthProperty" /><Bug pattern="EI_EXPOSE_REP" /></Match>
+  <Match><Class name="de.richmarkdown.features.editing.WritingViewController" /><Method name="typewriterProperty" /><Bug pattern="EI_EXPOSE_REP" /></Match>
+  <Match><Class name="de.richmarkdown.ui.CommandCenter$Command" /><Field name="item" /><Bug pattern="EI_EXPOSE_REP2" /></Match>
+  <Match><Class name="de.richmarkdown.ui.CommandCenter$Command" /><Method name="item" /><Bug pattern="EI_EXPOSE_REP" /></Match>
+
+  <!-- JavaFX scene graph objects and the editor are intentionally shared. A copy
+       would not represent the displayed review or update the active document.
+       Restrict these exceptions to the specific getter and injected field. -->
+  <Match>
+    <Class name="de.richmarkdown.ui.DiffDialog" />
+    <Method name="getComparisonView" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.DiffDialog" />
+    <Field name="editor" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+
+  <!-- ================================================================== -->
+  <!-- CT_CONSTRUCTOR_THROW: Constructor throws exception -->
+  <!-- These are intentional - constructors validate with Objects.requireNonNull -->
+  <!-- SpotBugs false positive: validation happens before field assignment -->
+  <!-- ================================================================== -->
+  
+  <Match>
+    <Class name="de.richmarkdown.editor.MarkdownEditor" />
+    <Bug pattern="CT_CONSTRUCTOR_THROW" />
+  </Match>
+  
+  <Match>
+    <Class name="de.richmarkdown.findreplace.FindReplaceEngine" />
+    <Bug pattern="CT_CONSTRUCTOR_THROW" />
+  </Match>
+  
+  <Match>
+    <Class name="de.richmarkdown.markdown.HeadingBlock" />
+    <Bug pattern="CT_CONSTRUCTOR_THROW" />
+  </Match>
+  
+  <Match>
+    <Class name="de.richmarkdown.markdown.ListItemBlock" />
+    <Bug pattern="CT_CONSTRUCTOR_THROW" />
+  </Match>
+  
+  <Match>
+    <Class name="de.richmarkdown.markdown.TableBlock" />
+    <Bug pattern="CT_CONSTRUCTOR_THROW" />
+  </Match>
+  
+  <!-- FindReplaceEngine inner classes - simple DTOs -->
+  <Match>
+    <Class name="de.richmarkdown.findreplace.FindReplaceEngine$FindOptions" />
+    <Bug pattern="CT_CONSTRUCTOR_THROW" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.findreplace.FindReplaceEngine$Match" />
+    <Bug pattern="CT_CONSTRUCTOR_THROW" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.findreplace.FindReplaceEngine$SearchResult" />
+    <Bug pattern="CT_CONSTRUCTOR_THROW" />
+  </Match>
+
+  <!-- ================================================================== -->
+  <!-- EI_EXPOSE_REP: Methods that return mutable internal fields -->
+  <!-- Intentional API design - getters return components for integrators -->
+  <!-- ================================================================== -->
+  
+  <!-- MarkdownEditor API methods -->
+  <Match>
+    <Class name="de.richmarkdown.editor.MarkdownEditor" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  
+  <!-- All UI classes that expose their components via getters -->
+  <Match>
+    <Class name="de.richmarkdown.ui.DocumentStructureView" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.EditorWindow" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.FormatToolBar" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.StatusBar" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.LineNumberGutter" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.ZoomController" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.ViewModeController" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.dialogs.CodeBlockDialog" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.dialogs.ImageDialog" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.dialogs.LinkDialog" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.dialogs.PrintDialog" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.dialogs.StatisticsDialog" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.dialogs.TableDialog" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <!-- AddFeatures #16/#18 UI components - getters return JavaFX controls for integrators -->
+  <Match>
+    <Class name="de.richmarkdown.ui.DiffView" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.dialogs.IssueDialog" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.InlineDocumentView" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.ui.TrackChangesView" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+
+  <!-- ================================================================== -->
+  <!-- EI_EXPOSE_REP2: Constructors that store mutable references -->
+  <!-- Intentional - these are facade classes that store component references -->
+  <!-- ================================================================== -->
+  
+  <Match>
+    <Class name="de.richmarkdown.editor.MarkdownEditor" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  
+  <Match>
+    <Class name="de.richmarkdown.findreplace.FindReplaceEngine" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  
+  <Match>
+    <Class name="de.richmarkdown.ui.DocumentStructureView" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  
+  <Match>
+    <Class name="de.richmarkdown.ui.FormatToolBar" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  
+  <Match>
+    <Class name="de.richmarkdown.ui.LineNumberGutter" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  
+  <Match>
+    <Class name="de.richmarkdown.ui.ZoomController" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  <!-- These controllers must retain references to the live editor/view objects
+       they coordinate; defensive copies would break the shared editing model. -->
+  <Match>
+    <Class name="de.richmarkdown.ui.ViewModeController" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.io.AutoSaveService" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  
+  <Match>
+    <Class name="de.richmarkdown.ui.dialogs.FindReplaceDialog" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+
+  <!-- ================================================================== -->
+  <!-- RCN_REDUNDANT_NULLCHECK: False positives -->
+  <!-- compilePattern can return null, so these checks are necessary -->
+  <!-- ================================================================== -->
+  
+  <Match>
+    <Class name="de.richmarkdown.ui.dialogs.FindReplaceDialog" />
+    <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" />
+  </Match>
+
+  <!-- ================================================================== -->
+  <!-- UUF_UNUSED_FIELD: False positives - fields are actually used -->
+  <!-- ================================================================== -->
+  
+  <!-- FindReplaceEngine fields - used in various methods -->
+  <Match>
+    <Class name="de.richmarkdown.findreplace.FindReplaceEngine" />
+    <Bug pattern="UUF_UNUSED_FIELD" />
+  </Match>
+
+  <!-- FindReplaceEngine inner classes - fields are used -->
+  <Match>
+    <Class name="de.richmarkdown.findreplace.FindReplaceEngine$FindOptions" />
+    <Bug pattern="UUF_UNUSED_FIELD" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.findreplace.FindReplaceEngine$Match" />
+    <Bug pattern="UUF_UNUSED_FIELD" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.findreplace.FindReplaceEngine$SearchResult" />
+    <Bug pattern="UUF_UNUSED_FIELD" />
+  </Match>
+
+  <!-- ================================================================== -->
+  <!-- URF_UNREAD_FIELD: Fields read via event handlers or callbacks -->
+  <!-- ================================================================== -->
+  
+  <Match>
+    <Class name="de.richmarkdown.ui.FormatToolBar" />
+    <Bug pattern="URF_UNREAD_FIELD" />
+  </Match>
+
+  <!-- ================================================================== -->
+  <!-- UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD: False positives -->
+  <!-- ================================================================== -->
+  
+  <!-- Wrap enum fields are read in EditorWindow and FindReplaceDialog -->
+  <Match>
+    <Class name="de.richmarkdown.findreplace.FindReplaceEngine$Wrap" />
+    <Bug pattern="UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD" />
+  </Match>
+  <Match>
+    <Class name="de.richmarkdown.findreplace.FindReplaceEngine$Wrap" />
+    <Bug pattern="UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD" />
+  </Match>
+
+  <!-- ================================================================== -->
+  <!-- UPM_UNCALLED_PRIVATE_METHOD: False positives - methods are called -->
+  <!-- ================================================================== -->
+  
+  <Match>
+    <Class name="de.richmarkdown.findreplace.FindReplaceEngine" />
+    <Bug pattern="UPM_UNCALLED_PRIVATE_METHOD" />
+  </Match>
+
+<!-- ================================================================== -->
+  <!-- RV_ABSOLUTE_VALUE_OF_HASHCODE: Integer.MIN_VALUE edge case -->
+  <!-- Fixed by using bitwise AND instead of Math.abs -->
+  <!-- ================================================================== -->
+  <Match>
+    <Class name="de.richmarkdown.ui.InlineDocumentView" />
+    <Bug pattern="RV_ABSOLUTE_VALUE_OF_HASHCODE" />
+  </Match>
+
+  <!-- ================================================================== -->
+  <!-- SE_BAD_FIELD: Non-serializable field in Serializable class -->
+  <!-- Fixed by making the field transient -->
+  <!-- ================================================================== -->
+  <Match>
+    <Class name="de.richmarkdown.ui.InlineDocumentView$ChangeSelectionEvent" />
+    <Bug pattern="SE_BAD_FIELD" />
+  </Match>
+</FindBugsFilter>

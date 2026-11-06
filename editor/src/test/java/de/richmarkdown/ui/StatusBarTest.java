@@ -53,6 +53,8 @@ class StatusBarTest {
     @BeforeEach
     void setUp() {
         FxTestUtil.runAndWait(() -> {
+            de.richmarkdown.i18n.I18n.setSettingsStore(de.richmarkdown.settings.ApplicationSettings.inMemory());
+            de.richmarkdown.i18n.I18n.setCurrentLanguage("de");
             editor = new MarkdownEditor();
             rta = editor.getControl();
             statusBar = new StatusBar(editor);
@@ -62,9 +64,9 @@ class StatusBarTest {
         });
     }
 
-    @AfterAll
-    static void tearDown() {
-        // kein stage.hide(): blockt den FX-Thread in Monocle headless
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        FxTestUtil.runAndWait(stage::close);
     }
 
     private void flush() {

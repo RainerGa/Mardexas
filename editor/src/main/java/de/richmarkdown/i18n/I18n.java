@@ -73,6 +73,10 @@ public final class I18n {
     private static volatile Locale locale = Locale.GERMAN;
     private static volatile ResourceBundle bundle = loadBundle(locale);
     private static volatile boolean initialLanguageSelectionRequired;
+    private static final java.util.concurrent.CopyOnWriteArrayList<Runnable> RECENT_FILES_LISTENERS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    /** Lock-Objekt für Thread-Sicherheit (vermeidet Synchronisation auf Class-Objekt). */
+    private static final Object LOCK = new Object();
 
     private I18n() {
     }
@@ -148,27 +152,29 @@ public final class I18n {
      * @throws IllegalArgumentException wenn eine gespeicherte Sprache nicht
      *                                  mehr unterstützt wird
      */
-    public static synchronized boolean initializeForStartup(Locale systemLocale) {
-        String savedLanguage = settingsStore.read(LANGUAGE_KEY);
-        if (savedLanguage == null) {
-            savedLanguage = migrateLegacyLanguagePreference();
-        }
-        if (savedLanguage != null) {
-            requireSupportedLanguage(savedLanguage);
-            setCurrentLanguage(savedLanguage);
-            initialLanguageSelectionRequired = false;
-        } else {
-            Optional<String> systemLanguage = languageForSystemLocale(systemLocale);
-            if (systemLanguage.isPresent()) {
-                setCurrentLanguage(systemLanguage.get());
-                settingsStore.save(LANGUAGE_KEY, systemLanguage.get());
+    public static boolean initializeForStartup(Locale systemLocale) {
+        synchronized (LOCK) {
+            String savedLanguage = settingsStore.read(LANGUAGE_KEY);
+            if (savedLanguage == null) {
+                savedLanguage = migrateLegacyLanguagePreference();
+            }
+            if (savedLanguage != null) {
+                requireSupportedLanguage(savedLanguage);
+                setCurrentLanguageInternal(savedLanguage);
                 initialLanguageSelectionRequired = false;
             } else {
-                setCurrentLanguage("en");
-                initialLanguageSelectionRequired = true;
+                Optional<String> systemLanguage = languageForSystemLocale(systemLocale);
+                if (systemLanguage.isPresent()) {
+                    setCurrentLanguageInternal(systemLanguage.get());
+                    settingsStore.save(LANGUAGE_KEY, systemLanguage.get());
+                    initialLanguageSelectionRequired = false;
+                } else {
+                    setCurrentLanguageInternal("en");
+                    initialLanguageSelectionRequired = true;
+                }
             }
+            return initialLanguageSelectionRequired;
         }
-        return initialLanguageSelectionRequired;
     }
 
     /**
@@ -187,11 +193,13 @@ public final class I18n {
      * @param language unterstützter Sprachcode
      * @throws IllegalArgumentException wenn der Sprachcode nicht unterstützt wird
      */
-    public static synchronized void selectInitialLanguage(String language) {
-        requireSupportedLanguage(language);
-        setCurrentLanguage(language);
-        settingsStore.save(LANGUAGE_KEY, language);
-        initialLanguageSelectionRequired = false;
+    public static void selectInitialLanguage(String language) {
+        synchronized (LOCK) {
+            requireSupportedLanguage(language);
+            setCurrentLanguageInternal(language);
+            settingsStore.save(LANGUAGE_KEY, language);
+            initialLanguageSelectionRequired = false;
+        }
     }
 
     /**
@@ -205,8 +213,10 @@ public final class I18n {
      * @throws IllegalArgumentException wenn der Sprachcode nicht unterstützt wird
      */
     public static void setLanguagePreference(String language) {
-        requireSupportedLanguage(language);
-        settingsStore.save(LANGUAGE_KEY, language);
+        synchronized (LOCK) {
+            requireSupportedLanguage(language);
+            settingsStore.save(LANGUAGE_KEY, language);
+        }
     }
 
     /**
@@ -218,15 +228,58 @@ public final class I18n {
      *
      * @param store neuer Store oder {@code null} für In-Memory-Deaktivierung
      */
-    public static synchronized void setSettingsStore(ApplicationSettings store) {
-        settingsStore = store != null ? store : ApplicationSettings.inMemory();
+    public static void setSettingsStore(ApplicationSettings store) {
+        synchronized (LOCK) {
+            settingsStore = store != null ? store : ApplicationSettings.inMemory();
+        }
+        notifyRecentFilesChanged();
     }
 
     /**
      * Stellt den Plattform-Default-Store wieder her (für Tests).
      */
-    public static synchronized void resetSettingsStore() {
-        settingsStore = defaultSettingsStore();
+    public static void resetSettingsStore() {
+        synchronized (LOCK) {
+            settingsStore = defaultSettingsStore();
+        }
+        notifyRecentFilesChanged();
+    }
+
+    /** Application-only preference; never written to a Markdown document. */
+    public static String preference(String key, String fallback) {
+        String value = settingsStore.read("features." + key);
+        return value == null ? fallback : value;
+    }
+
+    /** Reads all application-only preferences with a single profile access. */
+    public static java.util.Map<String, String> preferences() {
+        var values = new java.util.HashMap<String, String>();
+        settingsStore.snapshot().forEach((key, value) -> {
+            if (key.startsWith("features.")) values.put(key.substring(9), value);
+        });
+        return java.util.Map.copyOf(values);
+    }
+
+    public static void setPreference(String key, String value) {
+        settingsStore.save("features." + key, value);
+    }
+
+    /**
+     * Liefert das konfigurierte Autosave-Intervall in Millisekunden.
+     *
+     * @return Intervall oder der Standardwert von fünf Minuten
+     */
+    public static long autoSaveIntervalMillis() {
+        String value = settingsStore.read("autosave.interval");
+        long interval = 300_000;
+        if (value != null) {
+            try {
+                interval = Long.parseLong(value);
+            } catch (NumberFormatException ignored) {
+                return 300_000;
+            }
+        }
+        return interval >= 10_000 ? interval : 300_000;
     }
 
     private static ApplicationSettings defaultSettingsStore() {
@@ -370,6 +423,7 @@ public final class I18n {
      */
     public static void addRecentFile(String filePath) {
         settingsStore.addRecentFile(filePath);
+        notifyRecentFilesChanged();
     }
 
     /**
@@ -379,6 +433,17 @@ public final class I18n {
      */
     public static void removeRecentFile(String filePath) {
         settingsStore.removeRecentFile(filePath);
+        notifyRecentFilesChanged();
+    }
+
+    /** Subscribes to successful recent-file changes; the returned action removes the listener. */
+    public static Runnable onRecentFilesChanged(Runnable listener) {
+        RECENT_FILES_LISTENERS.add(java.util.Objects.requireNonNull(listener));
+        return () -> RECENT_FILES_LISTENERS.remove(listener);
+    }
+
+    private static void notifyRecentFilesChanged() {
+        RECENT_FILES_LISTENERS.forEach(Runnable::run);
     }
 
     static Optional<String> languageForSystemLocale(Locale systemLocale) {
@@ -405,7 +470,19 @@ public final class I18n {
         }
     }
 
-    public static synchronized void setCurrentLanguage(String language) {
+    public static void setCurrentLanguage(String language) {
+        synchronized (LOCK) {
+            setCurrentLanguageInternal(language);
+        }
+    }
+
+    /**
+     * Interne Methode zum Setzen der Sprache ohne Synchronisation.
+     * Wird von anderen synchronisierten Methoden aufgerufen.
+     *
+     * @param language unterstützter Sprachcode
+     */
+    private static void setCurrentLanguageInternal(String language) {
         requireSupportedLanguage(language);
         locale = localeForLanguage(language);
         bundle = loadBundle(locale);

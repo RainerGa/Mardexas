@@ -1,0 +1,11 @@
+{
+  "resources": [
+    {"module": "com.gluonhq.emoji", "glob": "com/gluonhq/emoji/emoji.csv"},
+    {"module": "com.gluonhq.emoji", "glob": "com/gluonhq/emoji/noto/**"},
+    {"module": "RichMarkDownEditor", "glob": "de/richmarkdown/ui/credits.css"},
+    {
+      "module": "RichMarkDownEditor",
+      "glob": "de/richmarkdown/ui/icons/tabler/**"
+    }
+  ]
+}

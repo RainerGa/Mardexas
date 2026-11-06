@@ -241,6 +241,7 @@ class EditorWindowFileTest {
         EditorWindow window = newWindow();
         FxTestUtil.runAndWait(() -> window.openFile(file));
         flush();
+        FxTestUtil.runAndWait(() -> window.getEditor().goToPosition("original".length()));
         type(window, " changed");
         flush();
         FxTestUtil.runAndWait(window::save);

@@ -24,6 +24,12 @@ import com.gluonhq.richtextarea.model.ParagraphDecoration;
 import com.gluonhq.richtextarea.model.TableDecoration;
 import com.gluonhq.richtextarea.model.TextDecoration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -38,6 +44,9 @@ class MarkdownTableImageTest {
 
     private final MarkdownWriter writer = new MarkdownWriter();
     private final MarkdownParser parser = new MarkdownParser();
+
+    @TempDir
+    Path tempDir;
 
     private static final String SEP = "\u200b";
     private static final String IMAGE_PLACEHOLDER = "\ufeff";
@@ -92,9 +101,21 @@ class MarkdownTableImageTest {
 
     @Test
     void writesTableWithFormattedCells() {
+        // Visible formatting is represented by decorations, not Markdown characters in plain text.
+        ParagraphDecoration table = tableDecoration(2, 2);
+        Document document = doc("a" + SEP + "b" + SEP + "c" + SEP + "d",
+                dm(0, 1, TextDecoration.builder().presets().fontWeight(javafx.scene.text.FontWeight.BOLD).build(), table),
+                dm(1, 6, normal(), table));
+        assertEquals("| **a** | b |\n| --- | --- |\n| c | d |", writer.write(document));
+        assertEquals("a" + SEP + "b" + SEP + "c" + SEP + "d", parser.parseInto(writer.write(document)).getText());
+    }
+
+    @Test
+    void unformattedMarkdownCharactersInTableCellsRemainLiteral() {
         Document document = doc("**a**" + SEP + "b" + SEP + "c" + SEP + "d",
                 dm(0, 11, normal(), tableDecoration(2, 2)));
-        assertEquals("| **a** | b |\n| --- | --- |\n| c | d |", writer.write(document));
+        assertEquals("| \\*\\*a\\*\\* | b |\n| --- | --- |\n| c | d |", writer.write(document));
+        assertEquals(document.getText(), parser.parseInto(writer.write(document)).getText());
     }
 
     @Test
@@ -223,6 +244,87 @@ class MarkdownTableImageTest {
     }
 
     @Test
+    void parsesHtmlLinkedImageAndItsSize() {
+        String html = "<a href=\"https://example.com\"><img src=\"logo.svg\" "
+                + "height=\"100px\" width=\"100px\"></a>";
+        ImageBlock image = (ImageBlock) parser.parse(html).getBlocks().get(0);
+        assertEquals("logo.svg", image.getUrl());
+        assertEquals("https://example.com", image.getLink());
+        assertEquals(100, image.getWidth());
+        assertEquals(100, image.getHeight());
+    }
+
+    @Test
+    void parsesStandaloneHtmlImageAndItsSize() {
+        ImageBlock image = (ImageBlock) parser.parse(
+                "<img src=\"/.github/images/partdesign.jpg\" width=\"800\"/>")
+                .getBlocks().get(0);
+
+        assertEquals("/.github/images/partdesign.jpg", image.getUrl());
+        assertEquals(800, image.getWidth());
+        assertEquals(-1, image.getHeight());
+        assertEquals(null, image.getLink());
+    }
+
+    @Test
+    void parseInto_resolvesHtmlImageRelativeToMarkdownDirectory() throws IOException {
+        Path imagePath = tempDir.resolve("src/Gui/Icons/freecad.svg");
+        Files.createDirectories(imagePath.getParent());
+        Files.writeString(imagePath, "<svg xmlns=\"http://www.w3.org/2000/svg\"/>");
+        String html = "<a href=\"https://freecad.org\"><img "
+                + "src=\"/src/Gui/Icons/freecad.svg\"></a>";
+
+        Document document = parser.parseInto(html, tempDir);
+        ImageDecoration decoration = document.getDecorations().stream()
+                .map(DecorationModel::getDecoration)
+                .filter(ImageDecoration.class::isInstance)
+                .map(ImageDecoration.class::cast)
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(imagePath.toUri().toString(), decoration.getUrl());
+        assertEquals("<a href=\"https://freecad.org\"><img "
+                + "src=\"src/Gui/Icons/freecad.svg\"></a>",
+                writer.write(document, tempDir));
+    }
+
+    @Test
+    void parseInto_missingLocalImageShowsPlaceholderAndPreservesMarkup() {
+        String html = "<a href=\"https://freecad.org\"><img "
+                + "src=\"/src/Gui/Icons/freecad.svg\"></a>";
+
+        Document document = parser.parseInto(html, tempDir);
+
+        assertTrue(document.getText().contains("[Bild nicht gefunden: /src/Gui/Icons/freecad.svg]"));
+        assertFalse(document.getDecorations().stream()
+                .anyMatch(model -> model.getDecoration() instanceof ImageDecoration));
+        assertEquals("<a href=\"https://freecad.org\"><img "
+                + "src=\"/src/Gui/Icons/freecad.svg\"></a>",
+                writer.write(document, tempDir));
+    }
+
+    @Test
+    void parseInto_missingStandaloneHtmlImageShowsPlaceholderAndPreservesMarkup() {
+        String html = "<img src=\"/.github/images/partdesign.jpg\" width=\"800\"/>";
+
+        Document document = parser.parseInto(html, tempDir);
+
+        assertTrue(document.getText().contains(
+                "[Bild nicht gefunden: /.github/images/partdesign.jpg]"));
+        assertEquals("<img src=\"/.github/images/partdesign.jpg\" width=\"800px\">",
+                writer.write(document, tempDir));
+    }
+
+    @Test
+    void editedMissingImagePlaceholderIsSavedAsText() {
+        ImagePlaceholder placeholder = new ImagePlaceholder("missing.png", null, -1, -1);
+        MarkdownModel model = MarkdownModel.of(new ParagraphBlock(List.of(
+                Inline.builder("Edited missing image").url(placeholder.marker()).build())));
+
+        assertEquals("Edited missing image", writer.write(model));
+    }
+
+    @Test
     void parseInto_createsImageDecoration() {
         Document document = parser.parseInto("![alt](img.png)");
         boolean found = document.getDecorations().stream()
@@ -262,6 +364,15 @@ class MarkdownTableImageTest {
     @Test
     void roundTrip_imageWithLocalPath() {
         assertRoundTrip("![](images/pic.png)");
+    }
+
+    @Test
+    void roundTrip_htmlLinkedImage() {
+        String html = "<a href=\"https://example.com\"><img src=\"logo.svg\" "
+                + "height=\"100px\" width=\"100px\"></a>";
+        assertEquals("<a href=\"https://example.com\"><img src=\"logo.svg\" "
+                        + "width=\"100px\" height=\"100px\"></a>",
+                writer.write(parser.parseInto(html)));
     }
 
     @Test

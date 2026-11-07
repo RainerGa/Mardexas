@@ -30,21 +30,28 @@ public final class WritingAssistActions {
     public static Menu createMenu(Window owner, Supplier<String> currentMarkdown, Supplier<String> selectedMarkdown,
                                   Consumer<String> insertMarkdown, Consumer<String> insertLiteral,
                                   Consumer<String> newDocument) {
+        return createMenuWithOwner(() -> owner, currentMarkdown, selectedMarkdown, insertMarkdown, insertLiteral, newDocument);
+    }
+
+    /** Owner is evaluated when a command is executed, after embedding in a host scene. */
+    public static Menu createMenuWithOwner(Supplier<Window> owner, Supplier<String> currentMarkdown, Supplier<String> selectedMarkdown,
+                                  Consumer<String> insertMarkdown, Consumer<String> insertLiteral,
+                                  Consumer<String> newDocument) {
         Menu menu = new Menu("Textbausteine und Vorlagen");
         menu.setId("menu.writingAssist");
-        menu.getItems().add(item("insert.manageSnippets", "Textbausteine verwalten / einfügen…", () -> library(owner,
+        menu.getItems().add(item("insert.manageSnippets", "Textbausteine verwalten / einfügen…", () -> library(owner.get(),
                 MarkdownLibraryStore.Kind.SNIPPET, "", insertMarkdown)));
-        menu.getItems().add(item("insert.saveSnippet", "Auswahl als Textbaustein speichern…", () -> library(owner,
+        menu.getItems().add(item("insert.saveSnippet", "Auswahl als Textbaustein speichern…", () -> library(owner.get(),
                 MarkdownLibraryStore.Kind.SNIPPET, selectedMarkdown.get(), insertMarkdown)));
-        menu.getItems().add(item("insert.insertShortcut", "Textbaustein über Kürzel einfügen…", () -> shortcut(owner, insertMarkdown)));
+        menu.getItems().add(item("insert.insertShortcut", "Textbaustein über Kürzel einfügen…", () -> shortcut(owner.get(), insertMarkdown)));
         menu.getItems().add(new SeparatorMenuItem());
-        menu.getItems().add(item("insert.manageTemplates", "Eigene Dokumentvorlagen…", () -> library(owner,
+        menu.getItems().add(item("insert.manageTemplates", "Eigene Dokumentvorlagen…", () -> library(owner.get(),
                 MarkdownLibraryStore.Kind.TEMPLATE, "", newDocument)));
-        menu.getItems().add(item("insert.saveTemplate", "Dokument als Vorlage speichern…", () -> library(owner,
+        menu.getItems().add(item("insert.saveTemplate", "Dokument als Vorlage speichern…", () -> library(owner.get(),
                 MarkdownLibraryStore.Kind.TEMPLATE, currentMarkdown.get(), newDocument)));
         menu.getItems().add(new SeparatorMenuItem());
-        menu.getItems().add(item("insert.dateTime", "Datum / Uhrzeit einfügen…", () -> dateTime(owner, insertLiteral)));
-        menu.getItems().add(item("insert.specialCharacter", "Sonderzeichen einfügen…", () -> specialCharacter(owner, insertLiteral)));
+        menu.getItems().add(item("insert.dateTime", "Datum / Uhrzeit einfügen…", () -> dateTime(owner.get(), insertLiteral)));
+        menu.getItems().add(item("insert.specialCharacter", "Sonderzeichen einfügen…", () -> specialCharacter(owner.get(), insertLiteral)));
         return menu;
     }
 

@@ -39,7 +39,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Regressionstest fuer das Ersetzen von Text innerhalb einer Tabelle.
@@ -262,10 +261,6 @@ class TableReplaceTest {
             }
             return cells;
         });
-    }
-
-    private String cell(int index) {
-        return cells().get(index);
     }
 
     /** Die TableDecoration des Tabellenabsatzes. */

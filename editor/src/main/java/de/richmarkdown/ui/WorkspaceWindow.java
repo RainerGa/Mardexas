@@ -2,7 +2,6 @@ package de.richmarkdown.ui;
 
 import de.richmarkdown.io.ExternalFileMonitor;
 import de.richmarkdown.io.WorkspaceSession;
-import de.richmarkdown.i18n.I18n;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,7 +29,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
-import javafx.stage.Window;
 import javafx.util.Duration;
 
 /** Tab host. Each document retains its own control, undo history, selection and read-only state. */

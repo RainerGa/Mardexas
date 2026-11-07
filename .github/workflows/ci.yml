@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, Packaging_and_IntegrationAPI ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, Packaging_and_IntegrationAPI ]
 
 permissions:
   contents: read
@@ -24,6 +24,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Set up reproducible Python tooling
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Java einrichten
         uses: actions/setup-java@v4
         with:
@@ -34,8 +39,14 @@ jobs:
       - name: Tests ausführen
         run: mvn clean test
 
+      - name: Linux checkout script tests
+        if: runner.os == 'Linux'
+        run: |
+          bash -n scripts/checkout-linux.sh
+          python3 -B -m unittest discover -s scripts -p 'test_*.py'
+
       - name: Release checks testen
-        run: python3 -B -m unittest discover -s packaging -p test_release_checks.py
+        run: python3 -B -m unittest discover -s packaging -p 'test_*.py'
 
       - name: Icon-Herkunft und Lizenzprüfung testen
         run: |

@@ -33,6 +33,7 @@
   <modules>
     <module>emoji-noto</module>
     <module>editor</module>
+    <module>integration-demos</module>
   </modules>
 
   <profiles>

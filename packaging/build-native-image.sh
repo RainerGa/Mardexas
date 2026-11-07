@@ -7,7 +7,8 @@ APP_POM_VERSION="$(sed -n 's/^[[:space:]]*<version>\([^<]*\)<\/version>[[:space:
 APP_VERSION="${APP_VERSION:-$APP_POM_VERSION}"
 APP_JAR="RichMarkDownEditor-$APP_POM_VERSION.jar"
 INPUT_DIR="$PROJECT_DIR/editor/target/native-image-input"
-OUTPUT_DIR="$PROJECT_DIR/dist/native/$JAVAFX_PLATFORM"
+FINAL_OUTPUT_DIR="$PROJECT_DIR/dist/native/$JAVAFX_PLATFORM"
+OUTPUT_DIR="$PROJECT_DIR/editor/target/native-output/$JAVAFX_PLATFORM"
 METADATA_PLATFORM="${JAVAFX_PLATFORM/mac-aarch64/mac}"
 NATIVE_IMAGE_CONFIG_DIR="$PROJECT_DIR/packaging/native-image/$METADATA_PLATFORM"
 CHECK_DIR="$PROJECT_DIR/editor/target/package-check/$JAVAFX_PLATFORM"
@@ -16,7 +17,7 @@ NATIVE_IMAGE=""
 
 case "$JAVAFX_PLATFORM" in
     linux)
-        if [[ "$(uname -s)" != Linux ]]; then
+        if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
             echo "A Linux Native Image must be built on a Linux host." >&2
             exit 2
         fi
@@ -102,9 +103,13 @@ if ! "$NATIVE_IMAGE" --version 2>&1 | grep -qi "native-image"; then
     exit 1
 fi
 
+JAVA_HOME="$(cd "$(dirname "$NATIVE_IMAGE")/.." && pwd)"
+export JAVA_HOME
+export PATH="$JAVA_HOME/bin:$PATH"
+
 cd "$PROJECT_DIR"
 mvn --batch-mode --no-transfer-progress \
-    -Dmaven.test.skip=true \
+    -Dmaven.test.skip=true -Djacoco.skip=true \
     -pl editor -am install
 
 rm -rf "$INPUT_DIR"
@@ -135,7 +140,8 @@ if command -v cygpath >/dev/null 2>&1; then
     NATIVE_IMAGE_CONFIG_DIRS="$(python3 -c 'import sys; print(",".join(__import__("subprocess").check_output(["cygpath", "-m", p], text=True).strip() for p in sys.argv[1].split(",")))' "$NATIVE_IMAGE_CONFIG_DIRS")"
 fi
 
-rm -f "$OUTPUT_DIR/Mardexas" "$OUTPUT_DIR/Mardexas.exe"
+rm -rf "$OUTPUT_DIR"
+mkdir -p "$OUTPUT_DIR"
 "$NATIVE_IMAGE" \
     --module-path "$INPUT_DIR" \
     --module RichMarkDownEditor/de.richmarkdown.Launcher \
@@ -153,9 +159,15 @@ cp "$PROJECT_DIR/rich-text-area/LICENSE" "$OUTPUT_DIR/RichTextArea-GPL-3.0.txt"
 cp "$PROJECT_DIR/editor/src/main/resources/de/richmarkdown/ui/icons/tabler/LICENSE" "$OUTPUT_DIR/Tabler-Icons-MIT.txt"
 cp "$PROJECT_DIR/emoji-noto/src/main/resources/com/gluonhq/emoji/noto/"*.txt "$OUTPUT_DIR/"
 cp "$PROJECT_DIR/THIRD-PARTY-NOTICES.md" "$OUTPUT_DIR/"
+python3 "$PROJECT_DIR/packaging/copy-runtime-notices.py" "$JAVA_HOME" "$OUTPUT_DIR" --javafx-platform "$JAVAFX_PLATFORM"
 
 EXECUTABLE="$OUTPUT_DIR/$OUTPUT_NAME"
 [[ "$JAVAFX_PLATFORM" == win ]] && EXECUTABLE="$EXECUTABLE.exe"
 python3 "$PROJECT_DIR/packaging/verify-package.py" native \
     --input-dir "$INPUT_DIR" --output-dir "$CHECK_DIR" \
     --platform "$JAVAFX_PLATFORM" --executable "$EXECUTABLE"
+
+# Publish only a complete verified build, with no libraries from an older JDK.
+rm -rf "$FINAL_OUTPUT_DIR"
+mkdir -p "$FINAL_OUTPUT_DIR"
+cp -R "$OUTPUT_DIR/." "$FINAL_OUTPUT_DIR/"

@@ -21,10 +21,10 @@ public final class FeatureMenus {
         CommandIdentity.assign(menus);
         var editor = window.getEditor();
         CommandIdentity.menu(menus, "menu.file").getItems().add(item("file.printLayout", FeatureUi.text("Druckbereich und Gestaltung …", "Print range and layout …"), window::configurePrint));
-        Menu edit = EditingCommands.createMenu(editor, window.getDialogOwner());
+        Menu edit = EditingCommands.createMenuWithOwner(editor, window::getDialogOwner);
         CommandIdentity.menu(menus, "menu.edit").getItems().add(edit);
         var commands = new EditingCommands(editor);
-        Menu writing = WritingAssistActions.createMenu(window.getDialogOwner(), editor::getMarkdownSource,
+        Menu writing = WritingAssistActions.createMenuWithOwner(window::getDialogOwner, editor::getMarkdownSource,
                 () -> selectedMarkdown(window), value -> commands.paste(value, true),
                 value -> commands.paste(value, false), value -> newFromMarkdown(window, value));
         writing.disableProperty().bind(window.readOnlyProperty());

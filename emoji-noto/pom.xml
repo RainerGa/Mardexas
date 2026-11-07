@@ -11,13 +11,17 @@
     <url>https://github.com/gluonhq/emoji</url><distribution>repo</distribution>
   </license></licenses>
   <properties>
+    <!-- Allow Maven checks to use a separate output directory from the IDE. -->
+    <mardexas.build.directory>${project.basedir}/target</mardexas.build.directory>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>21</maven.compiler.release>
   </properties>
   <dependencies>
     <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>25.0.4</version></dependency>
   </dependencies>
-  <build><plugins>
+  <build>
+    <directory>${mardexas.build.directory}</directory>
+  <plugins>
     <plugin><artifactId>maven-compiler-plugin</artifactId><version>3.14.1</version></plugin>
     <plugin><artifactId>maven-resources-plugin</artifactId><version>3.3.1</version></plugin>
     <plugin><artifactId>maven-jar-plugin</artifactId><version>3.4.2</version></plugin>

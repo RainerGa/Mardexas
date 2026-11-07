@@ -8,6 +8,7 @@ PLATFORM="${JAVAFX_PLATFORM:?Set JAVAFX_PLATFORM}"
 VERSION="$(sed -n 's/^[[:space:]]*<version>\([^<]*\)<\/version>[[:space:]]*$/\1/p' editor/pom.xml | head -n1)"
 TOOL="${JAVA_HOME:?Set JAVA_HOME}/bin/jpackage"
 if command -v cygpath >/dev/null 2>&1; then TOOL="$(cygpath -u "$TOOL").exe"; fi
+export PATH="$(dirname "$TOOL"):$PATH"
 IMAGE="$PROJECT_DIR/dist/$PLATFORM/Mardexas"
 EXTRA=()
 case "$PLATFORM" in
@@ -18,6 +19,13 @@ case "$PLATFORM" in
     mac-aarch64) TYPES=(dmg pkg); LABEL=macos-aarch64; IMAGE="$IMAGE.app" ;;
     *) echo "Unsupported platform: $PLATFORM" >&2; exit 2 ;;
 esac
+if (( $# > 1 )); then echo "Usage: $0 [installer-type]" >&2; exit 2; fi
+if (( $# == 1 )); then
+    MATCH=false
+    for TYPE in "${TYPES[@]}"; do [[ "$TYPE" != "$1" ]] || MATCH=true; done
+    [[ "$MATCH" == true ]] || { echo "Unsupported $PLATFORM installer: $1" >&2; exit 2; }
+    TYPES=("$1")
+fi
 [[ -d "$IMAGE" ]] || { echo "Build the app-image first: $IMAGE" >&2; exit 2; }
 for TYPE in "${TYPES[@]}"; do
     OUTPUT="$PROJECT_DIR/editor/target/installer-$TYPE"

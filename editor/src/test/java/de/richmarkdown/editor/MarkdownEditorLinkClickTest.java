@@ -19,7 +19,6 @@ package de.richmarkdown.editor;
 
 import com.gluonhq.richtextarea.RichTextArea;
 import de.richmarkdown.FxTestUtil;
-import javafx.event.ActionEvent;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;

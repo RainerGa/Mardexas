@@ -5,7 +5,6 @@ import com.gluonhq.richtextarea.Selection;
 import com.gluonhq.richtextarea.model.Document;
 import de.richmarkdown.editor.WritingMetrics;
 import de.richmarkdown.i18n.I18n;
-import de.richmarkdown.features.editing.DocumentEdits;
 import java.time.Duration;
 import java.util.Locale;
 import javafx.scene.control.*;

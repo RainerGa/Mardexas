@@ -24,7 +24,6 @@ import java.util.MissingResourceException;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
-import java.util.ArrayList;
 import java.nio.file.Path;
 
 /**
@@ -63,8 +62,6 @@ public final class I18n {
     private static final String LINE_NUMBERS_KEY = "lineNumbers";
     private static final String ZOOM_PERCENT_KEY = "zoomPercent";
     private static final String LINE_WRAP_MODE_KEY = "lineWrapMode";
-    private static final String RECENT_FILES_KEY_PREFIX = "recentFile.";
-    private static final int MAX_RECENT_FILES = 10;
     private static final Preferences LEGACY_PREFERENCES =
             Preferences.userRoot().node("de/kilocode/richmarkdown/i18n");
     private static volatile ApplicationSettings settingsStore = defaultSettingsStore();

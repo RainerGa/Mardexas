@@ -132,10 +132,10 @@ class ToolbarIconsTest {
 
     @Test
     void iconsPaintVisiblePixels() {
-        for (java.util.function.Supplier<Node> factory : new java.util.function.Supplier[]{
+        for (java.util.function.Supplier<Node> factory : java.util.List.<java.util.function.Supplier<Node>>of(
                 ToolbarIcons::bulletListIcon, ToolbarIcons::numberedListIcon,
                 ToolbarIcons::indentIcon, ToolbarIcons::outdentIcon,
-                ToolbarIcons::inlineCodeIcon}) {
+                ToolbarIcons::inlineCodeIcon)) {
             Node icon = icon(factory);
             javafx.scene.image.Image image = FxTestUtil.callAndWait(() -> {
                 return icon.snapshot(new javafx.scene.SnapshotParameters(), null);

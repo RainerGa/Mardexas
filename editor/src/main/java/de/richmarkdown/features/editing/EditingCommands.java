@@ -234,6 +234,11 @@ public final class EditingCommands {
         return skin.getViewModel();
     }
     public static Menu createMenu(MarkdownEditor editor, Window owner) {
+        return createMenuWithOwner(editor, () -> owner);
+    }
+
+    /** Resolves the dialog owner at execution time, including reparented editors. */
+    public static Menu createMenuWithOwner(MarkdownEditor editor, java.util.function.Supplier<Window> owner) {
         var commands = new EditingCommands(editor);
         Menu menu = new Menu(text("Text und Absätze", "Text and paragraphs"));
         menu.setId("menu.textParagraphs");
@@ -297,7 +302,7 @@ public final class EditingCommands {
         editor.getControl().documentProperty().addListener(updateWhileOpen);
         return menu;
     }
-    private static void add(Menu menu, String id, String label, Runnable action, Window owner) {
+    private static void add(Menu menu, String id, String label, Runnable action, java.util.function.Supplier<Window> owner) {
         var item = new MenuItem(label);
         item.setId(id);
         item.setOnAction(event -> {
@@ -305,7 +310,7 @@ public final class EditingCommands {
             try { action.run(); }
             catch (RuntimeException failure) {
                 var alert = new Alert(Alert.AlertType.ERROR, text("Die Bearbeitung konnte nicht ausgeführt werden: ", "The edit could not be completed: ") + failure.getMessage(), ButtonType.OK);
-                alert.initOwner(owner); alert.showAndWait();
+                alert.initOwner(owner.get()); alert.showAndWait();
             }
         });
         menu.getItems().add(item);

@@ -11,7 +11,6 @@ package de.richmarkdown.ui.dialogs;
 
 import com.gluonhq.richtextarea.RichTextArea;
 import com.gluonhq.richtextarea.RichTextAreaSkin;
-import com.gluonhq.richtextarea.Selection;
 import de.richmarkdown.FxTestUtil;
 import de.richmarkdown.editor.MarkdownEditor;
 import de.richmarkdown.findreplace.FindReplaceEngine;

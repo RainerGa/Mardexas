@@ -16,7 +16,40 @@ permissions:
   contents: write
 
 jobs:
+  verify:
+    name: Unit tests, GUI contracts and static checks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up reproducible Python tooling
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Verify application and packaging tests
+        run: |
+          mvn --batch-mode --no-transfer-progress verify
+          python3 -B -m unittest discover -s packaging -p 'test_*.py'
+      - name: Retain test and coverage evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-test-evidence
+          path: |
+            editor/target/surefire-reports/
+            editor/target/site/jacoco/
+            integration-demos/target/surefire-reports/
+          if-no-files-found: warn
+
   linux:
+    needs: verify
     name: Linux portable and Flatpak
     runs-on: ubuntu-24.04
     steps:
@@ -24,6 +57,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Set up reproducible Python tooling
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -103,14 +141,20 @@ jobs:
             "dist/Mardexas-${APP_VERSION}-linux-x86_64.flatpak" \
             io.github.rainerga.Mardexas
 
+      - name: Verify actual Flatpak runtime GUI and readable font samples
+        run: |
+          dbus-run-session -- python3 packaging/verify-package.py flatpak \
+            --input-dir editor/target/jpackage-input --output-dir editor/target/flatpak-check \
+            --platform linux --executable dist/flatpak-build
+
+      - name: Build integration library, Javadoc, demos and complete command reference
+        run: bash packaging/build-library.sh
+
       - name: Create source archive including submodule contents
         env:
           APP_VERSION: ${{ steps.version.outputs.value }}
         run: |
-          mkdir -p dist/source/Mardexas/rich-text-area
-          git archive HEAD | tar -x -C dist/source/Mardexas
-          git -C rich-text-area archive HEAD | tar -x -C dist/source/Mardexas/rich-text-area
-          tar -C dist/source -czf "dist/Mardexas-${APP_VERSION}-source.tar.gz" Mardexas
+          python3 packaging/source-archive.py "dist/Mardexas-${APP_VERSION}-source.tar.gz"
 
       - name: Upload Linux and source release assets
         uses: actions/upload-artifact@v4
@@ -122,9 +166,21 @@ jobs:
             dist/Mardexas-*-linux-x86_64.rpm
             dist/Mardexas-*-linux-x86_64.flatpak
             dist/Mardexas-*-source.tar.gz
+            dist/Mardexas-*-library.zip
           if-no-files-found: error
 
+      - name: Retain GUI and font evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-evidence-linux
+          path: |
+            editor/target/portable-check/linux/
+            editor/target/flatpak-check/
+          if-no-files-found: warn
+
   windows:
+    needs: verify
     name: Windows MSI and portable ZIP
     runs-on: windows-2025
     steps:
@@ -132,6 +188,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Set up reproducible Python tooling
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -204,7 +265,16 @@ jobs:
             dist/Mardexas-*-windows-x86_64.exe
           if-no-files-found: error
 
+      - name: Retain GUI and font evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-evidence-windows
+          path: editor/target/portable-check/win/
+          if-no-files-found: warn
+
   macos:
+    needs: verify
     name: macOS portable and installers (${{ matrix.architecture }})
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -220,6 +290,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Set up reproducible Python tooling
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -299,14 +374,43 @@ jobs:
             dist/Mardexas-*-macos-*.pkg
           if-no-files-found: error
 
+      - name: Retain GUI and font evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-evidence-macos-${{ matrix.architecture }}
+          path: editor/target/portable-check/${{ steps.version.outputs.platform }}/
+          if-no-files-found: warn
+
   fat-jar:
-    name: Executable FAT JAR
-    runs-on: ubuntu-24.04
+    needs: verify
+    name: Executable FAT JAR (${{ matrix.label }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            label: linux-x86_64
+          - runner: windows-2025
+            label: windows-x86_64
+          - runner: macos-15-intel
+            label: macos-x86_64
+          - runner: macos-15
+            label: macos-aarch64
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Check out source and pinned RichTextArea fork
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Set up reproducible Python tooling
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -343,11 +447,20 @@ jobs:
       - name: Upload FAT JAR release asset
         uses: actions/upload-artifact@v4
         with:
-          name: mardexas-fat-jar
+          name: mardexas-fat-jar-${{ matrix.label }}
           path: dist/Mardexas-*-fat.jar
           if-no-files-found: error
 
+      - name: Retain GUI and font evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-evidence-fat-${{ matrix.label }}
+          path: editor/target/fat-check/
+          if-no-files-found: warn
+
   native-image:
+    needs: verify
     name: Native image (${{ matrix.label }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
@@ -379,6 +492,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Set up reproducible Python tooling
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: graalvm/setup-graalvm@v1
         with:
           java-version: '25.0.2'
@@ -391,9 +509,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes build-essential libz-dev libgtk-3-0t64 xvfb xauth libfreetype6 fontconfig
       - name: Validate release version
+        env:
+          REQUESTED_RELEASE: ${{ inputs.release_tag }}
         run: |
           version="$(sed -n 's/^[[:space:]]*<version>\([^<]*\)<\/version>[[:space:]]*$/\1/p' editor/pom.xml | head -n1)"
-          requested="${{ inputs.release_tag }}"
+          requested="$REQUESTED_RELEASE"
           [[ "$GITHUB_REF" != refs/tags/v* ]] || requested="$GITHUB_REF_NAME"
           [[ -z "$requested" || "${requested#v}" == "$version" ]] || exit 2
       - name: Build and verify native GUI and fonts
@@ -432,6 +552,13 @@ jobs:
       - native-image
     runs-on: ubuntu-24.04
     steps:
+      - name: Check out inventory validator
+        uses: actions/checkout@v4
+
+      - name: Set up reproducible Python tooling
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Download all release assets
         uses: actions/download-artifact@v4
         with:
@@ -455,6 +582,10 @@ jobs:
             echo "Release tag version ($tag_version) does not match package version ($asset_version)." >&2
             exit 1
           fi
+      - name: Require every target and generate checksums
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+        run: python3 packaging/release-inventory.py dist "$RELEASE_TAG"
       - name: Publish release with packages and source
         uses: softprops/action-gh-release@v2
         with:

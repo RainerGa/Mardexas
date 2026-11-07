@@ -28,7 +28,6 @@ import com.gluonhq.richtextarea.model.TextDecoration;
 import com.gluonhq.richtextarea.viewmodel.RichTextAreaViewModel;
 import de.richmarkdown.markdown.Change;
 import de.richmarkdown.markdown.ChangeStatus;
-import de.richmarkdown.markdown.ChangeType;
 import de.richmarkdown.markdown.ChangeViewMode;
 import de.richmarkdown.markdown.TrackChangesEngine;
 import de.richmarkdown.markdown.ViewMode;

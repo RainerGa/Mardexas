@@ -51,8 +51,9 @@ test_output.txt
 # Backup files
 *.bak
 
-# IDE (VS Code) – nicht ins Repository einchecken, sofern das Team nicht auf VS Code standardisiert
+# Machine-local workspaces; retain the portable project entry point.
 *.code-workspace
+!/RichMarkDownEditor.code-workspace
 
 # Python bytecode cache
 __pycache__/

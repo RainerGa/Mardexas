@@ -16,6 +16,9 @@ public final class WindowCommandRegistry implements AutoCloseable {
     private final EditorWindow window;
     private final MenuBar menuBar;
     private final Map<String, Entry> entries = new LinkedHashMap<>();
+    private final Map<String, Runnable> handlers = new HashMap<>();
+    private final Set<String> blocked = new HashSet<>();
+    private java.util.function.Consumer<RuntimeException> errorHandler;
     private final List<Runnable> removers = new ArrayList<>();
     private final InvalidationListener listener = observable -> schedule();
     private final Runnable documentListener = this::schedule;
@@ -101,7 +104,7 @@ public final class WindowCommandRegistry implements AutoCloseable {
                 if (FORMAT_TOGGLES.contains(entry.command().id())) selected = formatSelected(entry.command().id(), selectionStyles);
                 entry.command().presentation(entry.item().getText().replace("_", ""),
                         Objects.toString(entry.item().getProperties().get("command.description"), entry.item().getText().replace("_", "")));
-                entry.command().update(available && visible, visible, selected, entry.item().getAccelerator());
+                entry.command().update(available && visible && !blocked.contains(entry.command().id()), visible, selected, entry.item().getAccelerator());
             }
         } finally { refreshing = false; }
     }
@@ -157,15 +160,45 @@ public final class WindowCommandRegistry implements AutoCloseable {
         if (result == null) throw new IllegalArgumentException("Unknown command: " + id);
         return result;
     }
-    public boolean execute(String id) { return dispatch(id, true); }
+    public boolean execute(String id) { checkThread(); return dispatch(id, true); }
+
+    private static void checkThread() {
+        if (!Platform.isFxApplicationThread()) throw new IllegalStateException("Use the JavaFX application thread");
+    }
+
+    /** Overrides a command for host file/window policy. Null restores its default handler. */
+    public void setHandler(String id, Runnable handler) {
+        checkThread();
+        require(id);
+        if (closed) throw new IllegalStateException("Command registry is closed");
+        if (handler == null) handlers.remove(id); else handlers.put(id, handler);
+    }
+    /** Additional host capability gate; document context/read-only checks still apply. */
+    public void setAllowed(String id, boolean allowed) {
+        checkThread();
+        require(id);
+        if (closed) throw new IllegalStateException("Command registry is closed");
+        if (allowed) blocked.remove(id); else blocked.add(id);
+        refresh();
+    }
+    /** Receives failed commands instead of displaying the default error dialog. */
+    public void setErrorHandler(java.util.function.Consumer<RuntimeException> handler) {
+        checkThread(); errorHandler = handler;
+    }
     private boolean dispatch(String id, boolean toggle) {
         refresh(); Entry entry = require(id);
         if (closed || !entry.command().isEnabled()) return false;
         if (toggle && entry.item() instanceof CheckMenuItem check) check.setSelected(!check.isSelected());
         if (toggle && entry.item() instanceof RadioMenuItem radio) radio.setSelected(true);
         try {
-            if (entry.action() != null) entry.action().handle(new ActionEvent(entry.item(), entry.item()));
-        } catch (RuntimeException failure) { FeatureUi.error(window.getDialogOwner(), failure); }
+            Runnable handler = handlers.get(id);
+            if (handler != null) handler.run();
+            else if (entry.action() != null) entry.action().handle(new ActionEvent(entry.item(), entry.item()));
+        } catch (RuntimeException failure) {
+            refresh();
+            if (errorHandler != null) errorHandler.accept(failure); else FeatureUi.error(window.getDialogOwner(), failure);
+            return false;
+        }
         refresh(); return true;
     }
     private void keyPressed(KeyEvent event) {
@@ -190,6 +223,7 @@ public final class WindowCommandRegistry implements AutoCloseable {
     @Override public void close() {
         if (closed) return;
         closed = true; removers.forEach(Runnable::run); removers.clear();
+        handlers.clear(); blocked.clear(); errorHandler = null;
         window.getEditor().removeChangeListener(documentListener);
         CommandDocumentSnapshot.clear(window.getEditor());
         window.getEditorRoot().removeEventFilter(KeyEvent.KEY_PRESSED, keys);

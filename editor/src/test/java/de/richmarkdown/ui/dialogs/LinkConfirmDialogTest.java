@@ -19,7 +19,6 @@ package de.richmarkdown.ui.dialogs;
 
 import de.richmarkdown.FxTestUtil;
 import de.richmarkdown.i18n.I18n;
-import javafx.event.ActionEvent;
 import javafx.scene.Scene;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
@@ -62,10 +61,6 @@ class LinkConfirmDialogTest {
     @AfterAll
     static void tearDown() {
         // kein stage.hide(): blockt den FX-Thread in Monocle headless
-    }
-
-    private void flush() {
-        FxTestUtil.flushFxEvents();
     }
 
     @Test

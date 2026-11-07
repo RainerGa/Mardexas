@@ -27,6 +27,8 @@
  */
 module com.gluonhq.emoji {
     requires javafx.controls;
+    // Exported emoji APIs expose Node, Image, ImageView and Rectangle2D.
+    requires transitive javafx.graphics;
     requires java.logging;
 
     exports com.gluonhq.emoji;

@@ -2,7 +2,6 @@ package de.richmarkdown.editor;
 
 import com.gluonhq.richtextarea.model.*;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Buffer invariants underlying empty table insertion and ordinary list formatting. */

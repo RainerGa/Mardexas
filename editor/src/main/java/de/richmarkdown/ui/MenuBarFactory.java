@@ -476,11 +476,13 @@ public final class MenuBarFactory {
 
         private void showLinkDialog() {
             LinkDialog dialog = new LinkDialog();
+            if (window != null) dialog.initOwner(window.getDialogOwner());
             dialog.showAndWait().ifPresent(editor::applyLink);
         }
 
         private void showImageDialog() {
             ImageDialog dialog = new ImageDialog();
+            if (window != null) dialog.initOwner(window.getDialogOwner());
             dialog.showAndWait().ifPresent(editor::insertImage);
         }
 
@@ -489,6 +491,7 @@ public final class MenuBarFactory {
          */
         private void showCodeBlockDialog() {
             CodeBlockDialog dialog = new CodeBlockDialog();
+            if (window != null) dialog.initOwner(window.getDialogOwner());
             dialog.showAndWait().ifPresent(editor::insertCodeBlock);
         }
 
@@ -497,6 +500,7 @@ public final class MenuBarFactory {
          */
         private void showTableDialog() {
             TableDialog dialog = new TableDialog();
+            if (window != null) dialog.initOwner(window.getDialogOwner());
             dialog.showAndWait().ifPresent(size -> editor.insertTable(size.rows(), size.columns()));
         }
 
@@ -512,7 +516,7 @@ public final class MenuBarFactory {
         int currentStart = current.getStartNumber();
         javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog(String.valueOf(currentStart));
         if (window != null) {
-            dialog.initOwner(window);
+            dialog.initOwner(window.getDialogOwner());
         }
         dialog.setTitle(I18n.text("dialog.listStartNumber.title"));
         dialog.setHeaderText(I18n.text("dialog.listStartNumber.header"));
@@ -541,7 +545,7 @@ public final class MenuBarFactory {
             Platform.runLater(() -> {
                 Dialog<ButtonType> dialog = new Dialog<>();
                 if (window != null) {
-                    dialog.initOwner(window);
+                    dialog.initOwner(window.getDialogOwner());
                 }
                 dialog.setResizable(true);
                 dialog.setTitle(title);

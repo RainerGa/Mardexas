@@ -1,9 +1,16 @@
 import copy
+import hashlib
+import os
+import shutil
 import importlib.util
 from pathlib import Path
 import tempfile
+import subprocess
+import struct
+import tarfile
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 import zipfile
 
 
@@ -40,7 +47,7 @@ class RenderingComparisonTest(unittest.TestCase):
         for key, value in [('sampleCount', '6'), ('os', ''), ('architecture', 'arm64'),
                            ('outputScaleX', '1.5'), ('sample.0.font', 'Dialog'),
                            ('sample.0.size', '5'), ('sample.0.width', '1'),
-                           ('sample.0.height', 'nan'), ('sample.0.ink.2.0', '4'),
+                           ('sample.0.height', 'nan'), ('sample.0.height', 'inf'), ('sample.0.ink.2.0', '4'),
                            ('editorTextLength', '0')]:
             with self.subTest(key=key):
                 native = copy.deepcopy(baseline)
@@ -54,14 +61,70 @@ class RenderingComparisonTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)
             (output / 'fonts.properties').write_text('sampleCount=7')
-            with patch.object(verify.subprocess, 'run') as run:
-                run.return_value.returncode = 1
-                run.return_value.stdout = ''
-                run.return_value.stderr = 'crashed'
+            with patch.object(verify.subprocess, 'Popen') as run:
+                run.return_value.wait.return_value = 1
                 with self.assertRaises(RuntimeError):
                     verify.run_check(['Mardexas'], output, 'win')
             self.assertFalse((output / 'fonts.properties').exists())
-            self.assertIn('crashed', (output / 'run.log').read_text())
+            self.assertTrue((output / 'run.log').is_file())
+
+    def test_timeout_kills_the_entire_unix_gui_process_group(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(verify.os, 'name', 'posix'), patch.object(verify.subprocess, 'Popen') as run, patch.object(verify.os, 'killpg') as kill:
+                run.return_value.pid = 456
+                run.return_value.wait.side_effect = [verify.subprocess.TimeoutExpired('GUI', 120), -9]
+                with self.assertRaisesRegex(RuntimeError, 'timeout'):
+                    verify.run_check(['Mardexas'], Path(temporary), 'linux')
+                kill.assert_called_once_with(456, verify.signal.SIGKILL)
+
+    def test_all_package_modes_check_both_renderers_with_the_correct_launcher(self):
+        for mode in ('trace', 'jvm', 'native', 'portable', 'jar'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                report = self.report()
+                for renderer in ('default', 'sw'):
+                    baseline = root / ('jvm-' + renderer)
+                    baseline.mkdir()
+                    (baseline / 'fonts.properties').write_text(''.join(f'{k}={v}\n' for k, v in report.items()))
+                arguments = SimpleNamespace(mode=mode, java='java', input_dir=root,
+                                            output_dir=root, platform='win', executable=root / 'Mardexas')
+                with patch.object(verify.argparse.ArgumentParser, 'parse_args', return_value=arguments), patch.object(verify, 'run_check', return_value=report) as run:
+                    verify.main()
+                self.assertEqual(2, run.call_count)
+                commands = [call.args[0] for call in run.call_args_list]
+                if mode == 'trace':
+                    self.assertTrue(any('native-image-agent' in str(arg) for arg in commands[0]))
+                if mode == 'jvm':
+                    self.assertFalse(any('native-image-agent' in str(arg) for arg in commands[0]))
+                if mode == 'native':
+                    self.assertIn('-XX:MissingRegistrationReportingMode=Exit', commands[0])
+                if mode == 'jar':
+                    self.assertIn('-jar', commands[0])
+                if mode == 'portable':
+                    self.assertEqual([root / 'Mardexas'], commands[0])
+                    self.assertIn('-Dprism.order=sw', run.call_args_list[1].args[3]['JAVA_TOOL_OPTIONS'])
+                else:
+                    self.assertIn('-Dprism.order=sw', commands[1])
+
+
+    def test_flatpak_uses_platform_runtime_and_rejects_unreadable_or_incomplete_reports(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            arguments = SimpleNamespace(mode='flatpak', java='java', input_dir=root,
+                                        output_dir=root, platform='linux', executable=root / 'flatpak-build')
+            with patch.object(verify.argparse.ArgumentParser, 'parse_args', return_value=arguments):
+                with patch.object(verify, 'run_check', return_value=self.report()) as run:
+                    verify.main()
+                self.assertEqual(2, run.call_count)
+                for call in run.call_args_list:
+                    self.assertIn('--runtime', call.args[0])
+                    self.assertEqual('/app/bin/mardexas', call.args[0][-1])
+                self.assertIn('--env=JAVA_TOOL_OPTIONS=-Dprism.order=sw', run.call_args_list[1].args[0])
+                for report in ({}, dict(self.report(), **{'sample.0.ink.1.0': '0'})):
+                    with patch.object(verify, 'run_check', return_value=report), self.assertRaises((ValueError, KeyError)):
+                        verify.main()
+                arguments.platform = 'win'
+                with self.assertRaises(SystemExit): verify.main()
 
 
 class TargetMetadataTest(unittest.TestCase):
@@ -77,10 +140,13 @@ class TargetMetadataTest(unittest.TestCase):
                     jar.writestr('META-INF/MANIFEST.MF', b'ignored')
                 with zipfile.ZipFile(directory / 'RichMarkDownEditor-1.jar', 'w') as jar:
                     jar.writestr('de/richmarkdown/i18n/messages_de.properties', b'translation')
+                    jar.writestr('de/richmarkdown/ui/app.css', b'.root {}')
                 data = metadata.metadata(directory, platform)
-                self.assertEqual(len(prefixes) + 1, len(data['reflection']))
-                self.assertTrue(all(kind['jniAccessible'] for kind in data['reflection']))
-                self.assertEqual(2, len(data['resources']))
+                self.assertEqual(len(prefixes) + 1 + len(metadata.SEGMENT_TYPES), len(data['reflection']))
+                self.assertTrue(all(kind['jniAccessible'] for kind in data['reflection'] if not kind['type'].startswith('java.')))
+                self.assertIn({'type': 'java.lang.invoke.VarHandleSegmentAsIntsAligned', 'allDeclaredMethods': True}, data['reflection'])
+                self.assertEqual(6, len(data['resources']))
+                self.assertIn({'module': 'RichMarkDownEditor', 'glob': 'de/richmarkdown/ui/app.bss'}, data['resources'])
                 self.assertIn({'module': 'RichMarkDownEditor', 'glob': 'de/richmarkdown/i18n/messages_de.properties'}, data['resources'])
 
     def test_empty_or_unknown_runtime_input_is_rejected(self):
@@ -92,6 +158,241 @@ class TargetMetadataTest(unittest.TestCase):
                 pass
             with self.assertRaises(ValueError):
                 metadata.metadata(directory, 'win')
+
+
+class RuntimeNoticesTest(unittest.TestCase):
+    def test_original_javafx_notices_for_all_targets_are_complete_and_hash_verified(self):
+        notices = load('copy-runtime-notices')
+        project = Path(__file__).resolve().parent.parent
+        with tempfile.TemporaryDirectory() as temporary:
+            for platform in ('linux', 'win', 'mac', 'mac-aarch64'):
+                target = Path(temporary) / platform
+                notices.copy_javafx_notices(project, target, platform)
+                for module in ('javafx.base', 'javafx.controls', 'javafx.graphics'):
+                    license_file = target / f'javafx-25.0.4-licenses/{module}/LICENSE'
+                    self.assertIn('GNU GENERAL PUBLIC LICENSE', license_file.read_text().upper())
+
+    def test_modified_or_incomplete_javafx_notices_fail(self):
+        notices = load('copy-runtime-notices')
+        project = Path(__file__).resolve().parent.parent
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            shutil.copytree(project / 'packaging/licenses', root / 'packaging/licenses')
+            (root / 'editor').mkdir()
+            shutil.copyfile(project / 'editor/pom.xml', root / 'editor/pom.xml')
+            license_file = root / 'packaging/licenses/javafx-25.0.4/linux/javafx.base/LICENSE'
+            license_file.write_text('modified license')
+            with self.assertRaisesRegex(ValueError, 'differs from upstream'):
+                notices.copy_javafx_notices(root, root / 'output', 'linux')
+            origin_file = root / 'packaging/licenses/javafx-25.0.4/ORIGIN.json'
+            import json
+            origin = json.loads(origin_file.read_text())
+            del origin['targets']['linux']['files']['javafx.base/LICENSE']
+            origin_file.write_text(json.dumps(origin))
+            with self.assertRaisesRegex(ValueError, 'Missing JavaFX legal notice'):
+                notices.copy_javafx_notices(root, root / 'output', 'linux')
+
+    def test_copies_exact_vendor_notices_and_resolves_internal_symlinks(self):
+        notices = load('copy-runtime-notices')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            java = root / 'jdk'
+            (java / 'legal/java.base').mkdir(parents=True)
+            (java / 'legal/java.base/LICENSE').write_text('Original vendor license')
+            (java / 'legal/java.base/NOTICE').write_text('Copyright notice')
+            (java / 'legal/java.logging').mkdir()
+            try:
+                (java / 'legal/java.logging/LICENSE').symlink_to('../java.base/LICENSE')
+            except OSError:
+                # Windows runners can lack symbolic-link creation privileges.
+                (java / 'legal/java.logging/LICENSE').write_text('Original vendor license')
+            (java / 'legal/java.base/LICENSE').chmod(0o444)
+            (java / 'release').write_text('JAVA_VERSION="25.0.2"')
+            notices.copy_notices(java, root / 'package')
+            self.assertEqual('Original vendor license', (root / 'package/runtime-licenses/java.base/LICENSE').read_text())
+            self.assertEqual('JAVA_VERSION="25.0.2"', (root / 'package/runtime-licenses/BUILD-RUNTIME.properties').read_text())
+            copied = root / 'package/runtime-licenses/java.logging/LICENSE'
+            self.assertFalse(copied.is_symlink())
+            self.assertEqual('Original vendor license', copied.read_text())
+            notices.copy_notices(java, root / 'package')
+            self.assertEqual('Original vendor license', copied.read_text())
+            with self.assertRaises(ValueError):
+                notices.copy_notices(root / 'missing', root / 'bad-package')
+
+
+class SourceArchiveTest(unittest.TestCase):
+    def git(self, root, *arguments):
+        subprocess.run(['git', '-C', str(root), *arguments], check=True,
+                       capture_output=True)
+
+    def test_actual_dirty_sources_unicode_and_initialized_submodule_are_archived(self):
+        source = load('source-archive')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / 'project'
+            root.mkdir()
+            self.git(root, 'init')
+            (root / '.gitignore').write_text('target/\n')
+            (root / 'tracked.txt').write_text('old')
+            (root / 'deleted.txt').write_text('deleted')
+            self.git(root, 'add', '.')
+            (root / 'tracked.txt').write_text('actual compiled source')
+            (root / 'deleted.txt').unlink()
+            (root / 'Übersicht mit Leerzeichen.md').write_text('new')
+            (root / 'target').mkdir()
+            (root / 'target/secret').write_text('ignored')
+            child = root / 'fork'
+            child.mkdir()
+            self.git(child, 'init')
+            (child / 'library.java').write_text('actual fork source')
+            self.git(root, 'update-index', '--add', '--cacheinfo', '160000,' + '1' * 40 + ',fork')
+            destination = Path(temporary) / 'source.tar.gz'
+            self.assertEqual(4, source.create_archive(root, destination))
+            with tarfile.open(destination) as archive:
+                names = archive.getnames()
+                self.assertIn('Mardexas/Übersicht mit Leerzeichen.md', names)
+                self.assertIn('Mardexas/fork/library.java', names)
+                self.assertNotIn('Mardexas/target/secret', names)
+                self.assertNotIn('Mardexas/deleted.txt', names)
+                self.assertEqual(b'actual compiled source', archive.extractfile('Mardexas/tracked.txt').read())
+                self.assertFalse(any('/.git/' in name for name in names))
+
+    def test_missing_submodule_and_empty_source_fail(self):
+        source = load('source-archive')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.git(root, 'init')
+            with self.assertRaisesRegex(ValueError, 'No application sources'):
+                source.create_archive(root, root.parent / 'empty.tar.gz')
+            self.git(root, 'update-index', '--add', '--cacheinfo', '160000,' + '1' * 40 + ',fork')
+            with self.assertRaisesRegex(ValueError, 'Uninitialized'):
+                list(source.source_files(root))
+
+
+class FatJarArchitectureTest(unittest.TestCase):
+    def library(self, platform):
+        header = bytearray(128)
+        if platform == 'linux':
+            header[:6] = b'\x7fELF\x02\x01'
+            struct.pack_into('<H', header, 18, 62)
+            return 'libglass.so', header
+        if platform == 'win':
+            header[:2] = b'MZ'
+            struct.pack_into('<I', header, 60, 64)
+            header[64:68] = b'PE\0\0'
+            struct.pack_into('<H', header, 68, 0x8664)
+            return 'glass.dll', header
+        header[:4] = b'\xcf\xfa\xed\xfe'
+        struct.pack_into('<I', header, 4, 0x1000007 if platform == 'mac' else 0x100000c)
+        return 'libglass.dylib', header
+
+    def test_all_four_targets_accept_their_libraries_and_reject_other_targets(self):
+        checker = load('verify-fat-jar')
+        platforms = ('linux', 'win', 'mac', 'mac-aarch64')
+        with tempfile.TemporaryDirectory() as temporary:
+            jar = Path(temporary) / 'editor.jar'
+            for platform in platforms:
+                with zipfile.ZipFile(jar, 'w') as archive:
+                    archive.writestr(*self.library(platform))
+                self.assertEqual(1, checker.verify(platform, jar))
+                for wrong in set(platforms) - {platform}:
+                    with self.subTest(source=platform, target=wrong), self.assertRaises(ValueError):
+                        checker.verify(wrong, jar)
+
+    def test_missing_libraries_corrupt_headers_and_mixed_targets_fail(self):
+        checker = load('verify-fat-jar')
+        with tempfile.TemporaryDirectory() as temporary:
+            jar = Path(temporary) / 'editor.jar'
+            for entries in ([], [('libglass.so', b'invalid')],
+                            [self.library('linux'), self.library('win')]):
+                with zipfile.ZipFile(jar, 'w') as archive:
+                    for entry in entries:
+                        archive.writestr(*entry)
+                with self.assertRaises(ValueError):
+                    checker.verify('linux', jar)
+
+
+class ReleaseInventoryTest(unittest.TestCase):
+    def test_complete_release_has_reproducible_checksums(self):
+        checker = load('release-inventory')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            names = checker.expected_assets('1.2.3')
+            self.assertEqual(23, len(names))
+            for name in names:
+                (root / name).write_bytes(name.encode())
+            self.assertEqual(23, checker.inventory(root, '1.2.3'))
+            before = (root / 'SHA256SUMS').read_text()
+            for line in before.splitlines():
+                digest, name = line.split('  ')
+                self.assertEqual(hashlib.sha256(name.encode()).hexdigest(), digest)
+            checker.inventory(root, '1.2.3')
+            self.assertEqual(before, (root / 'SHA256SUMS').read_text())
+
+    def test_every_missing_asset_empty_asset_and_unexpected_version_fails(self):
+        checker = load('release-inventory')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            names = checker.expected_assets('1.0.0')
+            for name in names:
+                (root / name).write_bytes(b'package')
+            for name in names:
+                (root / name).unlink()
+                with self.subTest(missing=name), self.assertRaises(ValueError):
+                    checker.inventory(root, '1.0.0')
+                (root / name).write_bytes(b'')
+                with self.subTest(empty=name), self.assertRaises(ValueError):
+                    checker.inventory(root, '1.0.0')
+                (root / name).write_bytes(b'package')
+            (root / 'Mardexas-0.9.0-stale.jar').write_bytes(b'stale')
+            with self.assertRaises(ValueError):
+                checker.inventory(root, '1.0.0')
+        with self.assertRaises(ValueError):
+            checker.expected_assets('../malformed')
+
+
+@unittest.skipUnless(os.name == 'posix', 'Bash tool harness needs a POSIX host')
+class InstallerScriptTest(unittest.TestCase):
+    def setup_project(self, root):
+        (root / 'packaging').mkdir()
+        shutil.copyfile(Path(__file__).with_name('build-installers.sh'), root / 'packaging/build-installers.sh')
+        (root / 'editor').mkdir()
+        (root / 'editor/pom.xml').write_text('<project>\n  <version>1.2.3</version>\n</project>')
+        (root / 'LICENSE').write_text('Original application license')
+        (root / 'dist/linux/Mardexas').mkdir(parents=True)
+        tool = root / 'jdk/bin/jpackage'
+        tool.parent.mkdir(parents=True)
+        tool.write_text('''#!/usr/bin/env python3
+import pathlib, sys
+args=sys.argv[1:]
+output=pathlib.Path(args[args.index('--dest')+1])
+kind=args[args.index('--type')+1]
+assert pathlib.Path(args[args.index('--app-image')+1]).is_dir()
+assert pathlib.Path(args[args.index('--license-file')+1]).read_text() == 'Original application license'
+(output / ('mardexas.'+kind)).write_bytes(b'packaged app image')
+''')
+        tool.chmod(0o755)
+        return dict(os.environ, JAVA_HOME=str(root / 'jdk'), JAVAFX_PLATFORM='linux')
+
+    def test_both_default_installers_or_one_requested_type_are_exported(self):
+        for arguments, extensions in (([], ('deb', 'rpm')), (['rpm'], ('rpm',))):
+            with self.subTest(arguments=arguments), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                env = self.setup_project(root)
+                result = subprocess.run(['bash', str(root / 'packaging/build-installers.sh'), *arguments], env=env, capture_output=True)
+                self.assertEqual(0, result.returncode, result.stderr)
+                for extension in extensions:
+                    self.assertEqual(b'packaged app image', (root / f'dist/Mardexas-1.2.3-linux-x86_64.{extension}').read_bytes())
+
+    def test_invalid_type_and_missing_application_image_fail(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            env = self.setup_project(root)
+            for arguments in (['msi'], ['rpm', 'deb']):
+                result = subprocess.run(['bash', str(root / 'packaging/build-installers.sh'), *arguments], env=env, capture_output=True)
+                self.assertEqual(2, result.returncode)
+            (root / 'dist/linux/Mardexas').rmdir()
+            result = subprocess.run(['bash', str(root / 'packaging/build-installers.sh')], env=env, capture_output=True)
+            self.assertEqual(2, result.returncode)
 
 
 if __name__ == '__main__':

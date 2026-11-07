@@ -18,22 +18,28 @@ public final class CommandSurfaceController implements AutoCloseable {
     private final RibbonView ribbon;
     private final WindowCommandRegistry registry;
     private final Runnable unsubscribe;
+    private final boolean followApplicationMode;
     private final EventHandler<KeyEvent> keys = this::keyPressed;
     private UiMode mode = UiMode.CLASSIC;
     private boolean closed;
     private long layoutRevision;
 
     CommandSurfaceController(EditorWindow window, MenuBar menuBar, WindowCommandRegistry registry) {
+        this(window, menuBar, registry, true);
+    }
+    CommandSurfaceController(EditorWindow window, MenuBar menuBar, WindowCommandRegistry registry, boolean followApplicationMode) {
         this.window = window; this.menuBar = menuBar; this.registry = registry;
+        this.followApplicationMode = followApplicationMode;
         ribbon = new RibbonView(window, registry);
         window.getChrome().getChildren().add(2, ribbon);
         WeakReference<CommandSurfaceController> weak = new WeakReference<>(this);
-        unsubscribe = UiModeService.subscribe(value -> {
+        unsubscribe = followApplicationMode ? UiModeService.subscribe(value -> {
             CommandSurfaceController target = weak.get(); if (target != null) target.apply(value);
         }, failure -> {
             CommandSurfaceController target = weak.get();
             if (target != null) FeatureUi.error(target.window.getDialogOwner(), failure);
-        });
+        }) : () -> { };
+        if (!followApplicationMode) apply(UiMode.CLASSIC);
         window.getEditorRoot().addEventFilter(KeyEvent.KEY_PRESSED, keys);
     }
     private void keyPressed(KeyEvent event) {
@@ -48,7 +54,11 @@ public final class CommandSurfaceController implements AutoCloseable {
     public MenuBar getMenuBar() { return menuBar; }
     public RibbonView getRibbon() { return ribbon; }
     public void setMode(UiMode value) {
-        if (!closed) UiModeService.change(value, failure -> FeatureUi.error(window.getDialogOwner(), failure));
+        java.util.Objects.requireNonNull(value, "mode");
+        if (!closed) {
+            if (followApplicationMode) UiModeService.change(value, failure -> FeatureUi.error(window.getDialogOwner(), failure));
+            else apply(value);
+        }
     }
     private void apply(UiMode value) {
         if (closed) return;

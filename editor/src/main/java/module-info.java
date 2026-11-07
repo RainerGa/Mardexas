@@ -23,7 +23,7 @@
  * FXML wird nicht benötigt (reine Java-UI). Als Bibliothek (AP-06/API-Doku)
  * zusätzlich exportiert: {@code io} (Datei-Engine), {@code ui} (+
  * {@code ui.dialogs} als Default-Shell), {@code i18n} + {@code settings}
- * (globale Konfiguration), {@code findreplace} (Suchen & Ersetzen nach LO).
+ * (globale Konfiguration), {@code findreplace} (Suchen und Ersetzen nach LO).
  * Kein {@code opens} (kein FXML/Reflection).
  */
 module RichMarkDownEditor {
@@ -31,7 +31,8 @@ module RichMarkDownEditor {
     requires transitive com.gluonhq.richtextarea;
     // java.awt.Desktop für das Öffnen von Links (RME-002)
     requires java.desktop;
-    requires java.prefs;
+    // PrintOptions exposes Preferences in its public save/load API.
+    requires transitive java.prefs;
 
     exports de.richmarkdown;
     exports de.richmarkdown.editor;
@@ -42,4 +43,9 @@ module RichMarkDownEditor {
     exports de.richmarkdown.ui.dialogs;
     exports de.richmarkdown.i18n;
     exports de.richmarkdown.settings;
+    exports de.richmarkdown.api;
+    exports de.richmarkdown.features.editing;
+    exports de.richmarkdown.features.checking;
+    exports de.richmarkdown.features.tables;
+    exports de.richmarkdown.features.printing;
 }

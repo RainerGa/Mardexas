@@ -19,7 +19,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 
-import java.util.List;
 import java.util.concurrent.Callable;
 
 /** Bounded asynchronous CRUD for snippets/templates, including Markdown preview and file import. */

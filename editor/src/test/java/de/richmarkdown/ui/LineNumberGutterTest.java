@@ -21,7 +21,6 @@ import com.gluonhq.richtextarea.RichTextArea;
 import de.richmarkdown.FxTestUtil;
 import de.richmarkdown.editor.MarkdownEditor;
 import javafx.geometry.Orientation;
-import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -37,7 +36,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.testfx.api.FxRobot;
 import org.testfx.util.WaitForAsyncUtils;
 
 import java.util.ArrayList;
@@ -174,9 +172,7 @@ class LineNumberGutterTest {
 
     @Test
     @DisplayName("folgt dem Scrollen des Editors (Mausrad)")
-    @SuppressWarnings("deprecation")
     void followsScrolling() {
-        FxRobot robot = new FxRobot();
         editor.setMarkdown(String.join("\n\n", Collections.nCopies(40, "Zeile")));
         flushFully();
         showGutter();
@@ -305,18 +301,6 @@ class LineNumberGutterTest {
         return numberLabels().stream()
                 .map(Label::getText)
                 .collect(Collectors.toList());
-    }
-
-    /** Scrollposition der Editor-Liste (0 = oben, 1 = unten). */
-    private double verticalScrollPosition() {
-        return FxTestUtil.callAndWait(() -> {
-            for (Node node : rta.lookupAll(".scroll-bar")) {
-                if (node instanceof ScrollBar bar && bar.getOrientation() == Orientation.VERTICAL) {
-                    return bar.getValue();
-                }
-            }
-            return 0d;
-        });
     }
 
     /** Editor-Zelle mit dem gegebenen Zeilenindex (0-basiert). */

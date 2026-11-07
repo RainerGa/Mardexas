@@ -22,23 +22,24 @@ case "$JAVAFX_PLATFORM" in
         ;;
 esac
 
+
 if [[ -z "$APP_POM_VERSION" || "$APP_VERSION" != "$APP_POM_VERSION" ]]; then
     echo "APP_VERSION ($APP_VERSION) must match editor/pom.xml version ($APP_POM_VERSION)." >&2
     exit 2
 fi
 
-if [[ "${JAVA_HOME:-}" == /* && -x "$JAVA_HOME/bin/jpackage" ]]; then
-    JPACKAGE="$JAVA_HOME/bin/jpackage"
-elif command -v jpackage >/dev/null 2>&1; then
-    JPACKAGE="$(command -v jpackage)"
-else
-    echo "jpackage was not found. Install JDK 25 or newer." >&2
-    exit 1
-fi
+JAVA_HOME="${JAVA_HOME:?Set JAVA_HOME to the packaging JDK}"
+if command -v cygpath >/dev/null 2>&1; then JAVA_HOME="$(cygpath -u "$JAVA_HOME")"; fi
+JPACKAGE="$JAVA_HOME/bin/jpackage"
+[[ -f "$JPACKAGE.exe" ]] && JPACKAGE="$JPACKAGE.exe"
+[[ -x "$JPACKAGE" ]] || { echo "jpackage missing in JAVA_HOME: $JAVA_HOME" >&2; exit 2; }
+# Child tools and Maven must resolve the same JDK as jpackage.
+export JAVA_HOME
+export PATH="$JAVA_HOME/bin:$PATH"
 
 cd "$PROJECT_DIR"
 mvn --batch-mode --no-transfer-progress \
-    -Dmaven.test.skip=true \
+    -Dmaven.test.skip=true -Djacoco.skip=true \
     -pl editor -am install
 
 rm -rf "$INPUT_DIR"
@@ -50,6 +51,7 @@ cp "$PROJECT_DIR/LICENSE" "$LICENSE_DIR/Mardexas-GPL-3.0.txt"
 cp "$PROJECT_DIR/rich-text-area/LICENSE" "$LICENSE_DIR/RichTextArea-GPL-3.0.txt"
 cp "$PROJECT_DIR/editor/src/main/resources/de/richmarkdown/ui/icons/tabler/LICENSE" "$LICENSE_DIR/Tabler-Icons-MIT.txt"
 cp "$PROJECT_DIR/emoji-noto/src/main/resources/com/gluonhq/emoji/noto/"*.txt "$LICENSE_DIR/"
+python3 "$PROJECT_DIR/packaging/copy-runtime-notices.py" "$JAVA_HOME" "$LICENSE_DIR" --javafx-platform "$JAVAFX_PLATFORM"
 
 mvn --batch-mode --no-transfer-progress \
     -f "$PROJECT_DIR/editor/pom.xml" \
@@ -88,9 +90,20 @@ esac
 case "$JAVAFX_PLATFORM" in
     mac|mac-aarch64)
         mkdir -p "$OUTPUT_DIR/Mardexas.app/Contents/Resources/licenses"
-        cp "$LICENSE_DIR/"* "$OUTPUT_DIR/Mardexas.app/Contents/Resources/licenses/"
+        cp -R "$LICENSE_DIR/." "$OUTPUT_DIR/Mardexas.app/Contents/Resources/licenses/"
         cp "$PROJECT_DIR/THIRD-PARTY-NOTICES.md" "$OUTPUT_DIR/Mardexas.app/Contents/Resources/licenses/"
-        cp "$LICENSE_DIR/"* "$OUTPUT_DIR/"
+        cp -R "$LICENSE_DIR/." "$OUTPUT_DIR/"
         cp "$PROJECT_DIR/THIRD-PARTY-NOTICES.md" "$OUTPUT_DIR/"
         ;;
 esac
+
+CHECK_DIR="$PROJECT_DIR/editor/target/portable-check/$JAVAFX_PLATFORM"
+EXECUTABLE="$OUTPUT_DIR/Mardexas/bin/Mardexas"
+case "$JAVAFX_PLATFORM" in
+    win) EXECUTABLE="$OUTPUT_DIR/Mardexas/Mardexas.exe" ;;
+    mac|mac-aarch64) EXECUTABLE="$OUTPUT_DIR/Mardexas.app/Contents/MacOS/Mardexas" ;;
+esac
+python3 "$PROJECT_DIR/packaging/verify-package.py" jvm --java "$JAVA_HOME/bin/java" \
+    --input-dir "$INPUT_DIR" --output-dir "$CHECK_DIR" --platform "$JAVAFX_PLATFORM"
+python3 "$PROJECT_DIR/packaging/verify-package.py" portable \
+    --input-dir "$INPUT_DIR" --output-dir "$CHECK_DIR" --platform "$JAVAFX_PLATFORM" --executable "$EXECUTABLE"

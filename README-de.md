@@ -119,11 +119,24 @@ Ausführliche Details finden Sie in [docs/API.md](docs/API.md).
 ## Aus dem Quellcode bauen und ausführen
 
 ### Voraussetzungen
-- [JDK 25](https://adoptium.net/) oder neuer
+- [JDK 25](https://adoptium.net/) (diese Version für geprüfte Builds verwenden)
 - [Maven 3.8+](https://maven.apache.org/)
 - Git mit Submodul-Unterstützung
 
 ### 1. Klonen mit Submodulen
+
+Für Linux steht ein eigenständiges [Checkout-Skript](scripts/checkout-linux.sh)
+bereit. Es lädt das vollständige Projekt und prüft mit `--verify` den Maven-Build:
+
+```sh
+bash checkout-linux.sh --verify "$HOME/Projekte/Mardexas"
+```
+
+Die [Entwicklungsanleitung](docs/DEVELOPMENT.md) beschreibt den Download des
+Skripts vor dem ersten Checkout, Voraussetzungen, Projektstruktur, eigene Forks
+und die Prüfung der IDE-Meldungen. Dafür muss das Skript zuerst im gewünschten
+GitHub-Branch veröffentlicht sein. Alternativ direkt mit Git:
+
 ```sh
 git clone --recurse-submodules https://github.com/RainerGa/Mardexas.git
 cd Mardexas

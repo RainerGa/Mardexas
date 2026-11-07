@@ -22,7 +22,6 @@ import de.richmarkdown.i18n.I18n;
 import de.richmarkdown.settings.ApplicationSettings;
 import javafx.scene.Scene;
 import javafx.scene.control.MenuBar;
-import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
@@ -41,7 +40,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

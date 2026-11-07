@@ -26,10 +26,10 @@ import java.util.regex.Pattern;
  * Stateless-Prüfer für Markdown-Regelverstöße (AddFeatures #16).
  *
  * <p>Der Prüfer arbeitet auf dem reinen Markdown-Quelltext
- * ({@link MarkdownEditor#getMarkdown()} oder direkt
+ * ({@link de.richmarkdown.editor.MarkdownEditor#getMarkdown()} oder direkt
  * {@link #check(String)}) und liefert eine Liste von
  * {@link MarkdownIssue} mit Position, Zeile und Spalte. Die Positionen können
- * zur Navigation per {@link MarkdownEditor#goToPosition(int)} genutzt werden.
+ * zur Navigation per {@link de.richmarkdown.editor.MarkdownEditor#goToPosition(int)} genutzt werden.
  *
  * <p>Prüfregeln:
  * <ol>
@@ -48,7 +48,6 @@ public final class MarkdownChecker {
     /** Bild: {@code ![alt](url)}. */
     private static final Pattern IMAGE_PATTERN = Pattern.compile("!\\[([^\\]]*)\\]\\(([^\\)]*)\\)");
     /** Code-Fence am Zeilenanfang: {@code ```} optional gefolgt von Sprache. */
-    private static final Pattern FENCE_PATTERN = Pattern.compile("^\\s*```(\\w*)");
     /** Tabellen-Zeile: mit Pipe-Zeichen eingefasste Zellen. */
     private static final Pattern TABLE_ROW_PATTERN = Pattern.compile("^\\s*\\|.*\\|\\s*$");
     /** Überschrift am Zeilenanfang: 1-6× {@code #} gefolgt von Leerzeichen. */

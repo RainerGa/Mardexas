@@ -1,0 +1,82 @@
+{
+  "version": "25.0.4",
+  "modules": [
+    "javafx.base",
+    "javafx.controls",
+    "javafx.graphics"
+  ],
+  "targets": {
+    "linux": {
+      "url": "https://download2.gluonhq.com/openjfx/25.0.4/openjfx-25.0.4_linux-x64_bin-sdk.zip",
+      "sdkSha256": "3b02135c560390172eefba0e9cdb926e23e2d1864c03947779c498d157a3531c",
+      "files": {
+        "javafx.graphics/ASSEMBLY_EXCEPTION": "a44eb7b5caf5534c6ef536b21edb40b4d6babf91bf97d9d45596868618b2c6fb",
+        "javafx.graphics/pipewire.md": "56a8fb1652c70ac204d13bb52ca4d678162e7d21a97d10209c2a633de8082de0",
+        "javafx.graphics/LICENSE": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "javafx.graphics/ADDITIONAL_LICENSE_INFO": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916",
+        "javafx.graphics/jpeg_fx.md": "4d8164326adbb7c6a3dbb65b1979962915e4b6f67eb5885409c80a3f350b322a",
+        "javafx.graphics/mesa3d.md": "63f4e6f75caebbccb95d903fb43e46ac7111b3624d0a34f146b276d7d9e7b152",
+        "javafx.base/ASSEMBLY_EXCEPTION": "a44eb7b5caf5534c6ef536b21edb40b4d6babf91bf97d9d45596868618b2c6fb",
+        "javafx.base/LICENSE": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "javafx.base/ADDITIONAL_LICENSE_INFO": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916",
+        "javafx.controls/ASSEMBLY_EXCEPTION": "a44eb7b5caf5534c6ef536b21edb40b4d6babf91bf97d9d45596868618b2c6fb",
+        "javafx.controls/LICENSE": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "javafx.controls/ADDITIONAL_LICENSE_INFO": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916"
+      }
+    },
+    "win": {
+      "url": "https://download2.gluonhq.com/openjfx/25.0.4/openjfx-25.0.4_windows-x64_bin-sdk.zip",
+      "sdkSha256": "80ed1b43b9fa96575885761c3ed19e690b2aa3feb92973bae39aaccaccbf101b",
+      "files": {
+        "javafx.base/ADDITIONAL_LICENSE_INFO": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916",
+        "javafx.base/ASSEMBLY_EXCEPTION": "a44eb7b5caf5534c6ef536b21edb40b4d6babf91bf97d9d45596868618b2c6fb",
+        "javafx.base/LICENSE": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "javafx.controls/ADDITIONAL_LICENSE_INFO": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916",
+        "javafx.controls/ASSEMBLY_EXCEPTION": "a44eb7b5caf5534c6ef536b21edb40b4d6babf91bf97d9d45596868618b2c6fb",
+        "javafx.controls/LICENSE": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "javafx.graphics/ADDITIONAL_LICENSE_INFO": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916",
+        "javafx.graphics/ASSEMBLY_EXCEPTION": "a44eb7b5caf5534c6ef536b21edb40b4d6babf91bf97d9d45596868618b2c6fb",
+        "javafx.graphics/jpeg_fx.md": "4d8164326adbb7c6a3dbb65b1979962915e4b6f67eb5885409c80a3f350b322a",
+        "javafx.graphics/LICENSE": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "javafx.graphics/mesa3d.md": "63f4e6f75caebbccb95d903fb43e46ac7111b3624d0a34f146b276d7d9e7b152",
+        "javafx.graphics/pipewire.md": "56a8fb1652c70ac204d13bb52ca4d678162e7d21a97d10209c2a633de8082de0"
+      }
+    },
+    "mac": {
+      "url": "https://download2.gluonhq.com/openjfx/25.0.4/openjfx-25.0.4_osx-x64_bin-sdk.zip",
+      "sdkSha256": "c7dfe200a6f81bfeb065c5ac7c5020ceb0ad9be595234df38cfe7123303085e0",
+      "files": {
+        "javafx.graphics/mesa3d.md": "63f4e6f75caebbccb95d903fb43e46ac7111b3624d0a34f146b276d7d9e7b152",
+        "javafx.graphics/LICENSE": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "javafx.graphics/ADDITIONAL_LICENSE_INFO": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916",
+        "javafx.graphics/ASSEMBLY_EXCEPTION": "a44eb7b5caf5534c6ef536b21edb40b4d6babf91bf97d9d45596868618b2c6fb",
+        "javafx.graphics/jpeg_fx.md": "4d8164326adbb7c6a3dbb65b1979962915e4b6f67eb5885409c80a3f350b322a",
+        "javafx.graphics/pipewire.md": "56a8fb1652c70ac204d13bb52ca4d678162e7d21a97d10209c2a633de8082de0",
+        "javafx.base/LICENSE": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "javafx.base/ADDITIONAL_LICENSE_INFO": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916",
+        "javafx.base/ASSEMBLY_EXCEPTION": "a44eb7b5caf5534c6ef536b21edb40b4d6babf91bf97d9d45596868618b2c6fb",
+        "javafx.controls/LICENSE": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "javafx.controls/ADDITIONAL_LICENSE_INFO": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916",
+        "javafx.controls/ASSEMBLY_EXCEPTION": "a44eb7b5caf5534c6ef536b21edb40b4d6babf91bf97d9d45596868618b2c6fb"
+      }
+    },
+    "mac-aarch64": {
+      "url": "https://download2.gluonhq.com/openjfx/25.0.4/openjfx-25.0.4_osx-aarch64_bin-sdk.zip",
+      "sdkSha256": "57487970416d12c2b023e5fba3074bcb17c331d7f0665db1daeaab264e12a7c3",
+      "files": {
+        "javafx.graphics/mesa3d.md": "63f4e6f75caebbccb95d903fb43e46ac7111b3624d0a34f146b276d7d9e7b152",
+        "javafx.graphics/LICENSE": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "javafx.graphics/ADDITIONAL_LICENSE_INFO": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916",
+        "javafx.graphics/ASSEMBLY_EXCEPTION": "a44eb7b5caf5534c6ef536b21edb40b4d6babf91bf97d9d45596868618b2c6fb",
+        "javafx.graphics/jpeg_fx.md": "4d8164326adbb7c6a3dbb65b1979962915e4b6f67eb5885409c80a3f350b322a",
+        "javafx.graphics/pipewire.md": "56a8fb1652c70ac204d13bb52ca4d678162e7d21a97d10209c2a633de8082de0",
+        "javafx.base/LICENSE": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "javafx.base/ADDITIONAL_LICENSE_INFO": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916",
+        "javafx.base/ASSEMBLY_EXCEPTION": "a44eb7b5caf5534c6ef536b21edb40b4d6babf91bf97d9d45596868618b2c6fb",
+        "javafx.controls/LICENSE": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "javafx.controls/ADDITIONAL_LICENSE_INFO": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916",
+        "javafx.controls/ASSEMBLY_EXCEPTION": "a44eb7b5caf5534c6ef536b21edb40b4d6babf91bf97d9d45596868618b2c6fb"
+      }
+    }
+  }
+}

@@ -1,17 +1,29 @@
 # Third-party software and license notices
 
 This inventory is based on the Maven dependency tree for the current source
-revision. Maven plugins and the JDK are build/runtime tooling, not application
-dependencies listed here. The application is currently built from source; no
-third-party binary bundle is checked into the Mardexas repository.
+revision. Maven plugins are build tooling. Portable/installer packages also
+contain a Java runtime; Native Image executables contain runtime code and can
+ship additional JDK native libraries. Their compiler/runtime vendor's original
+notices are retained under `runtime-licenses` (or the bundled runtime's `legal`
+directory), together with its exact build identity. These notices supplement the
+application dependencies below. No third-party binary bundle is checked into
+the Mardexas repository.
 
 ## Runtime dependencies
 
 | Component | Version | Role | License and source |
 |---|---:|---|---|
-| RichTextArea fork (`com.gluonhq:rich-text-area`) | 3.0-RG | Rich-text editor control; source is the `RainerGa/rich-text-area` Git submodule pinned by the superproject | GNU GPL version 3, as declared in the fork POM. The fork derives from Gluon's RichTextArea; its source retains upstream notices. [Pinned fork commit](https://github.com/RainerGa/rich-text-area/commit/e3796be52aca7c553b1531eef04dbf138114912e), [upstream project](https://github.com/gluonhq/rich-text-area), [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html) |
+| RichTextArea fork (`com.gluonhq:rich-text-area`) | 3.0-RG | Rich-text editor control; source is the `RainerGa/rich-text-area` Git submodule pinned by the superproject | GNU GPL version 3, as declared in the fork POM. The fork derives from Gluon's RichTextArea; its source retains upstream notices. [Fork sources](https://github.com/RainerGa/rich-text-area) (the exact revision is the superproject gitlink; source archives include the compiled working tree), [upstream project](https://github.com/gluonhq/rich-text-area), [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html) |
 | Mardexas Noto Emoji (`de.richmarkdown:emoji-noto`), Gluon Emoji fork | 1.1.0-mardexas-1 | Local-only Unicode API and emoji rendering for RichTextArea | Gluon code: GPL-3.0-or-later. Noto artwork: Apache-2.0; region flags: public domain / copyright exemptions per upstream notice. emoji-data: MIT. All source, original licenses and notices are in `emoji-noto/`. See below. |
 | OpenJFX Controls, Graphics, and Base (`org.openjfx`) | 25.0.4 | JavaFX UI toolkit | GNU GPL version 2 with the Classpath Exception. [OpenJFX](https://openjfx.io/), [license](https://openjdk.org/legal/gplv2+ce.html) |
+
+The complete original OpenJFX notices for these three modules, including their
+native third-party components, are retained from each official platform SDK in
+`packaging/licenses/javafx-25.0.4/`. `ORIGIN.json` records the official download
+URLs, SDK hashes, and individual notice hashes. These files are also embedded
+under `META-INF/licenses` in the application and FAT JARs. Portable and Native
+Image packages additionally provide the target platform's notices beside their
+runtime notices. The package build checks the JavaFX version and original bytes.
 
 ## Local vector artwork
 

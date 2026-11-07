@@ -17,7 +17,6 @@
 
 package de.richmarkdown;
 
-import de.richmarkdown.ui.EditorWindow;
 import de.richmarkdown.i18n.I18n;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;

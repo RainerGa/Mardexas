@@ -129,7 +129,7 @@ class TableCellHighlightTest {
 
             // Die gezeichnete Hervorhebung muss der Textbereichsform des TextFlows
             // entsprechen: ein Rechteck ueber "Heading", das in der Zeile bleibt.
-            PathElement[] expected = textFlow.rangeShape(0, "Heading".length());
+            PathElement[] expected = textFlow.getRangeShape(0, "Heading".length(), false);
             assertTrue(expected.length > 0, "Textbereichsform muss vorhanden sein");
             javafx.geometry.Bounds expectedBounds = boundsOf(expected);
             javafx.geometry.Bounds actualBounds = selection.getBoundsInLocal();

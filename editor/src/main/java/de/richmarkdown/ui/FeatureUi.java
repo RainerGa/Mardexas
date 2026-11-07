@@ -1,7 +1,6 @@
 package de.richmarkdown.ui;
 
 import de.richmarkdown.i18n.I18n;
-import de.richmarkdown.io.WorkspaceSession;
 import de.richmarkdown.settings.ApplicationSettings;
 import java.nio.file.Path;
 import javafx.scene.control.Alert;

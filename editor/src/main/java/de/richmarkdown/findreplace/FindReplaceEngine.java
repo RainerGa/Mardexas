@@ -6,7 +6,6 @@ import com.gluonhq.richtextarea.Selection;
 import com.gluonhq.richtextarea.model.Decoration;
 import com.gluonhq.richtextarea.model.DecorationModel;
 import com.gluonhq.richtextarea.model.Document;
-import com.gluonhq.richtextarea.model.Paragraph;
 import com.gluonhq.richtextarea.model.ParagraphDecoration;
 import com.gluonhq.richtextarea.model.TextBuffer;
 import com.gluonhq.richtextarea.model.TextDecoration;
@@ -14,7 +13,6 @@ import com.gluonhq.richtextarea.model.TextUnit;
 import com.gluonhq.richtextarea.model.Unit;
 import com.gluonhq.richtextarea.viewmodel.RichTextAreaViewModel;
 import javafx.event.ActionEvent;
-import javafx.scene.control.ListView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -479,10 +477,6 @@ public class FindReplaceEngine {
         return null;
     }
 
-    private Match firstMatchFrom(Pattern pattern, String text, int from, int to) {
-        return firstMatchFrom(pattern, text, from, to, null);
-    }
-
     private Match lastMatchEndingBefore(Pattern pattern, String text, int from, int to, int start,
             FindOptions options) {
         if (from >= to || start <= from) {
@@ -540,14 +534,6 @@ public class FindReplaceEngine {
             last = candidate;
         }
         return last;
-    }
-
-    private Match lastMatchEndingBefore(Pattern pattern, String text, int from, int to, int start) {
-        return lastMatchEndingBefore(pattern, text, from, to, start, null);
-    }
-
-    private Match lastMatchBefore(Pattern pattern, String text, int from, int to) {
-        return lastMatchBefore(pattern, text, from, to, null);
     }
 
     public SearchResult replaceSelection(String searchText, String replaceText, FindOptions options) {

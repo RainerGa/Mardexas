@@ -39,7 +39,6 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
-import javafx.stage.Window;
 
 import java.awt.Desktop;
 import java.io.File;

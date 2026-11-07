@@ -6,7 +6,6 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.Binding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;

@@ -103,6 +103,13 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource><directory>src/main/resources</directory></resource>
+      <resource>
+        <directory>../packaging/licenses</directory>
+        <targetPath>META-INF/licenses</targetPath>
+      </resource>
+    </resources>
     <directory>${mardexas.build.directory}</directory>
     <plugins>
       <plugin>
@@ -164,6 +171,8 @@
         <executions>
           <execution>
             <id>checkstyle-validate</id>
+            <!-- Checkstyle runs in Maven; no incremental IDE build action is needed. -->
+            <?m2e ignore?>
             <phase>validate</phase>
             <goals>
               <goal>check</goal>
@@ -176,7 +185,7 @@
         <artifactId>spotbugs-maven-plugin</artifactId>
         <version>4.10.5.0</version>
         <configuration>
-          <failOnError>false</failOnError>
+          <failOnError>true</failOnError>
           <threshold>Medium</threshold>
           <effort>Default</effort>
           <excludeFilterFile>spotbugs-suppressions.xml</excludeFilterFile>
@@ -249,83 +258,10 @@
   </build>
 
   <profiles>
-    <!-- Profil "fatjar": ausführbares, plattformübergreifendes FAT-JAR. -->
+    <!-- One executable FAT JAR per host architecture. Native libraries with
+         identical paths (notably Intel/ARM macOS) must never be shaded together. -->
     <profile>
       <id>fatjar</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.openjfx</groupId>
-          <artifactId>javafx-base</artifactId>
-          <version>${javafx.version}</version>
-          <classifier>linux</classifier>
-        </dependency>
-        <dependency>
-          <groupId>org.openjfx</groupId>
-          <artifactId>javafx-base</artifactId>
-          <version>${javafx.version}</version>
-          <classifier>win</classifier>
-        </dependency>
-        <dependency>
-          <groupId>org.openjfx</groupId>
-          <artifactId>javafx-base</artifactId>
-          <version>${javafx.version}</version>
-          <classifier>mac</classifier>
-        </dependency>
-        <dependency>
-          <groupId>org.openjfx</groupId>
-          <artifactId>javafx-base</artifactId>
-          <version>${javafx.version}</version>
-          <classifier>mac-aarch64</classifier>
-        </dependency>
-        <dependency>
-          <groupId>org.openjfx</groupId>
-          <artifactId>javafx-graphics</artifactId>
-          <version>${javafx.version}</version>
-          <classifier>linux</classifier>
-        </dependency>
-        <dependency>
-          <groupId>org.openjfx</groupId>
-          <artifactId>javafx-graphics</artifactId>
-          <version>${javafx.version}</version>
-          <classifier>win</classifier>
-        </dependency>
-        <dependency>
-          <groupId>org.openjfx</groupId>
-          <artifactId>javafx-graphics</artifactId>
-          <version>${javafx.version}</version>
-          <classifier>mac</classifier>
-        </dependency>
-        <dependency>
-          <groupId>org.openjfx</groupId>
-          <artifactId>javafx-graphics</artifactId>
-          <version>${javafx.version}</version>
-          <classifier>mac-aarch64</classifier>
-        </dependency>
-        <dependency>
-          <groupId>org.openjfx</groupId>
-          <artifactId>javafx-controls</artifactId>
-          <version>${javafx.version}</version>
-          <classifier>linux</classifier>
-        </dependency>
-        <dependency>
-          <groupId>org.openjfx</groupId>
-          <artifactId>javafx-controls</artifactId>
-          <version>${javafx.version}</version>
-          <classifier>win</classifier>
-        </dependency>
-        <dependency>
-          <groupId>org.openjfx</groupId>
-          <artifactId>javafx-controls</artifactId>
-          <version>${javafx.version}</version>
-          <classifier>mac</classifier>
-        </dependency>
-        <dependency>
-          <groupId>org.openjfx</groupId>
-          <artifactId>javafx-controls</artifactId>
-          <version>${javafx.version}</version>
-          <classifier>mac-aarch64</classifier>
-        </dependency>
-      </dependencies>
       <build>
         <plugins>
           <plugin>
@@ -342,7 +278,7 @@
                   <!-- Thin JAR (RichMarkDownEditor-<version>.jar) bleibt für
                        jpackage erhalten; das FAT-JAR entsteht zusätzlich als
                        RichMarkDownEditor-<version>-fat.jar und wird vom
-                       Build-Skript nach dist/Mardexas-<version>-fat.jar kopiert. -->
+                       Build-Skript mit explizitem Plattformnamen nach dist/ kopiert. -->
                   <shadedArtifactAttached>true</shadedArtifactAttached>
                   <shadedClassifierName>fat</shadedClassifierName>
                   <createDependencyReducedPom>false</createDependencyReducedPom>

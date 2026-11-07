@@ -20,7 +20,6 @@ package de.richmarkdown.findreplace;
 import com.gluonhq.richtextarea.RichTextArea;
 import com.gluonhq.richtextarea.RichTextAreaSkin;
 import com.gluonhq.richtextarea.Selection;
-import com.gluonhq.richtextarea.model.DecorationModel;
 import com.gluonhq.richtextarea.model.Document;
 import com.gluonhq.richtextarea.model.TextDecoration;
 import de.richmarkdown.FxTestUtil;
@@ -335,7 +334,7 @@ class FindReplaceEngineTest {
                     .collect(Collectors.joining());
             assertTrue(cellText.startsWith("Headings"));
 
-            Path expectedSelection = new Path(textFlow.rangeShape(0, "Heading".length()));
+            Path expectedSelection = new Path(textFlow.getRangeShape(0, "Heading".length(), false));
             Bounds expectedBounds = expectedSelection.getBoundsInLocal();
             Bounds actualBounds = ((Path) selectedLayer.lookup(".selection")).getBoundsInLocal();
             assertEquals(expectedBounds.getMinX(), actualBounds.getMinX(), 0.01);

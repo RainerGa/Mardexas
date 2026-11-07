@@ -1,7 +1,6 @@
 package de.richmarkdown.editor;
 
 import com.gluonhq.richtextarea.model.*;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 

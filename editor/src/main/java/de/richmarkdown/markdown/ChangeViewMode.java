@@ -17,7 +17,6 @@
 
 package de.richmarkdown.markdown;
 
-import de.richmarkdown.markdown.ViewMode;
 
 /**
  * Utility for view mode logic on changes.

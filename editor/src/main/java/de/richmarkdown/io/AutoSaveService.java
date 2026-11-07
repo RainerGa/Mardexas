@@ -21,12 +21,10 @@ import de.richmarkdown.editor.MarkdownEditor;
 import de.richmarkdown.settings.ApplicationSettings;
 import javafx.animation.AnimationTimer;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 
 /**
  * Automatische periodische Speicherung des Dokuments in ein temporäres

@@ -51,7 +51,6 @@ import java.util.function.Supplier;
 public class IssueDialog extends Dialog<ButtonType> {
 
     private final Supplier<List<MarkdownIssue>> issuesSupplier;
-    private final IntConsumer onJump;
     private final ListView<MarkdownIssue> listView = new ListView<>();
     private final Button checkButton = new Button(I18n.text("dialog.issues.check"));
 
@@ -65,7 +64,6 @@ public class IssueDialog extends Dialog<ButtonType> {
      */
     public IssueDialog(Supplier<List<MarkdownIssue>> issuesSupplier, IntConsumer onJump) {
         this.issuesSupplier = issuesSupplier;
-        this.onJump = onJump;
         setTitle(I18n.text("dialog.issues.title"));
         setHeaderText(I18n.text("dialog.issues.header"));
 

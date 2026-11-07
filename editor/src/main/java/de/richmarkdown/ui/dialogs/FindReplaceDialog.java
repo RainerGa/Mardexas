@@ -71,6 +71,11 @@ public class FindReplaceDialog extends Stage {
     final ComboBox<SearchPresetStore.Preset> presetBox = new ComboBox<>();
     private final SearchPresetStore presets = new SearchPresetStore(FeatureUi.profileDirectory());
     private Window ownerWindow;
+    private java.util.function.BiConsumer<String, FindReplaceEngine.FindOptions> criteriaHandler;
+    /** Receives remembered criteria independently of the actual dialog owner. */
+    public void setCriteriaHandler(java.util.function.BiConsumer<String, FindReplaceEngine.FindOptions> handler) {
+        criteriaHandler = handler;
+    }
     public FindReplaceDialog(Window owner, FindReplaceEngine engine, java.util.function.Function<Boolean, Boolean> wrapConfirmed) {
         this.ownerWindow = owner;
         this.engine = engine;
@@ -337,7 +342,8 @@ public class FindReplaceDialog extends Stage {
         } catch (Exception error) { statusLabel.setText(error.getMessage()); }
     }
     private void rememberCriteria(String search, FindReplaceEngine.FindOptions o) {
-        if (ownerWindow instanceof de.richmarkdown.ui.EditorWindow w) w.rememberFindCriteria(search, o);
+        if (criteriaHandler != null) criteriaHandler.accept(search, o);
+        else if (ownerWindow instanceof de.richmarkdown.ui.EditorWindow w) w.rememberFindCriteria(search, o);
     }
     private boolean askWrap(boolean backwards) {
         // Genau eine Rueckfrage pro Wrap (LO: Am Anfang/Ende weitersuchen?).

@@ -71,11 +71,12 @@ public class EmojiData {
              Scanner scanner = new Scanner(Objects.requireNonNull(emojiStream))) {
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
-                Scanner rowScanner = new Scanner(line);
-                rowScanner.useDelimiter(COMMA_DELIMITER);
                 List<String> values = new ArrayList<>();
-                while (rowScanner.hasNext()) {
-                    values.add(rowScanner.next());
+                try (Scanner rowScanner = new Scanner(line)) {
+                    rowScanner.useDelimiter(COMMA_DELIMITER);
+                    while (rowScanner.hasNext()) {
+                        values.add(rowScanner.next());
+                    }
                 }
                 try {
                     Emoji e = Emoji.parseEmojiFromCSVList(values);

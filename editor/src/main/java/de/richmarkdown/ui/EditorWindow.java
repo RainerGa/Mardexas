@@ -21,46 +21,33 @@ import com.gluonhq.richtextarea.RichTextArea;
 import de.richmarkdown.editor.MarkdownEditor;
 import de.richmarkdown.i18n.I18n;
 import de.richmarkdown.ui.dialogs.DialogButtons;
-import de.richmarkdown.ui.dialogs.IssueDialog;
 import de.richmarkdown.ui.dialogs.PrintDialog;
 import de.richmarkdown.ui.dialogs.PrintDialogResult;
 import de.richmarkdown.ui.dialogs.TemplateDialog;
 import de.richmarkdown.io.MarkdownFileHandler;
-import de.richmarkdown.markdown.MarkdownChecker;
-import de.richmarkdown.ui.NavigationHistory;
 import javafx.application.Platform;
 import javafx.print.JobSettings;
 import javafx.print.PageLayout;
 import javafx.print.Printer;
 import javafx.print.PrinterJob;
 import javafx.scene.Scene;
-import javafx.geometry.Bounds;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.MenuButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
 import java.text.MessageFormat;
 
@@ -113,6 +100,7 @@ public class EditorWindow extends Stage {
                                 de.richmarkdown.features.printing.PrintOptions options) { }
     private final java.util.concurrent.ConcurrentMap<PrinterJob, PrintRequest> printRequests = new java.util.concurrent.ConcurrentHashMap<>();
     private String lastError;
+    private java.util.function.Consumer<String> errorHandler;
     private ConfirmationHandler confirmationHandler;
     private ZoomController zoomController;
     private DocumentStructureView structureView;
@@ -129,9 +117,12 @@ public class EditorWindow extends Stage {
      * Erstellt das vollständige Editorfenster einschließlich Editor, Menüs,
      * Formatierungsleiste und Statusleiste.
      */
-    public EditorWindow() { this(null); }
+    public EditorWindow() { this(null, true); }
 
-    EditorWindow(WorkspaceWindow host) {
+    EditorWindow(WorkspaceWindow host) { this(host, true); }
+
+    /** Creates the shared document shell; embedded shells keep their UI mode local. */
+    protected EditorWindow(WorkspaceWindow host, boolean followApplicationMode) {
         this.workspace = host;
         this.editor = new MarkdownEditor();
         this.toolBar = new FormatToolBar(editor);
@@ -230,7 +221,7 @@ public class EditorWindow extends Stage {
         searchCommands.setOnAction(event -> centerHolder[0].show());
         commandRegistry = new WindowCommandRegistry(this, menuBar);
         centerHolder[0] = new CommandCenter(this, commandRegistry);
-        commandSurface = new CommandSurfaceController(this, menuBar, commandRegistry);
+        commandSurface = new CommandSurfaceController(this, menuBar, commandRegistry, followApplicationMode);
         addFeatureDisposer(commandSurface::close); addFeatureDisposer(commandRegistry::close);
         addEventHandler(javafx.stage.WindowEvent.WINDOW_HIDDEN, event -> disposeFeatures());
         // Druckersystem schon beim ersten Anzeigen vorbereiten
@@ -243,7 +234,7 @@ public class EditorWindow extends Stage {
      * @return externe URL des Stylesheets oder {@code null}, wenn die Ressource nicht gefunden wurde
      */
     private String loadApplicationStylesheet() {
-        var css = getClass().getResource("/de/richmarkdown/ui/app.css");
+        var css = EditorWindow.class.getResource("/de/richmarkdown/ui/app.css");
         if (css != null) {
             return css.toExternalForm();
         }
@@ -551,7 +542,7 @@ public class EditorWindow extends Stage {
     }
 
     /**
-     * Oeffnet den Suchen-&-Ersetzen-Dialog (Bearbeiten, Vorbild LO).
+     * Oeffnet den Suchen-und-Ersetzen-Dialog (Bearbeiten, Vorbild LO).
      * Nicht-modal: bleibt offen, waehrend im Dokument gearbeitet wird.
      * Es gibt genau eine Instanz; die Auswahl wird als Suchtext uebernommen.
      */
@@ -570,7 +561,8 @@ public class EditorWindow extends Stage {
             // (reine Viewport-Aenderung, keine Selection-/Fokus-Eingriffe).
             engine.setRevealHandler(editor::revealPosition);
             findReplaceDialog = new de.richmarkdown.ui.dialogs.FindReplaceDialog(
-                    this, engine, backwards -> confirmWrap(backwards));
+                    getDialogOwner(), engine, backwards -> confirmWrap(backwards));
+            findReplaceDialog.setCriteriaHandler(this::rememberFindCriteria);
             findReplaceDialog.setOnHidden(event -> findReplaceDialog = null);
         }
         String selected = selectedTextForFind();
@@ -641,7 +633,7 @@ public class EditorWindow extends Stage {
         // Mit Hauptfenster als Owner wuerde der Fokus in den Editor fallen und
         // Enter dort den Absatzumbruch-Handler feuern (Formatierung kaputt).
         alert.initOwner(findReplaceDialog != null && findReplaceDialog.isShowing()
-                ? findReplaceDialog : this);
+                ? findReplaceDialog : getDialogOwner());
         alert.setTitle(I18n.text("dialog.findReplace.title"));
         alert.setHeaderText(null);
         alert.setContentText(I18n.text(key));
@@ -701,8 +693,14 @@ public class EditorWindow extends Stage {
         this.confirmationHandler = handler;
     }
 
+    /** Overrides file/validation error presentation; null restores the default owned Alert. */
+    public void setErrorHandler(java.util.function.Consumer<String> handler) { errorHandler = handler; }
+
     /** Owner used by dialogs whether this document is standalone or inside a tab. */
-    public javafx.stage.Window getDialogOwner() { return workspace == null ? this : workspace; }
+    public javafx.stage.Window getDialogOwner() {
+        var scene = editor.getControl().getScene();
+        return scene != null && scene.getWindow() != null ? scene.getWindow() : workspace == null ? this : workspace;
+    }
 
     void attachWorkspace(WorkspaceWindow host) { this.workspace = host; }
     void openFileInPlace(File file) { loadFile(file); }
@@ -710,9 +708,17 @@ public class EditorWindow extends Stage {
     public void addFeatureDisposer(Runnable disposer) { featureDisposers.add(disposer); }
     public void removeFeatureDisposer(Runnable disposer) { featureDisposers.remove(disposer); }
     public void disposeFeatures() {
-        for (Runnable disposer : List.copyOf(featureDisposers)) disposer.run();
+        var disposers = List.copyOf(featureDisposers);
         featureDisposers.clear();
-        if (findReplaceDialog != null) findReplaceDialog.close();
+        RuntimeException failure = null;
+        for (Runnable disposer : disposers) {
+            try { disposer.run(); }
+            catch (RuntimeException error) {
+                if (failure == null) failure = error; else failure.addSuppressed(error);
+            }
+        }
+        if (findReplaceDialog != null) { findReplaceDialog.close(); findReplaceDialog = null; }
+        if (failure != null) throw failure;
     }
     public WorkspaceWindow getWorkspace() { return workspace; }
     public BorderPane getEditorRoot() { return editorRoot; }
@@ -855,7 +861,7 @@ public class EditorWindow extends Stage {
             if (other == null) return;
             var currentContents = editor.getDocumentSnapshot();
             lastError = null;
-            new DiffDialog(this, editor, current, other, currentContents, isReadOnly(),
+            new DiffDialog(getDialogOwner(), editor, current, other, currentContents, isReadOnly(),
                     message -> lastError = message).showAndWait();
         } catch (RuntimeException failure) {
             lastError = MessageFormat.format(I18n.text("trackChanges.error"), failure.getMessage());
@@ -1182,30 +1188,6 @@ public class EditorWindow extends Stage {
         thread.start();
     }
 
-    private static List<Node> collectNodes(Node root) {
-        List<Node> all = new ArrayList<>();
-        Deque<Node> stack = new ArrayDeque<>();
-        stack.push(root);
-        while (!stack.isEmpty()) {
-            Node n = stack.pop();
-            all.add(n);
-            if (n instanceof Parent p) {
-                p.getChildrenUnmodifiable().forEach(stack::push);
-            }
-        }
-        return all;
-    }
-
-    private static String textOf(Node n) {
-        StringBuilder sb = new StringBuilder();
-        for (Node c : collectNodes(n)) {
-            if (c instanceof Text t) {
-                sb.append(t.getText()).append(' ');
-            }
-        }
-        return sb.toString().trim();
-    }
-
     /**
      * Baut die Druckfassung auf und schichtet sie auf die Seiten des
      * Druckauftrags. JavaFX rendert je {@code printPage} genau eine Seite –
@@ -1298,6 +1280,7 @@ public class EditorWindow extends Stage {
                     I18n.text("confirm.discard"));
         }
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.initOwner(getDialogOwner());
         alert.setTitle(I18n.text("confirm.discard.title"));
         alert.setHeaderText(null);
         alert.setContentText(I18n.text("confirm.discard"));
@@ -1313,6 +1296,7 @@ public class EditorWindow extends Stage {
      * (Tests) den FX-Thread blockieren.
      */
     private void showError(String message) {
+        if (errorHandler != null) { errorHandler.accept(message); return; }
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.initOwner(getDialogOwner());
         alert.setTitle(I18n.text("error.title"));

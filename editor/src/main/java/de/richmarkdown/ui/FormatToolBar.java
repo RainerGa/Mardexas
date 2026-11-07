@@ -143,20 +143,12 @@ public class FormatToolBar extends ToolBar {
     private final Button forwardButton = createIconButton(
             ToolbarIcons.forwardIcon(), I18n.text("menu.navigateForward"));
 
-    /** Handler für „Neu“ (von {@link EditorWindow} gesetzt). */
-    private Runnable newDocumentHandler;
-    /** Handler für „Öffnen“ (von {@link EditorWindow} gesetzt). */
-    private Runnable openFileHandler;
-    /** Handler für „Speichern“ (von {@link EditorWindow} gesetzt). */
-    private Runnable saveHandler;
-
     /**
      * Setzt den Handler für die „Neu“-Schaltfläche.
      *
      * @param handler Aktion, die beim Klick ausgeführt wird
      */
     public void setNewDocumentHandler(Runnable handler) {
-        this.newDocumentHandler = handler;
         newButton.setOnAction(event -> handler.run());
     }
 
@@ -166,7 +158,6 @@ public class FormatToolBar extends ToolBar {
      * @param handler Aktion, die beim Klick ausgeführt wird
      */
     public void setOpenFileHandler(Runnable handler) {
-        this.openFileHandler = handler;
         openButton.setOnAction(event -> handler.run());
     }
 
@@ -176,7 +167,6 @@ public class FormatToolBar extends ToolBar {
      * @param handler Aktion, die beim Klick ausgeführt wird
      */
     public void setSaveHandler(Runnable handler) {
-        this.saveHandler = handler;
         saveButton.setOnAction(event -> handler.run());
     }
 

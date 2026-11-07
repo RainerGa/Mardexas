@@ -33,13 +33,13 @@ import javafx.util.Duration;
 
 /** Opt-in release check, run in a separate process on the target OS. */
 public final class PackageVerification extends Application {
-    private static volatile Throwable failure;
+    private static final java.util.concurrent.atomic.AtomicReference<Throwable> FAILURE = new java.util.concurrent.atomic.AtomicReference<>();
 
     static void run(String reportDirectory) {
-        failure = null;
+        FAILURE.set(null);
         launch(PackageVerification.class, reportDirectory);
-        if (failure != null) {
-            throw new IllegalStateException("Packaged application verification failed", failure);
+        if (FAILURE.get() != null) {
+            throw new IllegalStateException("Packaged application verification failed", FAILURE.get());
         }
     }
 
@@ -88,7 +88,7 @@ public final class PackageVerification extends Application {
                     writePpm(shown.getScene().snapshot(null), output.resolve("window.ppm"));
                     System.out.println("PACKAGE_VERIFICATION_OK " + output);
                 } catch (Throwable problem) {
-                    failure = problem;
+                    FAILURE.set(problem);
                     problem.printStackTrace(System.err);
                 } finally {
                     shown.dispose();
@@ -98,7 +98,7 @@ public final class PackageVerification extends Application {
             });
             render.play();
         } catch (Throwable problem) {
-            failure = problem;
+            FAILURE.set(problem);
             problem.printStackTrace(System.err);
             if (workspace != null) {
                 workspace.dispose();

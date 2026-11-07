@@ -131,7 +131,6 @@ class TrackChangesViewTest {
             "2", ChangeType.DELETED, 6, 11, "world", "Author", Instant.now(), null, ChangeStatus.PENDING
         );
         Change acceptedInsertion = inserted.withStatus(ChangeStatus.ACCEPTED);
-        Change rejectedDeletion = deleted.withStatus(ChangeStatus.REJECTED);
 
         // ALL_MARKUP shows everything
         assertTrue(ChangeViewMode.isVisibleIn(inserted, ViewMode.ALL_MARKUP));

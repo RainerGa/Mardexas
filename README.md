@@ -48,10 +48,13 @@ Ready-to-run release packages bundle an optimized runtime image — **you do not
 | **Linux (x86-64)** | **Portable Tarball** (`.tar.gz`) | Extract archive and run `./Mardexas/bin/Mardexas` |
 | **Linux (x86-64)** | **GraalVM Native Binary** | Extract archive and execute `./Mardexas` directly (instant startup) |
 | **Windows (x86-64)** | **MSI Installer** (`.msi`) | Double-click installer and follow the setup wizard |
-| **Windows (x86-64)** | **Portable ZIP** (`.zip`) | Extract archive and run `Mardexas\bin\Mardexas.exe` |
+| **Windows (x86-64)** | **Portable ZIP** (`.zip`) | Extract archive and run `Mardexas\Mardexas.exe` |
 | **macOS** | **Portable App** (`.zip`) | Extract archive and drag `Mardexas.app` to your Applications folder |
 
 👉 **[Download the Latest Releases on GitHub](https://github.com/RainerGa/Mardexas/releases)**
+
+The release matrix, platform-specific FAT JARs, native font checks, notices,
+and reproducible build commands are documented in [Packaging](docs/PACKAGING.md).
 
 ---
 
@@ -119,6 +122,13 @@ String markdown = editor.getMarkdown();
 
 See [docs/API.md](docs/API.md) for the complete library API documentation.
 
+For the complete editing UI, embed `new EditorPane(EditorPane.Presentation.RIBBON)`
+from `de.richmarkdown.api` on the JavaFX application thread. Other presentations
+provide classic menus, a toolbar or the editor alone. `EditorMenus` contributes
+commands for the active document to a host menu bar. Close these components
+when their host removes them. Ten runnable integration examples, the library ZIP
+and lifecycle rules are described in [docs/API.md](docs/API.md).
+
 ---
 
 ## Build and Run from Source
@@ -126,11 +136,24 @@ See [docs/API.md](docs/API.md) for the complete library API documentation.
 If you prefer building from source:
 
 ### Requirements
-- [JDK 25](https://adoptium.net/) or newer
+- [JDK 25](https://adoptium.net/) (use this version for verified builds)
 - [Maven 3.8+](https://maven.apache.org/)
 - Git with submodule support
 
 ### 1. Clone with Submodules
+
+On Linux, the standalone [checkout script](scripts/checkout-linux.sh) can clone
+the complete project and run Maven verification:
+
+```sh
+bash checkout-linux.sh --verify "$HOME/Projects/Mardexas"
+```
+
+See [Linux development setup](docs/DEVELOPMENT.md) (German) for downloading the
+script before cloning, prerequisites, forks, branches, IDE checks, and the full
+project layout. The script must first be published to the selected GitHub branch.
+Alternatively, clone directly:
+
 ```sh
 git clone --recurse-submodules https://github.com/RainerGa/Mardexas.git
 cd Mardexas
@@ -159,8 +182,11 @@ mvn -f editor/pom.xml javafx:run
 
 - `editor/` — Mardexas / RichMarkDownEditor application, UI components, and unit tests.
 - `rich-text-area/` — Git submodule containing the upstream-derived RichTextArea fork.
+- `emoji-noto/` — Emoji data Maven module.
+- `integration-demos/` — JavaFX embedding examples and tests.
+- `scripts/` — Standalone Linux checkout and its offline regression tests.
 - `packaging/` — Build and packaging scripts for Linux (Flatpak, portable, native), Windows (MSI, portable), and macOS.
-- `docs/` — Project landing page hosted at [https://rainerga.github.io/Mardexas/](https://rainerga.github.io/Mardexas/).
+- `docs/` — Development, public API, packaging, and validation documentation.
 
 ---
 

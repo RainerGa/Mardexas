@@ -47,7 +47,7 @@ class EditingMenuGuiTest {
             private int count;
             @Override public void handle(long now) { if (++count == 4) { stop(); done.countDown(); } }
         }.start());
-        assertTrue(done.await(5, TimeUnit.SECONDS), "Rendered GUI must complete layout pulses");
+        assertTrue(done.await(FxTestUtil.TIMEOUT_SECONDS, TimeUnit.SECONDS), "Rendered GUI must complete layout pulses");
         FxTestUtil.flushFxEvents();
     }
     private void open(String markdown) throws Exception {
@@ -118,7 +118,7 @@ class EditingMenuGuiTest {
         int copy = text().lastIndexOf("Target text"); assertTrue(copy > source);
         assertEquals(copy + caret - source, FxTestUtil.callAndWait(() -> editor.getControl().getCaretPosition()));
         assertTrue(FxTestUtil.callAndWait(() -> editor.getControl().isFocused()));
-        robot.push(KeyCode.CONTROL, KeyCode.Z); pulses();
+        de.richmarkdown.GuiTestSupport.shortcut(KeyCode.Z, false);
         assertEquals(before, text());
         assertEquals(caret, FxTestUtil.callAndWait(() -> editor.getControl().getCaretPosition()));
     }

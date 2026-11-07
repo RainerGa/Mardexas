@@ -30,6 +30,8 @@ import java.util.function.Supplier;
  */
 public final class FxTestUtil {
 
+    /** Shared CI runners need time for software rendering and first-use class loading. */
+    public static final long TIMEOUT_SECONDS = 30;
     private static volatile boolean toolkitStarted = false;
 
     private FxTestUtil() {
@@ -43,7 +45,7 @@ public final class FxTestUtil {
             } catch (IllegalStateException alreadyInitialized) {
                 latch.countDown();
             }
-            if (!latch.await(5, TimeUnit.SECONDS)) {
+            if (!latch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 throw new IllegalStateException("JavaFX toolkit did not start headless");
             }
             // Ohne diese Einstellung beendet JavaFX die Application Thread,
@@ -88,7 +90,7 @@ public final class FxTestUtil {
             }
         });
         try {
-            if (!latch.await(5, TimeUnit.SECONDS)) {
+            if (!latch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 throw new IllegalStateException("FX action did not complete in time");
             }
         } catch (InterruptedException e) {

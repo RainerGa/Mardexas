@@ -1,0 +1,17 @@
+# Keep source files consistent across Windows, macOS and Linux checkouts.
+* text=auto eol=lf
+
+# Reviewed third-party files must retain their exact upstream bytes (SHA-256).
+editor/src/main/resources/de/richmarkdown/ui/icons/tabler/** -text
+emoji-noto/src/main/resources/com/gluonhq/emoji/noto/** -text
+packaging/licenses/** -text
+
+*.png -text
+*.jpg -text
+*.gif -text
+*.ico -text
+*.icns -text
+*.ttf -text
+*.otf -text
+*.zip -text
+*.jar -text

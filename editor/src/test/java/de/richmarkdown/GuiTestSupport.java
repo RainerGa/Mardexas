@@ -16,6 +16,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public final class GuiTestSupport {
     private GuiTestSupport() { }
 
+    /** JavaFX menu accelerators use Command on macOS and Control elsewhere. */
+    public static KeyCode shortcutModifier() {
+        return System.getProperty("os.name", "").startsWith("Mac") ? KeyCode.META : KeyCode.CONTROL;
+    }
+
+    public static void shortcut(KeyCode key, boolean shift) throws InterruptedException {
+        FxTestUtil.runAndWait(() -> {
+            Robot robot = new Robot();
+            KeyCode modifier = shortcutModifier();
+            robot.keyPress(modifier);
+            try {
+                if (shift) robot.keyPress(KeyCode.SHIFT);
+                try {
+                    robot.keyPress(key);
+                    robot.keyRelease(key);
+                } finally {
+                    if (shift) robot.keyRelease(KeyCode.SHIFT);
+                }
+            } finally {
+                robot.keyRelease(modifier);
+            }
+        });
+        pulses();
+    }
+
     public static void pulses() throws InterruptedException {
         CountDownLatch rendered = new CountDownLatch(1);
         FxTestUtil.runAndWait(() -> new AnimationTimer() {
@@ -24,7 +49,7 @@ public final class GuiTestSupport {
                 if (++frames == 4) { stop(); rendered.countDown(); }
             }
         }.start());
-        assertTrue(rendered.await(5, TimeUnit.SECONDS), "The shown scene must render");
+        assertTrue(rendered.await(FxTestUtil.TIMEOUT_SECONDS, TimeUnit.SECONDS), "The shown scene must render");
         FxTestUtil.flushFxEvents();
     }
 

@@ -57,14 +57,13 @@ public final class AutoSaveService {
      * @param intervalMillis konfiguriertes Speicherintervall
      */
     public AutoSaveService(MarkdownEditor editor, long intervalMillis) {
+        this(editor, intervalMillis, defaultRecoveryFile());
+    }
+
+    /** Allows tests to isolate recovery data without changing process-wide properties. */
+    AutoSaveService(MarkdownEditor editor, long intervalMillis, Path recoveryFile) {
         this.editor = editor;
-        // Wiederherstellungsdatei im plattformueblichen Config-Verzeichnis
-        String os = System.getProperty("os.name", "");
-        String home = System.getProperty("user.home", "");
-        String xdg = System.getenv("XDG_CONFIG_HOME");
-        String appData = System.getenv("APPDATA");
-        Path base = ApplicationSettings.defaultConfigDirectory(os, home, xdg, appData);
-        this.recoveryFile = base.resolve(AUTOSAVE_FILE_NAME);
+        this.recoveryFile = java.util.Objects.requireNonNull(recoveryFile);
 
         final long saveInterval = intervalMillis >= 10_000 ? intervalMillis : DEFAULT_INTERVAL_MS;
 
@@ -82,6 +81,13 @@ public final class AutoSaveService {
                 }
             }
         };
+    }
+
+    private static Path defaultRecoveryFile() {
+        Path base = ApplicationSettings.defaultConfigDirectory(
+                System.getProperty("os.name", ""), System.getProperty("user.home", ""),
+                System.getenv("XDG_CONFIG_HOME"), System.getenv("APPDATA"));
+        return base.resolve(AUTOSAVE_FILE_NAME);
     }
 
     /**

@@ -170,9 +170,12 @@ class PrintSupportTest {
         double contentHeight = FxTestUtil.callAndWait(
                 () -> PrintSupport.measureContentHeight(area));
 
-        // 20 Absätze + 19 Leerzeilen-Absätze = 39 Absätze à ~23px
-        assertTrue(contentHeight > 850d, "measured " + contentHeight);
-        assertTrue(contentHeight < 950d, "measured " + contentHeight);
+        // Font metrics vary by host. Every equally styled paragraph must still
+        // contribute its natural height, including the 19 empty paragraphs.
+        RichTextArea single = printCopyOf("Ein Absatz mit etwas Text");
+        double singleHeight = FxTestUtil.callAndWait(() -> PrintSupport.measureContentHeight(single));
+        assertTrue(singleHeight > 0d);
+        assertEquals(39 * singleHeight, contentHeight, 2d, "All 39 paragraphs must be measured");
     }
 
     @Test

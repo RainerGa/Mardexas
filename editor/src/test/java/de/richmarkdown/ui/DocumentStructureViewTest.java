@@ -57,6 +57,8 @@ class DocumentStructureViewTest {
     @BeforeEach
     void setUp() {
         FxTestUtil.runAndWait(() -> {
+            de.richmarkdown.i18n.I18n.setSettingsStore(de.richmarkdown.settings.ApplicationSettings.inMemory());
+            de.richmarkdown.i18n.I18n.setCurrentLanguage("de");
             editor = new MarkdownEditor();
             rta = editor.getControl();
             structureView = new DocumentStructureView(editor);

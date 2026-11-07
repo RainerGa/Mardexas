@@ -13,7 +13,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
-import javafx.scene.robot.Robot;
 import javafx.stage.Window;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -69,13 +68,7 @@ class WindowCommandRegistryTest {
         GuiTestSupport.pulses();
     }
     private void shortcut(KeyCode key, boolean shift) throws Exception {
-        FxTestUtil.runAndWait(() -> {
-            Robot robot = new Robot(); robot.keyPress(KeyCode.CONTROL);
-            if (shift) robot.keyPress(KeyCode.SHIFT);
-            robot.keyPress(key); robot.keyRelease(key);
-            if (shift) robot.keyRelease(KeyCode.SHIFT);
-            robot.keyRelease(KeyCode.CONTROL);
-        }); GuiTestSupport.pulses();
+        GuiTestSupport.shortcut(key, shift);
     }
     private WindowCommandRegistry custom(Menu menu) {
         return FxTestUtil.callAndWait(() -> {

@@ -43,8 +43,6 @@ class AutoSaveServiceTest {
     private MarkdownEditor editor;
     private AutoSaveService autoSave;
     private Path recoveryFile;
-    private String originalOsName;
-    private String originalUserHome;
     private Stage stage;
 
     @TempDir
@@ -57,35 +55,19 @@ class AutoSaveServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // System-Properties überschreiben, um Test-Verzeichnis als Config-Dir zu nutzen
-        originalOsName = System.getProperty("os.name");
-        originalUserHome = System.getProperty("user.home");
-        System.setProperty("os.name", "Linux");
-        System.setProperty("user.home", tempDir.toString());
-
         FxTestUtil.runAndWait(() -> {
             editor = new MarkdownEditor();
             stage = new Stage();
             stage.setScene(new Scene(new StackPane(editor.getControl()), 800, 600));
             stage.show();
-            autoSave = new AutoSaveService(editor, 100); // kurzes Intervall für schnelle Tests
             recoveryFile = tempDir.resolve(".config").resolve("autosave.md");
+            autoSave = new AutoSaveService(editor, 100, recoveryFile);
         });
     }
 
     @AfterEach
     void tearDown() {
-        // System-Properties wiederherstellen
-        if (originalOsName != null) {
-            System.setProperty("os.name", originalOsName);
-        } else {
-            System.clearProperty("os.name");
-        }
-        if (originalUserHome != null) {
-            System.setProperty("user.home", originalUserHome);
-        } else {
-            System.clearProperty("user.home");
-        }
+        FxTestUtil.runAndWait(() -> { autoSave.stop(); stage.close(); });
     }
 
     private void invokeSaveIfModified() throws Exception {

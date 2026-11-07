@@ -325,9 +325,14 @@ class EmptyLineClickTest {
     private void clickTwice(FxRobot robot, TextFlow flow, double fx) throws Exception {
         awaitClickCountReset();
         Point2D at = centerOf(flow, fx);
-        robot.clickOn(at.getX(), at.getY());
-        Thread.sleep(CLICK_PAUSE_MS);
-        robot.clickOn(at.getX(), at.getY());
+        // Keep the native events in one FX action. Per-call TestFX delays can
+        // exceed the macOS double-click interval on a busy shared runner.
+        FxTestUtil.runAndWait(() -> {
+            var nativeRobot = new javafx.scene.robot.Robot();
+            nativeRobot.mouseMove(at.getX(), at.getY());
+            nativeRobot.mouseClick(javafx.scene.input.MouseButton.PRIMARY);
+            nativeRobot.mouseClick(javafx.scene.input.MouseButton.PRIMARY);
+        });
         waitForFxEvents();
     }
 

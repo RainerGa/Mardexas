@@ -1,5 +1,35 @@
 # Local validation and remaining platform checks
 
+## GitHub CI repairs (2026-11-07)
+
+The failed CI run `42356582515` was inspected for Linux, Windows and macOS.
+Its failures involved an untracked test document, CRLF changes to reviewed
+resources, platform-specific shortcuts/font metrics, shared test settings and
+GUI assertions before layout completion. The current failed parent workflow
+was CI; the inspected dependency-submission/CodeQL and previous release runs
+were successful. Old failed fork runs remain historical results.
+
+Validation of the corrected working tree on Linux with JDK 25:
+
+- Full isolated Maven `verify`: **1,185 editor tests, zero failures/errors**;
+  one existing printer-dependent test was skipped because no printer was
+  installed. All **13 integration-demo tests** passed. Checkstyle and SpotBugs
+  reported zero findings. Output directories: each module's `target/ci-repair`.
+- The 272 tests selected from affected classes passed. After the final
+  offscreen-search layout synchronization change, all 83 `MarkdownEditorTest`
+  tests passed again.
+- **43 packaging Python tests**, **12 checkout-script tests**, and the actual
+  Tabler/emoji provenance audits passed. The packaging tests include a real
+  autocrlf checkout and both Windows/Unix timeout cleanup contracts.
+- `actionlint` 1.7.12 checked all three workflows successfully (shellcheck was
+  unavailable and disabled). `git diff --check` passed.
+
+Logs are temporary local evidence under `/tmp/mardexas-ci-repair-*.log`.
+The working tree already contained performance work and RichTextArea revision
+`94cf183`; those existing changes were preserved. These results do not claim
+fresh Windows/macOS/package-build validation: a new GitHub run of the corrected
+commit is still required. CI now retains Surefire reports even after failure.
+
 ## Linux development checkout tooling (2026-11-07)
 
 - `scripts/checkout-linux.sh`: Bash syntax check and 12 offline regression tests

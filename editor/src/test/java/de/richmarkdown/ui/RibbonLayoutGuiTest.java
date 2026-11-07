@@ -145,7 +145,7 @@ class RibbonLayoutGuiTest {
             assertTrue(((javafx.scene.control.ToggleButton) bold).isSelected());
             assertTrue(window.getEditorControl().isFocused());
         });
-        robot.press(KeyCode.CONTROL).type(KeyCode.Z).release(KeyCode.CONTROL); GuiTestSupport.pulses();
+        GuiTestSupport.shortcut(KeyCode.Z, false);
         FxTestUtil.runAndWait(() -> {
             assertFalse(window.getEditor().getMarkdownSource().contains("**"));
             assertFalse(((javafx.scene.control.ToggleButton) bold).isSelected());
@@ -286,7 +286,7 @@ class RibbonLayoutGuiTest {
             assertTrue(window.getEditor().getDocumentSnapshot().getText().contains("SOME EXAMPLE"));
             assertTrue(window.getEditorControl().isFocused());
         });
-        robot.press(KeyCode.CONTROL).type(KeyCode.Z).release(KeyCode.CONTROL); GuiTestSupport.pulses();
+        GuiTestSupport.shortcut(KeyCode.Z, false);
         assertTrue(FxTestUtil.callAndWait(() -> window.getEditor().getDocumentSnapshot().getText()).contains("Some example"));
     }
 
@@ -319,7 +319,7 @@ class RibbonLayoutGuiTest {
         assertFalse(FxTestUtil.callAndWait(group::isShowing), "Choosing the command closes its actual popup");
         assertTrue(FxTestUtil.callAndWait(() -> window.getEditor().getDocumentSnapshot().getText()).contains("SOME EXAMPLE"));
         assertTrue(FxTestUtil.callAndWait(() -> window.getEditorControl().isFocused()));
-        robot.press(KeyCode.CONTROL).type(KeyCode.Z).release(KeyCode.CONTROL); GuiTestSupport.pulses();
+        GuiTestSupport.shortcut(KeyCode.Z, false);
         assertTrue(FxTestUtil.callAndWait(() -> window.getEditor().getDocumentSnapshot().getText()).contains("Some example"));
     }
 }

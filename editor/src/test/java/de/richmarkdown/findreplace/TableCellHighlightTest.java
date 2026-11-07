@@ -68,7 +68,7 @@ class TableCellHighlightTest {
     }
 
     @Test
-    void searchMatchInTableIsHighlightedOnlyInItsOwnCell() {
+    void searchMatchInTableIsHighlightedOnlyInItsOwnCell() throws InterruptedException {
         RichTextArea rta = FxTestUtil.callAndWait(() -> {
             MarkdownEditor editor = new MarkdownEditor();
             RichTextArea control = editor.getControl();
@@ -100,9 +100,7 @@ class TableCellHighlightTest {
 
         // Tabelle in den sichtbaren Bereich scrollen: erst jetzt entstehen die Zellen.
         FxTestUtil.runAndWait(() -> scrollToParagraph(rta, tableMatch.getStart()));
-        for (int i = 0; i < 8; i++) {
-            FxTestUtil.flushFxEvents();
-        }
+        de.richmarkdown.GuiTestSupport.pulses();
 
         FxTestUtil.runAndWait(() -> {
             rta.applyCss();

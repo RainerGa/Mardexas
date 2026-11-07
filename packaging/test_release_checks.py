@@ -9,7 +9,7 @@ import subprocess
 import struct
 import tarfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from types import SimpleNamespace
 import zipfile
 
@@ -70,12 +70,25 @@ class RenderingComparisonTest(unittest.TestCase):
 
     def test_timeout_kills_the_entire_unix_gui_process_group(self):
         with tempfile.TemporaryDirectory() as temporary:
-            with patch.object(verify.os, 'name', 'posix'), patch.object(verify.subprocess, 'Popen') as run, patch.object(verify.os, 'killpg') as kill:
+            # Do not mutate global os.name: pathlib would create unsupported
+            # PosixPaths on a Windows host. Simulate just the process adapter.
+            kill = Mock()
+            with patch.object(verify, 'os', SimpleNamespace(name='posix', killpg=kill)), patch.object(verify, 'signal', SimpleNamespace(SIGKILL=9)), patch.object(verify.subprocess, 'Popen') as run:
                 run.return_value.pid = 456
                 run.return_value.wait.side_effect = [verify.subprocess.TimeoutExpired('GUI', 120), -9]
                 with self.assertRaisesRegex(RuntimeError, 'timeout'):
                     verify.run_check(['Mardexas'], Path(temporary), 'linux')
-                kill.assert_called_once_with(456, verify.signal.SIGKILL)
+                kill.assert_called_once_with(456, 9)
+
+    def test_timeout_kills_the_entire_windows_gui_process_tree(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(verify, 'os', SimpleNamespace(name='nt')), patch.object(verify.subprocess, 'Popen') as run, patch.object(verify.subprocess, 'run') as taskkill:
+                run.return_value.pid = 789
+                run.return_value.wait.side_effect = [verify.subprocess.TimeoutExpired('GUI', 120), -9]
+                with self.assertRaisesRegex(RuntimeError, 'timeout'):
+                    verify.run_check(['Mardexas'], Path(temporary), 'win')
+                self.assertFalse(run.call_args.kwargs['start_new_session'])
+                self.assertEqual(['taskkill', '/PID', '789', '/T', '/F'], taskkill.call_args.args[0])
 
     def test_all_package_modes_check_both_renderers_with_the_correct_launcher(self):
         for mode in ('trace', 'jvm', 'native', 'portable', 'jar'):

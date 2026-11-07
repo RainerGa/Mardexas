@@ -81,9 +81,10 @@ class MarkdownEditorTest {
         flush();
     }
 
-    // Hinweis: kein stage.hide() im tearDown – in Monocle headless blockt hide()
-    // den FX-Thread dauerhaft (alle nachfolgenden Tests würden timeouten).
-    // Die Stages leben nur für die Dauer der Test-JVM.
+    @org.junit.jupiter.api.AfterEach
+    void closeWindow() {
+        FxTestUtil.runAndWait(stage::close);
+    }
 
     // ---------- Test-Helfer ----------
 
@@ -98,7 +99,8 @@ class MarkdownEditorTest {
 
     private void press(KeyCode code, boolean shiftDown, boolean controlDown) {
         FxTestUtil.runAndWait(() -> rta.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "",
-                code, shiftDown, controlDown, false, false)));
+                code, shiftDown, controlDown && de.richmarkdown.GuiTestSupport.shortcutModifier() == KeyCode.CONTROL,
+                false, controlDown && de.richmarkdown.GuiTestSupport.shortcutModifier() == KeyCode.META)));
     }
 
     private void enter() {
@@ -1140,7 +1142,7 @@ class MarkdownEditorTest {
     }
 
     @Test
-    void findEngine_selectMatchRevealsOffscreenHit() {
+    void findEngine_selectMatchRevealsOffscreenHit() throws InterruptedException {
         FxTestUtil.runAndWait(() -> editor.setMarkdown(longDocumentWithTarget(60)));
         flush();
         flush();
@@ -1162,8 +1164,7 @@ class MarkdownEditorTest {
                 "Treffer liegt vor der Markierung unterhalb des Sichtbereichs");
 
         FxTestUtil.runAndWait(() -> engine.selectMatch(target, false));
-        flush();
-        flush();
+        de.richmarkdown.GuiTestSupport.pulses();
 
         assertTrue(isParagraphVisible(targetIndex),
                 "Markierter Treffer muss nach selectMatch sichtbar sein");

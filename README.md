@@ -160,6 +160,9 @@ cd Mardexas
 ```
 
 ### 2. Build and Test
+
+Reproducible JavaFX/Markdown benchmarks and the prioritized bottleneck analysis
+are documented in [Performance measurements and refactoring](docs/PERFORMANCE.md) (German).
 ```sh
 mvn test
 ```

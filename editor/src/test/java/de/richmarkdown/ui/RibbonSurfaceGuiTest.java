@@ -13,7 +13,6 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCode;
-import javafx.scene.robot.Robot;
 import javafx.scene.shape.Path;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -97,14 +96,7 @@ class RibbonSurfaceGuiTest {
         GuiTestSupport.click(button, bounds.getCenterX(), bounds.getCenterY());
     }
     private void shortcut(KeyCode key, boolean shift) throws Exception {
-        FxTestUtil.runAndWait(() -> {
-            Robot robot = new Robot(); robot.keyPress(KeyCode.CONTROL);
-            if (shift) robot.keyPress(KeyCode.SHIFT);
-            robot.keyPress(key); robot.keyRelease(key);
-            if (shift) robot.keyRelease(KeyCode.SHIFT);
-            robot.keyRelease(KeyCode.CONTROL);
-        });
-        GuiTestSupport.pulses();
+        GuiTestSupport.shortcut(key, shift);
     }
     private Bounds caretBounds() {
         var paths = window.getEditorControl().lookupAll(".caret").stream()

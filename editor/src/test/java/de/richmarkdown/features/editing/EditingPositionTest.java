@@ -72,7 +72,7 @@ class EditingPositionTest {
                 if (++frames == 4) { stop(); completed.countDown(); }
             }
         }.start());
-        assertTrue(completed.await(5, java.util.concurrent.TimeUnit.SECONDS));
+        assertTrue(completed.await(FxTestUtil.TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS));
         flush();
     }
 
@@ -205,15 +205,30 @@ class EditingPositionTest {
     void caseConversionRetainsSelectionAndViewportThroughUndoRedo(DocumentEdits.Transform operation, String expected) {
         open("Vorspann 😀\n\n" + "Eine weitere Zeile.\n\n".repeat(90) + "Straße HALLO\n\n" + "Nachspann\n\n".repeat(50));
         String original = text(); int start = original.indexOf("Straße HALLO"), end = start + "Straße HALLO".length();
-        select(start, end, false); double before = scroll(); assertTrue(before > .1);
+        select(start, end, false); assertTrue(scroll() > .1);
+        int paragraph = FxTestUtil.callAndWait(() -> model().getParagraphList().indexOf(
+                model().getParagraphWithCaret().orElseThrow()));
+        double before = paragraphY(paragraph);
         FxTestUtil.runAndWait(() -> new EditingCommands(editor).transform(operation)); flush();
         assertEquals(expected, text().substring(start, start + expected.length()));
         assertContext(start + expected.length(), start, start + expected.length());
-        assertEquals(before, scroll(), .000001, "Formatting must retain the viewport");
+        assertEquals(before, paragraphY(paragraph), 1d, "Formatting must retain the viewport within one pixel");
         undo(); assertEquals(original, text()); assertContext(end, start, end);
-        assertEquals(before, scroll(), .000001, "Undo must retain the viewport");
+        assertEquals(before, paragraphY(paragraph), 1d, "Undo must retain the viewport within one pixel");
         redo(); assertContext(start + expected.length(), start, start + expected.length());
-        assertEquals(before, scroll(), .000001, "Redo must retain the viewport");
+        assertEquals(before, paragraphY(paragraph), 1d, "Redo must retain the viewport within one pixel");
+    }
+
+    private double paragraphY(int paragraph) {
+        // VirtualFlow refines its estimated total height as cells are rendered.
+        // Check the resulting displacement in pixels, rather than requiring an
+        // identical normalized ratio despite platform-dependent font metrics.
+        return FxTestUtil.callAndWait(() -> editor.getControl().lookupAll(".list-cell").stream()
+                .filter(javafx.scene.control.ListCell.class::isInstance)
+                .map(javafx.scene.control.ListCell.class::cast)
+                .filter(cell -> cell.getIndex() == paragraph)
+                .mapToDouble(cell -> cell.localToScene(cell.getBoundsInLocal()).getMinY())
+                .findFirst().orElseThrow(() -> new AssertionError("The edited paragraph must stay visible")));
     }
 
     @Test void backwardsSelectionKeepsItsActiveEndWhenUnicodeExpands() {

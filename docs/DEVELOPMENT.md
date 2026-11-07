@@ -92,6 +92,68 @@ git submodule update --init --recursive
 Submodule werden auf genau die im Hauptrepository festgelegten Commits gesetzt.
 `git submodule update --remote` gehört nicht zum reproduzierbaren Einrichten.
 
+## Fehlgeschlagene Tests in GitHub Actions untersuchen
+
+Die CI sichert nach dem Maven-Testschritt auch bei einem Fehler die
+Surefire-Berichte aller getesteten Module. Im jeweiligen Workflow-Lauf stehen
+sie unter **Artifacts** als `test-reports-<Betriebssystem>-java-<Version>` zum
+Download bereit. Die Textdateien nennen die fehlgeschlagenen Tests und deren
+Stacktraces; `TEST-*.xml` enthält die strukturierten Ergebnisse. Ein Pfad wie
+`D:\a\Mardexas\Mardexas\editor\target\surefire-reports` im Maven-Log
+bezeichnet das Dateisystem des temporären GitHub-Runners.
+
+Für die Diagnose eines älteren Laufs ohne diese Artefakte im Schritt
+**Tests ausführen** die einzelnen Fehlermeldungen vor der abschließenden
+Zusammenfassung `Tests run: …, Failures: …, Errors: …` ansehen. Die
+Zusammenfassung allein nennt die Fehlerursache nicht. Nach Veröffentlichung
+der Workflow-Änderung einen neuen Lauf mit dem aktualisierten Commit starten;
+ein erneuter Lauf des alten Commits verwendet weiterhin dessen Workflow.
+
+### Plattformübergreifende CI-Verträge
+
+Die CI verwendet JDK 25 und feste Runner-Versionen: Ubuntu 24.04, Windows 2025
+sowie macOS 15 auf ARM und Intel. `mvn clean verify` führt neben den Tests auch
+die konfigurierten statischen Prüfungen aus. Die Release-Workflows verwenden
+dieselben gepflegten Checkout-, Java-, Python- und Artefakt-Actions.
+
+Für reproduzierbare Tests gelten folgende Regeln:
+
+- `.gitattributes` hält Quelltexte auf LF. Geprüfte Tabler-, Noto- und
+  Lizenzdateien bleiben bytegetreu, damit ihre SHA-256-Prüfsummen auch bei
+  `core.autocrlf=true` unter Windows stimmen. Die Prüfsummen nicht an einen
+  lokal umgeschriebenen Checkout anpassen.
+- Testdokumente gehören nach `editor/src/test/resources/`; die persönliche,
+  ignorierte `demo.md` ist keine Voraussetzung für einen Build.
+- Native Tastenkürzel verwenden `GuiTestSupport.shortcut`: Command auf macOS,
+  Control auf Windows/Linux. Layout-Prüfungen warten auf gerenderte JavaFX-Pulse.
+  Ein abgearbeiteter `runLater`-Aufruf garantiert noch kein fertiges Layout.
+- Geometrie-Prüfungen vergleichen sichtbare Positionen bzw. gemessene
+  Referenzabsätze statt plattformabhängiger Schriftmetriken oder geschätzter
+  `VirtualFlow`-Scrollverhältnisse.
+- Tests setzen Sprache und Einstellungen ausdrücklich. Autosave-Tests erhalten
+  eine temporäre Datei, statt `os.name` und `user.home` global zu ändern oder
+  von `XDG_CONFIG_HOME`/`APPDATA` des Runners abzuhängen.
+- Zwei getrennte JavaFX-Test-JVMs verwenden jeweils eigene Einstellungs- und
+  Preferences-Verzeichnisse. FX-Aktionen haben 30 Sekunden Zeit; abgeschlossene
+  Aktionen warten nicht bis zum Ablauf dieser Frist. Fenster und Timer werden
+  nach den betreffenden Tests geschlossen bzw. gestoppt.
+
+Zusätzliche Offline-Prüfungen der Checkout- und Release-Werkzeuge:
+
+```bash
+python3 -B -m unittest discover -s scripts -p 'test_*.py'
+python3 -B -m unittest discover -s packaging -p 'test_*.py'
+```
+
+`packaging/test_checkout_contracts.py` prüft die Drittanbieterdateien mit einem
+echten temporären Git-Checkout bei aktivem `core.autocrlf`. Die Timeout-Tests der
+Paketprüfung simulieren sowohl Unix-Prozessgruppen als auch Windows-Prozessbäume,
+ohne das Betriebssystem des Python-Prozesses umzudefinieren.
+
+Ein erfolgreicher lokaler Linux-Lauf ersetzt keine Ausführung auf Windows und
+macOS. Diese Bestätigung liefert erst ein neuer GitHub-Lauf mit dem korrigierten
+Commit; bereits fehlgeschlagene historische Läufe bleiben in der Historie stehen.
+
 ## Projektstruktur
 
 ```text

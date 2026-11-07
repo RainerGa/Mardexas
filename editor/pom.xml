@@ -25,6 +25,7 @@
     <testfx.version>4.0.19-gluon</testfx.version>
     <monocle.version>21.0.2</monocle.version>
     <surefire.version>3.2.5</surefire.version>
+    <test.forkCount>2</test.forkCount>
     <mainClass>de.richmarkdown.Launcher</mainClass>
   </properties>
 
@@ -133,8 +134,9 @@
           <useModulePath>false</useModulePath>
           <!-- Parallele Testausführung über mehrere JVM-Forks (JavaFX/TestFX nicht threadsicher,
                daher forkCount statt parallel=methods/classes) -->
-          <forkCount>4</forkCount>
+          <forkCount>${test.forkCount}</forkCount>
           <reuseForks>true</reuseForks>
+          <excludedGroups>performance</excludedGroups>
           <systemPropertyVariables>
             <prism.order>sw</prism.order>
             <prism.text>t2k</prism.text>
@@ -146,8 +148,9 @@
             <headless.geometry>1600x1000-32</headless.geometry>
             <!-- JavaFX-Cache in ein beschreibbares Verzeichnis lenken -->
             <javafx.cachedir>${project.build.directory}/javafx-cache</javafx.cachedir>
-            <java.util.prefs.userRoot>${project.build.directory}/test-prefs</java.util.prefs.userRoot>
-            <rme.config.dir>${project.build.directory}/test-config</rme.config.dir>
+            <java.util.prefs.userRoot>${project.build.directory}/test-prefs-${surefire.forkNumber}</java.util.prefs.userRoot>
+            <rme.config.dir>${project.build.directory}/test-config-${surefire.forkNumber}</rme.config.dir>
+            <perf.outputDirectory>${project.build.directory}/performance</perf.outputDirectory>
           </systemPropertyVariables>
           <argLine>@{argLine} -Djava.io.tmpdir=${project.build.directory}</argLine>
         </configuration>
@@ -258,6 +261,28 @@
   </build>
 
   <profiles>
+    <profile>
+      <id>performance</id>
+      <properties>
+        <jacoco.skip>true</jacoco.skip>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <groups>performance</groups>
+              <excludedGroups>none</excludedGroups>
+              <forkCount>1</forkCount>
+              <reuseForks>false</reuseForks>
+              <systemPropertyVariables>
+                <junit.jupiter.execution.parallel.enabled>false</junit.jupiter.execution.parallel.enabled>
+              </systemPropertyVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <!-- One executable FAT JAR per host architecture. Native libraries with
          identical paths (notably Intel/ARM macOS) must never be shaded together. -->
     <profile>

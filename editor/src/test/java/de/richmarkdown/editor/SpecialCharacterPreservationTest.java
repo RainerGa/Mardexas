@@ -23,12 +23,11 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -97,25 +96,28 @@ class SpecialCharacterPreservationTest {
     }
 
     @Test
-    void demoDocumentKeepsItsSpecialCharacters() throws IOException {
-        Path demo = demoFile();
-        assertTrue(Files.exists(demo), "demo.md wurde nicht gefunden: " + demo.toAbsolutePath());
-        String markdown = Files.readString(demo, StandardCharsets.UTF_8);
+    void fixtureDocumentKeepsItsSpecialCharacters() throws IOException {
+        String markdown;
+        try (var input = getClass().getResourceAsStream("/special-characters.md")) {
+            org.junit.jupiter.api.Assertions.assertNotNull(input, "Versionierte Testdatei fehlt");
+            markdown = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+        }
 
         editor.setMarkdown(markdown);
         FxTestUtil.flushFxEvents();
         String written = FxTestUtil.callAndWait(editor::getMarkdown);
 
         for (char character : DROPPED_CHARACTERS) {
+            assertTrue(count(markdown, character) > 0, "Testdatei muss jedes Regressionszeichen enthalten");
             assertEquals(count(markdown, character), count(written, character),
                     "Das Zeichen U+" + Integer.toHexString(character) + " ging beim Laden von "
-                            + demo.getFileName() + " verloren");
+                            + "special-characters.md verloren");
         }
     }
 
-    private static Path demoFile() {
-        Path candidate = Path.of("demo.md");
-        return Files.exists(candidate) ? candidate : Path.of("..", "demo.md");
+    @AfterEach
+    void close() {
+        FxTestUtil.runAndWait(stage::close);
     }
 
     private static int count(String text, char character) {

@@ -90,6 +90,15 @@ class RenderingComparisonTest(unittest.TestCase):
                 self.assertFalse(run.call_args.kwargs['start_new_session'])
                 self.assertEqual(['taskkill', '/PID', '789', '/T', '/F'], taskkill.call_args.args[0])
 
+    def test_macos_keeps_the_login_session_and_kills_the_direct_gui_on_timeout(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(verify, 'os', SimpleNamespace(name='posix')), patch.object(verify.subprocess, 'Popen') as run:
+                run.return_value.wait.side_effect = [verify.subprocess.TimeoutExpired('GUI', 120), -9]
+                with self.assertRaisesRegex(RuntimeError, 'timeout'):
+                    verify.run_check(['java'], Path(temporary), 'mac')
+                self.assertFalse(run.call_args.kwargs['start_new_session'])
+                run.return_value.kill.assert_called_once_with()
+
     def test_all_package_modes_check_both_renderers_with_the_correct_launcher(self):
         for mode in ('trace', 'jvm', 'native', 'portable', 'jar'):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:

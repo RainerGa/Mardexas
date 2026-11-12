@@ -31,6 +31,11 @@ Shell rejection tests explicitly use Git Bash on Windows to avoid invoking
 the unrelated WSL launcher. The 46 packaging tests pass locally after these
 portability corrections; the Windows runner provides the platform check.
 
+The package verifier keeps macOS GUI processes in the runner's login session.
+Only Linux/Xvfb uses an isolated process group; Windows uses taskkill and macOS
+kills the directly launched GUI on timeout. A dedicated regression test covers
+the macOS launch/timeout contract (47 packaging tests in total).
+
 ## GitHub CI repairs (2026-11-07)
 
 The failed CI run `42356582515` was inspected for Linux, Windows and macOS.

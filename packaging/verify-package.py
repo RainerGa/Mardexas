@@ -54,9 +54,12 @@ def run_check(command, output, platform, environment=None):
         command = ["xvfb-run", "-a", "--server-args=-screen 0 1600x1200x24"] + command
     log_path = output / "run.log"
     timed_out = False
+    # Only Linux wraps Java in xvfb-run and needs a separate process group.
+    # Keep macOS GUI processes in the runner's WindowServer login session.
+    process_group = os.name != "nt" and platform == "linux"
     with log_path.open("w", encoding="utf-8") as stream:
         process = subprocess.Popen(command, stdout=stream, stderr=subprocess.STDOUT,
-                                   env=environment, start_new_session=os.name != "nt")
+                                   env=environment, start_new_session=process_group)
         try:
             code = process.wait(timeout=120)
         except subprocess.TimeoutExpired:
@@ -66,8 +69,10 @@ def run_check(command, output, platform, environment=None):
             if os.name == "nt":
                 subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
                                stdout=stream, stderr=subprocess.STDOUT, timeout=15, check=False)
-            else:
+            elif process_group:
                 os.killpg(process.pid, signal.SIGKILL)
+            else:
+                process.kill()
             code = process.wait(timeout=15)
     log = log_path.read_text(encoding="utf-8", errors="replace")
     excerpt = log[-4000:]

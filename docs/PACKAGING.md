@@ -31,6 +31,10 @@ publication; rendering evidence is retained separately and is not published
 as a user package. A missing member of an upload glob cannot silently pass
 the final inventory check.
 
+The FAT-JAR builder installs its pinned reactor dependencies before running
+the separate runtime-dependency copy. This also works on clean Windows and
+macOS runners without previously cached custom Maven artifacts.
+
 ## Build and test locally
 
 Initialize the pinned Git submodule and select the same JDK for Maven and all

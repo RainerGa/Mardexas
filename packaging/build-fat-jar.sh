@@ -24,7 +24,7 @@ fi
 cd "$PROJECT_DIR"
 mvn --batch-mode --no-transfer-progress \
     -Dmaven.test.skip=true -Djacoco.skip=true \
-    -pl editor -am package -Pfatjar
+    -pl editor -am install -Pfatjar
 
 if [[ ! -f "$BUILT_JAR" ]]; then
     echo "FAT-JAR wurde nicht erzeugt: $BUILT_JAR" >&2

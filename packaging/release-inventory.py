@@ -15,7 +15,9 @@ def expected_assets(version):
     for architecture in ('x86_64', 'aarch64'):
         suffixes.extend(f'macos-{architecture}{suffix}' for suffix in ('-portable.zip', '.dmg', '.pkg'))
     for target in ('linux-x86_64', 'windows-x86_64', 'macos-x86_64', 'macos-aarch64'):
-        suffixes.extend((f'{target}-fat.jar', f'{target}-native.tar.gz'))
+        suffixes.append(f'{target}-fat.jar')
+    for target in ('linux-x86_64', 'windows-x86_64'):
+        suffixes.append(f'{target}-native.tar.gz')
     return {f'Mardexas-{version}-{suffix}' for suffix in suffixes}
 
 

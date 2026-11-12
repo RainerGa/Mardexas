@@ -95,6 +95,8 @@ def main():
     parser.add_argument("--platform", choices=("linux", "win", "mac", "mac-aarch64"), required=True)
     parser.add_argument("--executable", type=Path)
     args = parser.parse_args()
+    if args.mode in ("native", "trace") and args.platform not in ("linux", "win"):
+        parser.error("GraalVM native and trace modes support only linux or win")
     if args.mode == "flatpak" and (args.platform != "linux" or not args.executable):
         parser.error("flatpak requires --platform linux and --executable pointing to its build directory")
     output = args.output_dir.resolve()

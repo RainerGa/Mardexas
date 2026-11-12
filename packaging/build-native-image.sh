@@ -2,15 +2,14 @@
 set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-JAVAFX_PLATFORM="${JAVAFX_PLATFORM:?Set JAVAFX_PLATFORM to linux, win, mac, or mac-aarch64}"
+JAVAFX_PLATFORM="${JAVAFX_PLATFORM:?Set JAVAFX_PLATFORM to linux or win}"
 APP_POM_VERSION="$(sed -n 's/^[[:space:]]*<version>\([^<]*\)<\/version>[[:space:]]*$/\1/p' "$PROJECT_DIR/editor/pom.xml" | head -n1)"
 APP_VERSION="${APP_VERSION:-$APP_POM_VERSION}"
 APP_JAR="RichMarkDownEditor-$APP_POM_VERSION.jar"
 INPUT_DIR="$PROJECT_DIR/editor/target/native-image-input"
 FINAL_OUTPUT_DIR="$PROJECT_DIR/dist/native/$JAVAFX_PLATFORM"
 OUTPUT_DIR="$PROJECT_DIR/editor/target/native-output/$JAVAFX_PLATFORM"
-METADATA_PLATFORM="${JAVAFX_PLATFORM/mac-aarch64/mac}"
-NATIVE_IMAGE_CONFIG_DIR="$PROJECT_DIR/packaging/native-image/$METADATA_PLATFORM"
+NATIVE_IMAGE_CONFIG_DIR="$PROJECT_DIR/packaging/native-image/$JAVAFX_PLATFORM"
 CHECK_DIR="$PROJECT_DIR/editor/target/package-check/$JAVAFX_PLATFORM"
 NATIVE_IMAGE_CONFIG_DIRS="$NATIVE_IMAGE_CONFIG_DIR,$PROJECT_DIR/packaging/native-image/common"
 NATIVE_IMAGE=""
@@ -31,21 +30,8 @@ case "$JAVAFX_PLATFORM" in
         fi
         OUTPUT_NAME="Mardexas"
         ;;
-    mac|mac-aarch64)
-        if [[ "$(uname -s)" != Darwin ]]; then
-            echo "A macOS Native Image must be built on a macOS host." >&2
-            exit 2
-        fi
-        EXPECTED_ARCH=x86_64
-        [[ "$JAVAFX_PLATFORM" == mac-aarch64 ]] && EXPECTED_ARCH=arm64
-        if [[ "$(uname -m)" != "$EXPECTED_ARCH" ]]; then
-            echo "$JAVAFX_PLATFORM requires a $EXPECTED_ARCH host and JDK." >&2
-            exit 2
-        fi
-        OUTPUT_NAME="Mardexas"
-        ;;
     *)
-        echo "Unsupported GraalVM platform: $JAVAFX_PLATFORM (expected linux, win, mac, or mac-aarch64)." >&2
+        echo "Unsupported GraalVM platform: $JAVAFX_PLATFORM (expected linux or win)." >&2
         exit 2
         ;;
 esac

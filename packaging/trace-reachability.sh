@@ -7,7 +7,7 @@
 #   2. "tests" – führt die Unit-Tests mit demselben Agenten aus.
 #   3. "diff"  – vergleicht die Aufzeichnungen vollständig gegen die
 #                verifizierten reachability-metadata.json-Dateien.
-# Aufruf: packaging/trace-reachability.sh [linux|win|mac] [app|tests|jni|diff|all]
+# Aufruf: packaging/trace-reachability.sh [linux|win] [app|tests|jni|diff|all]
 set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -28,12 +28,8 @@ case "$PLATFORM" in
         META_DIR="$PROJECT_DIR/packaging/native-image/win"
         META_SW_DIR="$PROJECT_DIR/packaging/native-image/win"  # same as main for win
         ;;
-    mac)
-        META_DIR="$PROJECT_DIR/packaging/native-image/mac"
-        META_SW_DIR="$PROJECT_DIR/packaging/native-image/mac"  # same as main for mac
-        ;;
     *)
-        echo "Unsupported platform: $PLATFORM (expected linux, win, or mac)" >&2
+        echo "Unsupported platform: $PLATFORM (expected linux or win)" >&2
         exit 2
         ;;
 esac
@@ -236,10 +232,6 @@ run_jni_scan() {
             BIN="$PROJECT_DIR/dist/native/win/Mardexas.exe"
             JFX_JAR="$PROJECT_DIR/editor/target/native-image-input/javafx-graphics-25.0.4-win.jar"
             ;;
-        mac)
-            BIN="$PROJECT_DIR/dist/native/mac/Mardexas"
-            JFX_JAR="$PROJECT_DIR/editor/target/native-image-input/javafx-graphics-25.0.4-mac.jar"
-            ;;
     esac
     PATTERN='^(com/sun/|com/gluonhq/|javafx/|de/richmarkdown/)[A-Za-z0-9_$/]+[A-Za-z0-9_$]'
     : > "$TRACE_DIR/jni-classes.txt"
@@ -294,5 +286,5 @@ case "$MODE" in
     jni)   run_jni_scan ;;
     diff)  run_diff ;;
     all)   run_app_trace; run_tests_trace; run_jni_scan; run_diff ;;
-    *) echo "Usage: $0 [linux|win|mac] [app|tests|jni|diff|all]" >&2; exit 2 ;;
+    *) echo "Usage: $0 [linux|win] [app|tests|jni|diff|all]" >&2; exit 2 ;;
 esac

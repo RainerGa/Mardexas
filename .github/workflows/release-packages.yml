@@ -471,20 +471,9 @@ jobs:
           - runner: ubuntu-24.04
             platform: linux
             label: linux-x86_64
-            distribution: graalvm-community
           - runner: windows-2025
             platform: win
             label: windows-x86_64
-            distribution: graalvm-community
-          - runner: macos-15
-            platform: mac-aarch64
-            label: macos-aarch64
-            distribution: graalvm-community
-          # GraalVM 25 dropped macOS Intel. Liberica NIK retains this target.
-          - runner: macos-15-intel
-            platform: mac
-            label: macos-x86_64
-            distribution: liberica
     defaults:
       run:
         shell: bash
@@ -500,7 +489,7 @@ jobs:
       - uses: graalvm/setup-graalvm@v1
         with:
           java-version: '25.0.2'
-          distribution: ${{ matrix.distribution }}
+          distribution: graalvm-community
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cache: maven
       - name: Install Linux GUI build prerequisites

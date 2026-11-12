@@ -324,16 +324,56 @@ class FatJarArchitectureTest(unittest.TestCase):
                     checker.verify('linux', jar)
 
 
+class GraalVmTargetsTest(unittest.TestCase):
+    def test_removed_macos_targets_fail_before_building_or_tracing(self):
+        packaging = Path(__file__).resolve().parent
+        for platform in ('mac', 'mac-aarch64'):
+            commands = [
+                ['bash', str(packaging / 'build-native-image.sh')],
+                ['bash', str(packaging / 'trace-reachability.sh'), platform, 'all'],
+            ]
+            for command in commands:
+                with self.subTest(platform=platform, script=command[1]):
+                    result = subprocess.run(command, env={**os.environ, 'JAVAFX_PLATFORM': platform},
+                                            capture_output=True, text=True, timeout=10)
+                    self.assertEqual(2, result.returncode, result.stderr)
+                    self.assertIn('expected linux or win', result.stderr)
+            with self.assertRaisesRegex(ValueError, 'Unsupported GraalVM platform'):
+                metadata.metadata(packaging, platform)
+
+    def test_macos_native_verification_and_agent_tracing_are_rejected(self):
+        for platform in ('mac', 'mac-aarch64'):
+            for mode in ('native', 'trace'):
+                with self.subTest(platform=platform, mode=mode), \
+                        patch('sys.argv', ['verify-package.py', mode, '--platform', platform,
+                                           '--input-dir', '.', '--output-dir', '.']), \
+                        patch.object(verify, 'run_check') as run, \
+                        patch('sys.stderr'), self.assertRaises(SystemExit) as error:
+                    verify.main()
+                self.assertEqual(2, error.exception.code)
+                run.assert_not_called()
+
+
 class ReleaseInventoryTest(unittest.TestCase):
+    def test_native_assets_are_linux_and_windows_only_and_macos_jvm_packages_remain(self):
+        names = load('release-inventory').expected_assets('1.2.3')
+        self.assertEqual({
+            'Mardexas-1.2.3-linux-x86_64-native.tar.gz',
+            'Mardexas-1.2.3-windows-x86_64-native.tar.gz',
+        }, {name for name in names if name.endswith('-native.tar.gz')})
+        for architecture in ('x86_64', 'aarch64'):
+            for suffix in ('-portable.zip', '.dmg', '.pkg', '-fat.jar'):
+                self.assertIn(f'Mardexas-1.2.3-macos-{architecture}{suffix}', names)
+
     def test_complete_release_has_reproducible_checksums(self):
         checker = load('release-inventory')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             names = checker.expected_assets('1.2.3')
-            self.assertEqual(23, len(names))
+            self.assertEqual(21, len(names))
             for name in names:
                 (root / name).write_bytes(name.encode())
-            self.assertEqual(23, checker.inventory(root, '1.2.3'))
+            self.assertEqual(21, checker.inventory(root, '1.2.3'))
             before = (root / 'SHA256SUMS').read_text()
             for line in before.splitlines():
                 digest, name = line.split('  ')

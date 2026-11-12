@@ -13,8 +13,6 @@ import zipfile
 BACKENDS = {
     "linux": ("com/sun/glass/ui/gtk/", "com/sun/javafx/font/freetype/", "com/sun/prism/es2/"),
     "win": ("com/sun/glass/ui/win/", "com/sun/javafx/font/directwrite/", "com/sun/prism/d3d/"),
-    "mac": ("com/sun/glass/ui/mac/", "com/sun/javafx/font/coretext/", "com/sun/prism/es2/"),
-    "mac-aarch64": ("com/sun/glass/ui/mac/", "com/sun/javafx/font/coretext/", "com/sun/prism/es2/"),
 }
 
 # JavaFX's Marlin renderer uses memory-segment VarHandles. Native Image's
@@ -26,6 +24,8 @@ SEGMENT_TYPES = ('Booleans', 'Bytes', 'Chars', 'CharsAligned', 'Doubles',
 
 
 def metadata(input_dir, platform):
+    if platform not in BACKENDS:
+        raise ValueError(f"Unsupported GraalVM platform: {platform} (expected linux or win)")
     reflection, resources = {}, {}
     for jar in sorted(Path(input_dir).glob("*.jar")):
         if jar.name.startswith("javafx-graphics-"):

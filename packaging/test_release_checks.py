@@ -42,6 +42,15 @@ class RenderingComparisonTest(unittest.TestCase):
         native['sample.0.ink.1.5'] = '2610'
         verify.compare(baseline, native)
 
+    def test_accepts_windows_version_labels_but_rejects_a_different_os_family(self):
+        baseline = self.report()
+        baseline['os'] = 'Windows Server 2025'
+        native = {**baseline, 'os': 'Windows Server 2022'}
+        verify.compare(baseline, native)
+        native['os'] = 'Linux'
+        with self.assertRaisesRegex(ValueError, 'same environment: os'):
+            verify.compare(baseline, native)
+
     def test_rejects_missing_reports_wrong_fonts_scales_and_unreadable_text(self):
         baseline = self.report()
         for key, value in [('sampleCount', '6'), ('os', ''), ('architecture', 'arm64'),

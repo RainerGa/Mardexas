@@ -8,6 +8,12 @@ maintainer's request. The release inventory requires 13 packages plus checksums;
 a regression test prevents macOS runner targets from returning to the workflows.
 The earlier macOS investigation below describes superseded validation work.
 
+On the Windows 2025 runner, HotSpot reports `Windows Server 2025` while the
+GraalVM native executable reports `Windows Server 2022`. Both are launched on
+the same host. Font comparison accepts Windows version-label differences while
+still requiring the same OS family, architecture, scale, fonts and metrics.
+Regression tests cover the accepted labels and rejection of a different OS.
+
 Full isolated JDK 25 Maven verification with `-Pfork-tests` passed: 116
 RichTextArea model tests, 1,200 editor tests and 13 integration-demo tests;
 zero failures or errors. One editor test requires an installed printer and

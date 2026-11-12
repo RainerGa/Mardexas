@@ -26,7 +26,13 @@ def compare(baseline, native):
     if count < 7:
         raise ValueError("Incomplete regular/bold/italic/monospace/heading coverage")
     for key in ("os", "architecture", "outputScaleX", "outputScaleY"):
-        if not baseline.get(key) or baseline.get(key) != native.get(key):
+        expected, actual = baseline.get(key), native.get(key)
+        # Both processes run on this same host. GraalVM and HotSpot can report
+        # different Windows marketing versions (Server 2022 vs Server 2025).
+        # Retain the platform check without treating that label as a metric.
+        same_windows = (key == "os" and str(expected).startswith("Windows ")
+                        and str(actual).startswith("Windows "))
+        if not expected or (expected != actual and not same_windows):
             raise ValueError(f"Baseline and native must use the same environment: {key}")
     for index in range(count):
         prefix = f"sample.{index}."

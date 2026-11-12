@@ -12,9 +12,8 @@ def expected_assets(version):
     suffixes = ['linux-x86_64-portable.tar.gz', 'linux-x86_64.deb',
                 'linux-x86_64.rpm', 'linux-x86_64.flatpak', 'source.tar.gz',
                 'windows-x86_64-portable.zip', 'windows-x86_64.msi', 'windows-x86_64.exe', 'library.zip']
-    for architecture in ('x86_64', 'aarch64'):
-        suffixes.extend(f'macos-{architecture}{suffix}' for suffix in ('-portable.zip', '.dmg', '.pkg'))
-    for target in ('linux-x86_64', 'windows-x86_64', 'macos-x86_64', 'macos-aarch64'):
+    suffixes.extend(f'macos-x86_64{suffix}' for suffix in ('-portable.zip', '.dmg', '.pkg'))
+    for target in ('linux-x86_64', 'windows-x86_64', 'macos-x86_64'):
         suffixes.append(f'{target}-fat.jar')
     for target in ('linux-x86_64', 'windows-x86_64'):
         suffixes.append(f'{target}-native.tar.gz')

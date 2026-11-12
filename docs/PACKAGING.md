@@ -8,8 +8,9 @@ the maintainer. Local success on Linux is not evidence of a Windows/macOS pass.
 
 All builds use Java 25 and JavaFX 25.0.4. Native builds use GraalVM CE 25.0.2
 and support Linux x86-64 and Windows x86-64 only. GraalVM Native Image targets
-for macOS Intel and Apple Silicon have been removed; macOS continues to use
-the JVM packages and its regular JavaFX test matrix.
+for macOS Intel and Apple Silicon have been removed. macOS Intel uses JVM
+packages and regular JavaFX tests. Apple Silicon has been removed from all
+automated build, test and release targets.
 All workflow jobs select Python 3.12 explicitly with `setup-python`, including its
 Windows `python3` alias, rather than depending on the runner's default interpreter.
 See [GitHub's Python setup guidance](https://docs.github.com/en/actions/tutorials/build-and-test-code/python)
@@ -20,11 +21,10 @@ and the [Windows tool-cache installer](https://github.com/actions/python-version
 | Linux x86-64 | Ubuntu 24.04 | Portable TAR.GZ, DEB, RPM, Flatpak, FAT JAR, native TAR.GZ |
 | Windows x86-64 | Windows 2025 | Portable ZIP, MSI, EXE, FAT JAR, native TAR.GZ |
 | macOS Intel | macOS 15 Intel | Portable ZIP, DMG, PKG, FAT JAR |
-| macOS Apple Silicon | macOS 15 ARM | Portable ZIP, DMG, PKG, FAT JAR |
 | Sources | Ubuntu 24.04 | Source TAR.GZ including the actual RichTextArea fork sources |
 | Integration library | Ubuntu 24.04 | ZIP with custom Maven artifacts, Javadoc, command reference and demo sources |
 
-This produces 21 binary/source assets. `release-inventory.py` requires every
+This produces 17 binary/source assets. `release-inventory.py` requires every
 one, rejects stale versions, unexpected or empty files, and generates
 `SHA256SUMS`. The release workflow requires all jobs to succeed before
 publication; rendering evidence is retained separately and is not published

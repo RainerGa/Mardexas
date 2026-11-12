@@ -361,19 +361,19 @@ class ReleaseInventoryTest(unittest.TestCase):
             'Mardexas-1.2.3-linux-x86_64-native.tar.gz',
             'Mardexas-1.2.3-windows-x86_64-native.tar.gz',
         }, {name for name in names if name.endswith('-native.tar.gz')})
-        for architecture in ('x86_64', 'aarch64'):
-            for suffix in ('-portable.zip', '.dmg', '.pkg', '-fat.jar'):
-                self.assertIn(f'Mardexas-1.2.3-macos-{architecture}{suffix}', names)
+        for suffix in ('-portable.zip', '.dmg', '.pkg', '-fat.jar'):
+            self.assertIn(f'Mardexas-1.2.3-macos-x86_64{suffix}', names)
+        self.assertFalse(any('aarch64' in name for name in names))
 
     def test_complete_release_has_reproducible_checksums(self):
         checker = load('release-inventory')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             names = checker.expected_assets('1.2.3')
-            self.assertEqual(21, len(names))
+            self.assertEqual(17, len(names))
             for name in names:
                 (root / name).write_bytes(name.encode())
-            self.assertEqual(21, checker.inventory(root, '1.2.3'))
+            self.assertEqual(17, checker.inventory(root, '1.2.3'))
             before = (root / 'SHA256SUMS').read_text()
             for line in before.splitlines():
                 digest, name = line.split('  ')

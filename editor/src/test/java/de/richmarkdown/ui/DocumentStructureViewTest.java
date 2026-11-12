@@ -73,13 +73,9 @@ class DocumentStructureViewTest {
         // kein hide(): blockt den FX-Thread in Monocle headless
     }
 
-    /**
-     * Doppelter Flush: {@code viewModel.open()} arbeitet in einem verschachtelten
-     * {@code Platform.runLater} – der Ladevorgang schließt erst einen Puls später ab.
-     */
+    /** Waits for queued open, buffer notifications and the coalesced outline refresh. */
     private void flushFully() {
-        FxTestUtil.flushFxEvents();
-        FxTestUtil.flushFxEvents();
+        for (int i = 0; i < 4; i++) FxTestUtil.flushFxEvents();
     }
 
     private void type(String text) {

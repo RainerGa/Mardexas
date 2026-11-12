@@ -408,6 +408,7 @@ public class MarkdownParser {
         List<Block> blocks = new ArrayList<>();
         int i = 0;
         while (i < lines.size()) {
+            if (Thread.currentThread().isInterrupted()) throw new java.util.concurrent.CancellationException();
             String line = lines.get(i);
             if (line.isBlank()) {
                 blocks.add(emptyParagraph());
@@ -463,6 +464,7 @@ public class MarkdownParser {
         List<String> codeLines = new ArrayList<>();
         int i = start + 1;
         while (i < lines.size()) {
+            if (Thread.currentThread().isInterrupted()) throw new java.util.concurrent.CancellationException();
             String line = lines.get(i);
             String candidate = line.stripTrailing();
             int indent = 0;
@@ -484,6 +486,7 @@ public class MarkdownParser {
         int i = start;
         ListItemBlock previous = null;
         while (i < lines.size()) {
+            if (Thread.currentThread().isInterrupted()) throw new java.util.concurrent.CancellationException();
             String line = lines.get(i);
             Matcher matcher = LIST_ITEM.matcher(line);
             if (matcher.matches()) {
@@ -626,11 +629,12 @@ public class MarkdownParser {
         return href != null && !href.isBlank() && src != null && !src.isBlank();
     }
 
+    private static final java.util.Map<String, Pattern> HTML_ATTRIBUTES = java.util.stream.Stream.of("href", "src", "width", "height")
+            .collect(java.util.stream.Collectors.toUnmodifiableMap(name -> name, name -> Pattern.compile(
+                    "(?:^|\\s)" + Pattern.quote(name) + "\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))", Pattern.CASE_INSENSITIVE)));
+
     private String htmlAttribute(String attributes, String name) {
-        Pattern attribute = Pattern.compile("(?:^|\\s)" + Pattern.quote(name)
-                + "\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))",
-                Pattern.CASE_INSENSITIVE);
-        Matcher matcher = attribute.matcher(attributes);
+        Matcher matcher = HTML_ATTRIBUTES.get(name).matcher(attributes);
         if (!matcher.find()) {
             return null;
         }
@@ -671,8 +675,8 @@ public class MarkdownParser {
                 .replace("&amp;", "&");
     }
 
-    private int indexOfIgnoreCase(String text, String value, int fromIndex) {
-        int lastStart = text.length() - value.length();
+    private int indexOfIgnoreCase(String text, String value, int fromIndex, int limit) {
+        int lastStart = limit - value.length();
         for (int i = fromIndex; i <= lastStart; i++) {
             if (text.regionMatches(true, i, value, 0, value.length())) {
                 return i;
@@ -686,6 +690,7 @@ public class MarkdownParser {
         List<String> contents = new ArrayList<>();
         int i = start;
         while (i < lines.size()) {
+            if (Thread.currentThread().isInterrupted()) throw new java.util.concurrent.CancellationException();
             String line = lines.get(i);
             QuoteLine quoteLine = matchQuoteLine(line);
             if (quoteLine != null) {
@@ -755,6 +760,7 @@ public class MarkdownParser {
         int i = start;
         List<String> paragraphLines = new ArrayList<>();
         while (i < lines.size()) {
+            if (Thread.currentThread().isInterrupted()) throw new java.util.concurrent.CancellationException();
             String line = lines.get(i);
             int setextLevel = setextHeadingLevel(line);
             if (setextLevel > 0 && !paragraphLines.isEmpty()) {
@@ -798,143 +804,164 @@ public class MarkdownParser {
         return mergeInlines(inlines);
     }
 
-    private List<Inline> scan(String text, Format base) {
+    private record ScanFrame(String text, Format format, int offset, int end) { }
+
+    private List<Inline> scan(String source, Format initial) {
         List<Inline> result = new ArrayList<>();
-        StringBuilder plain = new StringBuilder();
-        int i = 0;
-        while (i < text.length()) {
-            char c = text.charAt(i);
+        java.util.ArrayDeque<ScanFrame> frames = new java.util.ArrayDeque<>();
+        frames.push(new ScanFrame(source, initial, 0, source.length()));
+        while (!frames.isEmpty()) {
+            ScanFrame frame = frames.pop();
+            String text = frame.text();
+            int limit = frame.end();
+            Format base = frame.format();
+            StringBuilder plain = new StringBuilder();
+            int failedMarkers = 0;
+            java.util.Set<Integer> unmatchedTicks = null;
+            int i = frame.offset();
+            while (i < limit) {
+                if (Thread.currentThread().isInterrupted()) throw new java.util.concurrent.CancellationException();
+                char c = text.charAt(i);
 
-            // Escaping
-            if (c == '\\' && i + 1 < text.length() && isEscapable(text.charAt(i + 1))) {
-                plain.append(text.charAt(i + 1));
-                i += 2;
-                continue;
-            }
-
-            // CommonMark code spans use equal-length backtick runs.
-            if (c == '`') {
-                int runEnd = i;
-                while (runEnd < text.length() && text.charAt(runEnd) == '`') runEnd++;
-                int length = runEnd - i;
-                int candidate = runEnd;
-                int close = -1;
-                while (candidate < text.length()) {
-                    int next = text.indexOf('`', candidate);
-                    if (next < 0) break;
-                    int nextEnd = next;
-                    while (nextEnd < text.length() && text.charAt(nextEnd) == '`') nextEnd++;
-                    if (nextEnd - next == length) { close = next; break; }
-                    candidate = nextEnd;
-                }
-                if (close > runEnd) {
-                    String code = text.substring(runEnd, close).replace('\n', ' ');
-                    if (code.startsWith(" ") && code.endsWith(" ") && !code.isBlank()) code = code.substring(1, code.length() - 1);
-                    flush(plain, result, base);
-                    result.add(Inline.builder(code).code(true).build());
-                    i = close + length;
+                // Escaping
+                if (c == '\\' && i + 1 < limit && isEscapable(text.charAt(i + 1))) {
+                    plain.append(text.charAt(i + 1));
+                    i += 2;
                     continue;
                 }
-            }
 
-            // HTML-Anker mit Textinhalt
-            if (c == '<') {
-                Matcher anchor = HTML_ANCHOR_START.matcher(text);
-                anchor.region(i, text.length());
-                if (anchor.lookingAt()) {
-                    String href = htmlAttribute(anchor.group(1), "href");
-                    int close = indexOfIgnoreCase(text, "</a>", anchor.end());
-                    if (href != null && close >= anchor.end()) {
+                // CommonMark code spans use equal-length backtick runs.
+                if (c == '`') {
+                    int runEnd = i;
+                    while (runEnd < limit && text.charAt(runEnd) == '`') runEnd++;
+                    int length = runEnd - i;
+                    int candidate = runEnd;
+                    int close = -1;
+                    while ((unmatchedTicks == null || !unmatchedTicks.contains(length)) && candidate < limit) {
+                        int next = text.indexOf('`', candidate);
+                        if (next < 0 || next >= limit) break;
+                        int nextEnd = next;
+                        while (nextEnd < limit && text.charAt(nextEnd) == '`') nextEnd++;
+                        if (nextEnd - next == length) { close = next; break; }
+                        candidate = nextEnd;
+                    }
+                    if (close < 0) {
+                        if (unmatchedTicks == null) unmatchedTicks = new java.util.HashSet<>();
+                        unmatchedTicks.add(length);
+                    }
+                    if (close > runEnd) {
+                        String code = text.substring(runEnd, close).replace('\n', ' ');
+                        if (code.startsWith(" ") && code.endsWith(" ") && !code.isBlank()) code = code.substring(1, code.length() - 1);
                         flush(plain, result, base);
-                        String inner = decodeHtmlEntities(text.substring(anchor.end(), close));
-                        result.addAll(scan(inner, base.withUrl(decodeHtmlEntities(href))));
-                        i = close + 4;
+                        result.add(Inline.builder(code).code(true).build());
+                        i = close + length;
                         continue;
                     }
                 }
-            }
 
-            // Link
-            if (c == '[') {
-                int closeBracket = findUnescaped(text, "]", i + 1);
-                if (closeBracket > 0 && closeBracket + 1 < text.length()
-                        && text.charAt(closeBracket + 1) == '(') {
-                    int closeParen = text.indexOf(')', closeBracket + 2);
-                    if (closeParen > 0) {
-                        String inner = text.substring(i + 1, closeBracket);
-                        String url = text.substring(closeBracket + 2, closeParen);
-                        flush(plain, result, base);
-                        result.addAll(scan(inner, base.withUrl(url)));
-                        i = closeParen + 1;
-                        continue;
+                // HTML-Anker mit Textinhalt
+                if (c == '<') {
+                    Matcher anchor = HTML_ANCHOR_START.matcher(text);
+                    anchor.region(i, limit);
+                    if (anchor.lookingAt()) {
+                        String href = htmlAttribute(anchor.group(1), "href");
+                        int close = indexOfIgnoreCase(text, "</a>", anchor.end(), limit);
+                        if (href != null && close >= anchor.end()) {
+                            flush(plain, result, base);
+                            String inner = decodeHtmlEntities(text.substring(anchor.end(), close));
+                            frames.push(new ScanFrame(text, base, close + 4, limit));
+                            frames.push(new ScanFrame(inner, base.withUrl(decodeHtmlEntities(href)), 0, inner.length()));
+                            i = limit;
+                            break;
+                        }
                     }
                 }
-            }
 
-            // Unterstrichen
-            if (text.startsWith("<u>", i)) {
-                int close = text.indexOf("</u>", i + 3);
-                if (close > 0) {
-                    String inner = text.substring(i + 3, close);
+                // Link
+                if (c == '[') {
+                    int closeBracket = (failedMarkers & 16) != 0 ? -1 : findUnescaped(text, "]", i + 1, limit);
+                    if (closeBracket < 0) failedMarkers |= 16;
+                    if (closeBracket > 0 && closeBracket + 1 < limit
+                            && text.charAt(closeBracket + 1) == '(') {
+                        int closeParen = text.indexOf(')', closeBracket + 2);
+                        if (closeParen > 0 && closeParen < limit) {
+                            String url = text.substring(closeBracket + 2, closeParen);
+                            flush(plain, result, base);
+                            frames.push(new ScanFrame(text, base, closeParen + 1, limit));
+                            frames.push(new ScanFrame(text, base.withUrl(url), i + 1, closeBracket));
+                            i = limit;
+                            break;
+                        }
+                    }
+                }
+
+                // Unterstrichen
+                if (i + 3 <= limit && text.startsWith("<u>", i)) {
+                    int close = text.indexOf("</u>", i + 3);
+                    if (close > 0 && close + 4 <= limit) {
+                        flush(plain, result, base);
+                        frames.push(new ScanFrame(text, base, close + 4, limit));
+                        frames.push(new ScanFrame(text, base.withUnderline(true), i + 3, close));
+                        i = limit;
+                        break;
+                    }
+                }
+
+                // Betonung: längste Marker zuerst
+                String marker = matchEmphasis(text, i, limit);
+                if (marker != null && i + marker.length() <= limit) {
+                    int bit = marker.equals("~~") ? 8 : 1 << (marker.length() - 1);
+                    int close = (failedMarkers & bit) != 0 ? -1 : findClosingEmphasis(text, i + marker.length(), marker, limit);
+                    if (close < 0) failedMarkers |= bit;
+                    if (close > 0) {
+                        if (close > i + marker.length()) {
+                            flush(plain, result, base);
+                            frames.push(new ScanFrame(text, base, close + marker.length(), limit));
+                            frames.push(new ScanFrame(text, base.withEmphasis(marker), i + marker.length(), close));
+                            i = limit;
+                            break;
+                        }
+                    }
+                }
+
+                // Autolink in spitzen Klammern: <https://...> oder <http://...>
+                if (c == '<' && (text.startsWith("<http://", i) || text.startsWith("<https://", i))) {
+                    int close = text.indexOf('>', i + 1);
+                    if (close > 0 && close < limit) {
+                        String url = text.substring(i + 1, close);
+                        if (!url.isEmpty() && !containsAny(url, WHITESPACE_DELIMS)
+                                && (url.startsWith("http://") || url.startsWith("https://"))) {
+                            flush(plain, result, base);
+                            result.add(Inline.builder(url).url(url).build());
+                            i = close + 1;
+                            continue;
+                        }
+                    }
+                }
+
+                // Autolink: bare http(s)-URL
+                int urlLen = matchUrl(text, i, limit);
+                if (urlLen > 0) {
                     flush(plain, result, base);
-                    result.addAll(scan(inner, base.withUnderline(true)));
-                    i = close + 4;
+                    String urlText = text.substring(i, i + urlLen);
+                    result.add(Inline.builder(urlText).url(urlText).build());
+                    i += urlLen;
                     continue;
                 }
-            }
 
-            // Betonung: längste Marker zuerst
-            String marker = matchEmphasis(text, i);
-            if (marker != null) {
-                int close = findClosingEmphasis(text, i + marker.length(), marker);
-                if (close > 0) {
-                    String inner = text.substring(i + marker.length(), close);
-                    if (!inner.isEmpty()) {
-                        flush(plain, result, base);
-                        result.addAll(scan(inner, base.withEmphasis(marker)));
-                        i = close + marker.length();
-                        continue;
-                    }
+                // Inline-Image-Syntax ![...](url) für Webseiten: führendes '!'
+                // überspringen, sodass der Link-Handler das [text](url) verarbeitet
+                // ohne den '!' als Plain-Text zu hinterlassen.
+                if (c == '!' && i + 1 < limit && text.charAt(i + 1) == '[') {
+                    i++;
+                    continue;
                 }
-            }
 
-            // Autolink in spitzen Klammern: <https://...> oder <http://...>
-            if (c == '<' && (text.startsWith("<http://", i) || text.startsWith("<https://", i))) {
-                int close = text.indexOf('>', i + 1);
-                if (close > 0) {
-                    String url = text.substring(i + 1, close);
-                    if (!url.isEmpty() && !containsAny(url, WHITESPACE_DELIMS)
-                            && (url.startsWith("http://") || url.startsWith("https://"))) {
-                        flush(plain, result, base);
-                        result.add(Inline.builder(url).url(url).build());
-                        i = close + 1;
-                        continue;
-                    }
-                }
-            }
-
-            // Autolink: bare http(s)-URL
-            int urlLen = matchUrl(text, i);
-            if (urlLen > 0) {
-                flush(plain, result, base);
-                String urlText = text.substring(i, i + urlLen);
-                result.add(Inline.builder(urlText).url(urlText).build());
-                i += urlLen;
-                continue;
-            }
-
-            // Inline-Image-Syntax ![...](url) für Webseiten: führendes '!'
-            // überspringen, sodass der Link-Handler das [text](url) verarbeitet
-            // ohne den '!' als Plain-Text zu hinterlassen.
-            if (c == '!' && i + 1 < text.length() && text.charAt(i + 1) == '[') {
+                plain.append(c);
                 i++;
-                continue;
             }
-
-            plain.append(c);
-            i++;
+            flush(plain, result, base);
         }
-        flush(plain, result, base);
         return result;
     }
 
@@ -951,15 +978,16 @@ public class MarkdownParser {
         return false;
     }
 
-    private static int matchUrl(String text, int i) {
-        if (!text.regionMatches(i, "http://", 0, 7) && !text.regionMatches(i, "https://", 0, 8)) {
+    private static int matchUrl(String text, int i, int limit) {
+        if (!(i + 7 <= limit && text.regionMatches(i, "http://", 0, 7))
+                && !(i + 8 <= limit && text.regionMatches(i, "https://", 0, 8))) {
             return -1;
         }
         if (i > 0 && Character.isLetterOrDigit(text.charAt(i - 1))) {
             return -1;
         }
         int end = i;
-        int n = text.length();
+        int n = limit;
         while (end < n) {
             char ch = text.charAt(end);
             if (Character.isWhitespace(ch)) {
@@ -981,26 +1009,26 @@ public class MarkdownParser {
         return ch == ',' || ch == ';' || ch == ':' || ch == '.' || ch == '!' || ch == '?';
     }
 
-    private String matchEmphasis(String text, int i) {
+    private String matchEmphasis(String text, int i, int limit) {
         for (String marker : new String[]{"***", "**", "~~", "*"}) {
-            if (text.startsWith(marker, i)) {
+            if (i + marker.length() <= limit && text.startsWith(marker, i)) {
                 return marker;
             }
         }
         return null;
     }
 
-    private int findClosingEmphasis(String text, int from, String marker) {
-        int index = findUnescaped(text, marker, from);
-        while (index >= 0 && marker.equals("*") && index + 1 < text.length() && text.charAt(index + 1) == '*') {
-            index = findUnescaped(text, marker, index + 2);
+    private int findClosingEmphasis(String text, int from, String marker, int limit) {
+        int index = findUnescaped(text, marker, from, limit);
+        while (index >= 0 && marker.equals("*") && index + 1 < limit && text.charAt(index + 1) == '*') {
+            index = findUnescaped(text, marker, index + 2, limit);
         }
         return index;
     }
 
-    private static int findUnescaped(String text, String marker, int from) {
+    private static int findUnescaped(String text, String marker, int from, int limit) {
         int candidate = text.indexOf(marker, from);
-        while (candidate >= 0) {
+        while (candidate >= 0 && candidate + marker.length() <= limit) {
             int slashes = 0;
             for (int i = candidate - 1; i >= 0 && text.charAt(i) == '\\'; i--) slashes++;
             if (slashes % 2 == 0) return candidate;
@@ -1022,20 +1050,15 @@ public class MarkdownParser {
 
     private List<Inline> mergeInlines(List<Inline> inlines) {
         List<Inline> merged = new ArrayList<>();
-        for (Inline inline : inlines) {
-            if (!merged.isEmpty() && sameFormat(merged.get(merged.size() - 1), inline)) {
-                Inline last = merged.get(merged.size() - 1);
-                merged.set(merged.size() - 1, Inline.builder(last.getText() + inline.getText())
-                        .bold(last.isBold())
-                        .italic(last.isItalic())
-                        .underline(last.isUnderline())
-                        .strikethrough(last.isStrikethrough())
-                        .code(last.isCode())
-                        .url(last.getUrl())
-                        .build());
-            } else {
-                merged.add(inline);
+        for (int i = 0; i < inlines.size();) {
+            Inline first = inlines.get(i++);
+            StringBuilder text = new StringBuilder(first.getText());
+            while (i < inlines.size() && sameFormat(first, inlines.get(i))) {
+                text.append(inlines.get(i++).getText());
             }
+            merged.add(Inline.builder(text.toString())
+                    .bold(first.isBold()).italic(first.isItalic()).underline(first.isUnderline())
+                    .strikethrough(first.isStrikethrough()).code(first.isCode()).url(first.getUrl()).build());
         }
         return merged;
     }

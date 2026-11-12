@@ -17,8 +17,8 @@ mvn -o --batch-mode --no-transfer-progress -pl editor -am \
 ```
 
 Für zusätzliche UI-Stresstests mit 1.000 und 3.000 Nutztextabsätzen denselben
-Aufruf mit `-Dperf.stress=true` ergänzen. Diese Fälle können mit dem aktuellen
-vollständigen Höhenmesspfad den 60-Sekunden-Timeout überschreiten. Die normale
+Aufruf mit `-Dperf.stress=true` ergänzen. Diese Fälle bestanden nach dem Refactoring; vor dem Refactoring wurde
+ein 1.000er-Lauf wegen langer Blockaden abgebrochen. Die normale
 UI-Messreihe verwendet 200 und 400 Absätze; Pipeline-Messungen reichen immer
 bis 3.000 Absätze. Nicht mehr benötigte CSVs vor einem neuen Vergleich in ein
 separates Archiv verschieben, damit ältere Stressszenarien nicht mitgezählt werden.
@@ -150,9 +150,10 @@ die zwei zusätzlichen UI-Stressfälle waren deaktiviert. Ein zuvor gestarteter
 1.000er-UI-Lauf wurde wegen langer Blockaden abgebrochen, bevor vollständige
 Messwerte vorlagen; er ist kein erfolgreicher Stressnachweis. Der Parser-/Writer-
 Wiederholungslauf mit allen sieben Fällen bestand ebenfalls. Rohdaten und
-Zusammenfassungen bleiben lokal im oben angegebenen Build-Verzeichnis.
+Zusammenfassungen dieser Ausgangsmessung wurden vor dem Refactoring unter
+`/tmp/mardexas-performance-before-optimization` archiviert.
 
-Abschließende Validierung: reguläres `mvn -o --batch-mode --no-transfer-progress
+Validierung der damaligen Benchmark-/Analyseänderung: reguläres `mvn -o --batch-mode --no-transfer-progress
 -Dmardexas.build.directory=target/performance-check verify` mit JDK 25 war
 erfolgreich. 1.185 Editor-Tests ohne Fehler, davon ein Druckertest wegen
 fehlendem Systemdrucker übersprungen; außerdem 13 erfolgreiche Integration-Demo-Tests.
@@ -160,9 +161,8 @@ Checkstyle ohne Verstöße, SpotBugs ohne
 Bugs und Coverage-Prüfung bestanden. Die sechs Python-Tests für den
 Baseline-Vergleich bestanden ebenfalls. Das Maven-Profil des Submoduls
 überspringt dessen eigene Tests standardmäßig; diese Prüfung ist kein neuer
-vollständiger Testlauf der Bibliothek. Produktionscode wurde durch diese
-Benchmark-/Analyseänderung nicht refaktoriert; die Lösungen unten sind der
-konkrete nächste Umsetzungsschritt.
+vollständiger Testlauf der Bibliothek. Dieser Ausgangslauf enthielt noch keine Produktionsoptimierungen.
+Der aktuelle Umsetzungsstand folgt unten.
 
 ## Systematische Codeanalyse
 
@@ -199,150 +199,82 @@ Bereits sinnvolle Mechanismen: `VirtualFlow`/`RichVirtualFlow`, Font-/Bildcaches
 sollen als Ausgangspunkt dienen. Insbesondere ist „fehlende Virtualisierung“
 für den normalen Absatzeditor keine zutreffende Diagnose.
 
-## Konkrete Refactoring-Bausteine
+## Umgesetzte Refactorings
 
-Die folgenden Ausschnitte sind Vorschläge für die angegebenen Methoden. Sie
-sind bewusst von den implementierten Messinstrumenten getrennt; Änderungen
-der Produktionssemantik und des Submoduls sind damit noch nicht durchgeführt.
+Die vorherigen Bausteinvorschläge sind jetzt in Produktionscode überführt:
 
-### 1. Dekorationsindex im MarkdownWriter
+| Bereich | Umsetzung |
+| --- | --- |
+| Absatzmessung | `RichTextAreaSkin` speichert Höhen nach Absatzidentität, Bereich, Stil und Breite. Stiländerungen invalidieren den betroffenen Bereich; Einfügen/Löschen konservativ den nachfolgenden Bereich. Bufferwechsel, Bildabschluss und Skin-Tone invalidieren passend. Breitenänderungen bündeln Layout und Neuberechnung. |
+| PieceTable | Fauler kumulativer Positionsindex, binäre Bereichs-/Caret-Lookups, Export nur über überlappende Pieces; keine vollständigen Stringpräfixe pro Absatz. Zeicheniterator sucht binär und ermittelt Zeilenumbrüche direkt aus Pieces. Revision steigt vor Buffer-Change-Listenern, auch bei Undo/Redo; Undo meldet Dokumentkoordinaten. |
+| Sichtbare Zellen | `RichListCell` verwendet unveränderte Fragmente bei gleicher Bufferrevision, Absatzidentität/-dekoration, Skin-Tone und Bildrevision wieder. Geometrie wird weiter aktualisiert. Bestehende Absatzvirtualisierung bleibt erhalten. |
+| MarkdownWriter | Ein aufruflokaler Index für geordnete, nicht überlappende positive Runs; alte lineare Semantik als Fallback für überlappende/unsortierte/Null-Längen-Runs. Lücken behalten die frühere Fallback-Semantik. Codeblöcke und benachbarte Inlines werden linear gesammelt. |
+| MarkdownParser | Expliziter Scan-Stack mit Indexbereichen für Link-/Emphasis-/Underline-Inhalte; nur dekodierte HTML-Anker brauchen einen eigenen Quellstring. Negative Delimitersuchen werden pro Bereich gemerkt, HTML-Attributpatterns einmal kompiliert und Inline-Texte mit Buildern zusammengeführt. Abbruch wird beim Scan und Blockdurchlauf geprüft. |
+| Dokument-Snapshots | Unveränderlicher Exportcache nach Bufferidentität, Revision, Textlänge und Seiten-/Headerformat. Headings und Statistiken teilen denselben Snapshot. |
+| Dateiaktionen | `MarkdownEditor.openAsync/saveAsync`: Snapshot auf FX, CPU und I/O in geordnetem Worker mit begrenzter Queue, Ergebnisabgleich auf FX. Veraltete Loads überschreiben keine Eingaben; Saves bestätigen nur die passende Revision. `EditorWindow` und Session-Dokumentladen verwenden die neue Grenze. |
+| Atomisches Speichern | Temporäre Datei im Zielverzeichnis, atomisches Ersetzen mit Fallback; bestehende Symlinks und POSIX-Rechte bleiben erhalten. Fehler bestätigen keinen gespeicherten Stand. Kein `fsync`-Durabilitätsversprechen. |
+| Autosave | Serialisiert einen Snapshot im eigenen Worker und ändert Dirty nicht. Recovery-Schreiben und -Löschen laufen geordnet. `pendingWrite()` und `close()` ermöglichen überprüfbaren Abschluss/Lifecycle. |
+| Strukturansicht | Coalesced Dirty-Refresh, gemeinsame Snapshot-/Kapitelcaches, ausgeblendete Ansicht erst beim Einblenden; unnötiges `setAll` entfällt. Buffer-Stiländerungen werden auch ohne Textlängenwechsel erkannt. Listener inklusive ChapterFolding werden abgemeldet. |
+| Zeilennummern | Eine Synchronisation nach Layout pro Puls, zuerst Zellgeometrie lesen, dann Labels aktualisieren; Fonts nur bei Größenwechsel, Clip wiederverwenden; Scene-/Scroll-/Property-Listener beim Schließen entfernen. |
+| Liveprüfung und Dashboard | Revisionsgesicherter Hintergrundpfad bleibt; Markdown-Serialisierung und Kapitel-/Bereichsanalyse laufen jetzt ebenfalls im Worker. |
+| Workspace | Hash der tatsächlich gelesenen/geschriebenen Bytes aus dem Dateiworker übernehmen, kein erneuter vollständiger Read nach erfolgreichem Öffnen/Speichern. Externes Überschreiben vorab im Workspace-Worker prüfen. Session erfasst auch gerade ladende Dateipfade. |
+| Bilder | Hintergrundladen mit Platzhalter und nachfolgender Mess-/Zellinvalidierung bei Erfolg oder Fehler. LRU-Cache auf 256 Bilder begrenzt; ausstehende Loader beim Evict/Dispose abmelden/abbrechen. Drag-and-drop-Validierung im begrenzten Worker, Einfügen nur bei unverändertem Dokument und Auswahl; Datei-Reihenfolge und URL-Fallback bleiben erhalten. |
+| Kleine Konfiguration | `ApplicationSettings.saveAll` bündelt Fenstereinstellungen, überspringt unveränderte Gruppen und erhält andere Schlüssel. Recent-Files-Änderung liest die Datei nur einmal. Session wird bereits atomisch und nur beim Schließen gespeichert. |
 
-Für validierte, sortierte, lückenlose, nicht überlappende Runs kann ein
-aufruflokaler Index die wiederholte lineare Suche ersetzen:
-
-```java
-final class DecorationIndex {
-    private final List<DecorationModel> runs;
-    DecorationIndex(List<DecorationModel> runs) { this.runs = List.copyOf(runs); }
-
-    DecorationModel covering(int position) {
-        int lo = 0, hi = runs.size();
-        while (lo < hi) {
-            int mid = (lo + hi) >>> 1;
-            if (runs.get(mid).getStart() <= position) lo = mid + 1;
-            else hi = mid;
-        }
-        if (lo == 0) return null;
-        DecorationModel run = runs.get(lo - 1);
-        return position < (long) run.getStart() + run.getLength() ? run : null;
-    }
-}
-```
-
-Index einmal in `toModel` aufbauen und an `classify`, `inlineRuns` und die
-Zugriffshilfen weitergeben. Keinen veränderlichen Cache als Writer-Feld halten:
-Writer werden künftig auch nebenläufig verwendet. Für sortierte Inline-Runs
-ist ein monotoner Cursor noch günstiger. Der bisherige Fallback für Lücken,
-unsortierte/überlappende und leere Runs muss entweder durch validierte
-Normalisierung oder den bisherigen Lookup erhalten bleiben. Besonders mehrere
-Dekorationen mit gleichem Start dürfen nicht stillschweigend anders ausgewählt
-werden. Deshalb den Index nicht blind in die bisher öffentliche Writer-API
-einsetzen. Testmatrix: bestehende Writer-/Roundtrip-/Hardening-Tests plus
-Lücken, gleiche Startposition, EOF/Leerabsatz, Tabellen, Bilder und Emojis.
-
-### 2. Dokumentweite Höhenmessung ersetzen
-
-Zielstruktur für `RichTextAreaSkin`:
+### Asynchrone API und Zustandsgrenzen
 
 ```java
-record HeightKey(long paragraphRevision, long styleRevision, double width) { }
-// Pro Absatzidentität genau einen aktuellen Eintrag halten, keine Historie.
-record MeasuredHeight(HeightKey key, double height) { }
-
-double heightOf(Paragraph paragraph, HeightKey key) {
-    MeasuredHeight old = heights.get(paragraph); // IdentityHashMap, FX-thread only
-    if (old != null && old.key().equals(key)) return old.height();
-    double measured = measureParagraphHeight(paragraph, key.width());
-    heights.put(paragraph, new MeasuredHeight(key, measured));
-    return measured;
-}
+// Auf FX, nachdem das Control eine Skin besitzt:
+editor.saveAsync(target).whenComplete((ignored, failure) -> {
+    if (failure != null) showSaveError(failure);
+    else updateTitle();
+});
+editor.openAsync(source).thenRun(this::updateTitle);
 ```
 
-`heights` ist eine Skin-eigene `IdentityHashMap<Paragraph, MeasuredHeight>`.
-Buffer-Events liefern die Änderungsrange; nur diese Absätze erhalten eine neue
-Revision. Bei Breite, Font, Emoji-Ton, Bildladeabschluss oder Absatzstil die
-betroffenen Werte invalidieren. Gelöschte Absätze aus der Map entfernen und
-beim Dispose leeren. Höhe eines Edits per Delta zur Summe addieren; einen
-vollständigen Durchlauf nur beim Öffnen bzw. globalen Layoutwechsel ausführen.
-Zusätzliche Verbesserung: mehrere Bufferevents vor dem nächsten Puls sammeln.
-Nicht nur `computeFullHeight` entfernen: `fullHeightProperty` ist öffentlich,
-und Druck-/Seitenumbrüche benötigen weiterhin korrekte Höhen.
+Die Futures schließen erst nach Installation bzw. Statusabgleich auf FX ab.
+Nicht auf FX darauf warten. `EditorWindow.pendingFileOperation()` und
+`WorkspaceWindow.pendingFileOperations()` erlauben Hosts/Tests dieselbe Grenze.
+Eigenständige Hosts rufen beim Dispose `cancelPendingIo()`; `EditorPane.close()`
+erledigt dies bereits. Schon akzeptierte Schreiboperationen werden geordnet
+zu Ende geführt. Die synchronen API-Methoden bleiben kompatibel verfügbar;
+`setMarkdown` ist weiterhin eine synchrone Parsing-API mit gequeuter Installation.
+`getMarkdownSource` liest ohne Saved-Side-Effect; das alte `getMarkdown` behält
+seine bestehende Save-Semantik. Details: [API.md](API.md).
 
-### 3. Schwere Listener bündeln
+### Weiterhin bedingte Profiling-Themen
 
-Für die Strukturansicht kann dieser FX-interne Einstieg die drei direkten
-`refresh()`-Listener ersetzen:
+Die Analyse enthielt ausdrücklich bedingte Vorschläge, keine nachgewiesenen
+Flaschenhälse: Untervirtualisierung einzelner Tabellen/Einzelabsätze sowie
+aktive Druck-/Reviewpfade. Das Refactoring ersetzt keine Tabellenzeilen durch
+virtuelle Zeilen: Auswahl, Caret, Undo und Druck benötigen weiter ihre vollständige
+Geometrie. Die bestehenden Druck- und Reviewtests prüfen diese Semantik.
+Session-/Preset-Dateien und einzelne Einstellungsänderungen bleiben synchron;
+es gibt dafür keinen gemessenen dominanten Latenzbefund.
 
-```java
-private boolean refreshPending;
+Für lange Einzelabsätze und große Tabellen gibt es jetzt zusätzliche ausführbare
+UI-Szenarien (200 formatierte Absätze plus 500 Tabellenzeilen bzw. 1.000 Inlinefolgen):
 
-private void requestRefresh() {
-    if (refreshPending) return;
-    refreshPending = true;
-    Platform.runLater(() -> {
-        refreshPending = false;
-        if (isVisible() && getScene() != null) refresh();
-    });
-}
+```bash
+mvn -o --batch-mode --no-transfer-progress -pl editor -am \
+  -Dmardexas.build.directory=target/performance-check -Pperformance \
+  -Dperf.shapes=true test
 ```
 
-Das bündelt eine Queue-Runde, garantiert aber noch nicht „einmal pro Puls“.
-Für die Zeilennummern stattdessen einen einzigen Pre-/Post-Layout-Listener mit
-Dirty-Flag verwenden: im Pre-Layout nur Styles/Größen ändern, nach dem Layout
-Geometrie lesen. Unsichtbare Ansichten behalten ein Dirty-Flag und aktualisieren
-beim Einblenden. Revisionscache zusätzlich einsetzen, damit mehrere Runden
-derselben Revision nicht erneut exportieren. Listener und Pulse-Callbacks beim
-Dispose entfernen. Tests: gleiche Länge bei Ersetzen, reine Formatänderung,
-Undo/Redo, Wechsel des Buffers, Ein-/Ausblenden und Zoom.
+Sie messen dieselben Layout-/Format-/Scrollgrenzen. Eine Teilvirtualisierung ist
+kein durch diese Änderungen behaupteter Leistungsgewinn; Release-Ziele mit
+extremen Tabellen, Bildern, Seitenmodus und realer GPU benötigen weiterhin
+Profiling auf Zielhardware. `VirtualFlow` kann auch im optimierten Lauf noch
+`index exceeds maxCellCount` protokollieren; die Zellzahlassertion prüft weiter,
+dass nicht das gesamte Dokument materialisiert wird.
 
-### 4. Snapshot auf FX, Serialisierung und I/O im Worker
+## Nachmessung und Regressionen
 
-Das bestehende `getMarkdown()` darf für Autosave nicht verwendet werden.
-Stattdessen einen abgelösten Snapshot aufnehmen und ein JavaFX-Task bauen:
+Die lokale Ausgangsmessung dient als Diagnosevergleich. Es liegen nicht drei
+neue Baseline-Läufe desselben alten Arbeitsbaums vor; eine statistisch belastbare
+Vergleichsaussage oder universelle Desktop-FPS wird daraus nicht abgeleitet.
+Atomisches Dateiersetzen hat zusätzliche Dateisystemoperationen gegenüber dem
+alten In-place-Schreiben: steigende reine Schreibzeiten müssen zusammen mit
+dieser absichtlichen Änderung der Messoperation beurteilt werden.
 
-```java
-Document live = editor.getDocumentSnapshot(); // FX thread
-Document captured = new Document(live.getText(), List.copyOf(live.getDecorations()),
-        0, live.getPageFormat(), List.copyOf(live.getHeadersFooters()));
-Path directory = target.toAbsolutePath().getParent();
-Task<Void> write = new Task<>() {
-    @Override protected Void call() throws Exception {
-        String markdown = new MarkdownWriter().write(captured, directory);
-        new MarkdownFileHandler().write(target.toFile(), markdown);
-        return null;
-    }
-};
-write.setOnFailed(event -> showSaveError(write.getException())); // FX callback
-ioExecutor.execute(write); // bounded single worker owned by the document/workspace
-```
-
-`showSaveError`, `target` und der lifecyclegebundene `ioExecutor` sind im
-aufrufenden Controller zu integrieren. Der Erfolgspfad benötigt eine separate
-Revision: nur wenn aktuelle Bufferrevision, Dateipfad und Dokumentidentität zum
-Snapshot passen, darf der manuelle Save den Saved-Marker setzen. Bei Edit
-während des Schreibens bleibt Dirty=true. Recovery-Save setzt niemals diesen
-Marker. Für atomisches Speichern im Zielverzeichnis temporär schreiben und
-danach verschieben; pro Dokument eine geordnete Schreibwarteschlange verwenden.
-Recovery-Löschen und Worker-Schreiben müssen dieselbe Reihenfolge benutzen,
-sonst kann ein später Worker ein gerade gelöschtes Recovery wiederherstellen.
-
-Laden analog: `MarkdownFileHandler.read` und `MarkdownParser.parseInto(source,
-directory)` im Task, nur die Installation des fertigen Dokuments auf FX. Die
-asynchrone Open-Action besitzt einen eigenen Abschlusszeitpunkt; Dateiidentität
-und Saved-Marker erst danach aktualisieren. Tasks bei Dispose abbrechen und
-späte Ergebnisse anhand einer Request-ID verwerfen. Keine Steuerelemente aus
-dem Worker lesen. Tests: Schreibfehler, zwei Saves, Edit während Save, neuer
-Dateiname, geschlossener Tab, externe Dateiänderung und Recovery-Rennen.
-
-## Reihenfolge der Umsetzung
-
-1. Messdaten samt Revisionen sichern; Höhenmessung und Writer-Run-Lookup mit
-   JFR auf CPU/Allokationen eingrenzen.
-2. Höhenmessung im Submodul inkrementell machen; Core-Renderingbenchmark und
-   vorhandene Caret-/Viewport-/Druck-/Seiten-Regressionstests ausführen.
-3. Writer-Index plus Codeblock-Builder mit semantischen Tests einführen.
-4. I/O und Save-Zustand gemeinsam asynchron refaktorieren.
-5. Struktur-/Gutter-Listener bündeln, anschließend mit sichtbaren Zusatzpanels
-   messen. Tabellenzeilen-/Einzelabsatzvirtualisierung erst nach diesen Schritten.
-
-Commit/Push und Änderung des Submodulzeigers sind nicht Teil der Messimplementierung.
+Aktuelle Ergebnisse und Abschlussprüfung werden nach den Wiederholungsläufen ergänzt.

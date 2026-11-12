@@ -50,7 +50,7 @@ import javafx.scene.layout.VBox;
  * {@link MarkdownEditor#goToPosition(int)}; Änderungen an der Auswahl wirken
  * nicht auf den Dokumentinhalt.
  */
-public class DocumentStructureView extends VBox {
+public class DocumentStructureView extends VBox implements AutoCloseable {
 
     private static final int INDENT_PER_LEVEL = 12;
 
@@ -65,7 +65,49 @@ public class DocumentStructureView extends VBox {
     private final de.richmarkdown.features.editing.ChapterFolding folding;
 
     /** Guard gegen Selektions-/Navigations-Rückkopplung. */
+    private com.gluonhq.richtextarea.model.Document structureSnapshot;
     private boolean updatingSelection;
+    private boolean refreshPending, dirty = true, closed;
+    private com.gluonhq.richtextarea.model.TextBuffer observedBuffer;
+    private final java.util.function.Consumer<com.gluonhq.richtextarea.model.TextBuffer.Event> bufferChanged = event -> requestRefresh();
+    private final Runnable facadeChanged = this::requestRefresh;
+    private final javafx.beans.InvalidationListener documentChanged = this::documentInvalidated;
+    private final javafx.beans.InvalidationListener caretChanged = observable -> selectEntryAtCaret();
+
+    private void documentInvalidated(javafx.beans.Observable observable) {
+        if (observable instanceof javafx.beans.value.ObservableValue<?> value) value.getValue();
+        wireBuffer(); requestRefresh();
+    }
+
+    private void wireBuffer() {
+        var current = editor.getControl().getSkin() instanceof RichTextAreaSkin skin ? skin.getViewModel().getTextBuffer() : null;
+        if (current == observedBuffer) return;
+        if (observedBuffer != null) observedBuffer.removeChangeListener(bufferChanged);
+        observedBuffer = current;
+        if (current != null) current.addChangeListener(bufferChanged);
+    }
+
+    private void requestRefresh() {
+        dirty = true;
+        if (closed || refreshPending || !isVisible() || getScene() == null) return;
+        refreshPending = true;
+        javafx.application.Platform.runLater(() -> {
+            refreshPending = false;
+            if (!closed && dirty && isVisible() && getScene() != null) refresh();
+        });
+    }
+
+    @Override public void close() {
+        closed = true;
+        folding.close();
+        if (observedBuffer != null) observedBuffer.removeChangeListener(bufferChanged);
+        observedBuffer = null;
+        editor.removeChangeListener(facadeChanged);
+        editor.getControl().documentProperty().removeListener(documentChanged);
+        editor.getControl().skinProperty().removeListener(documentChanged);
+        editor.getControl().textLengthProperty().removeListener(documentChanged);
+        editor.getControl().caretPositionProperty().removeListener(caretChanged);
+    }
 
     /** Eigener Sprungpfad (z. B. für die Zurück-/Vorwärts-Navigation). */
     private java.util.function.IntConsumer jumpHandler;
@@ -96,13 +138,17 @@ public class DocumentStructureView extends VBox {
         });
 
         // Caret-Verfolgung: der aktuelle Eintrag wird markiert
-        editor.getControl().caretPositionProperty().addListener((obs, old, nv) -> selectEntryAtCaret());
+        editor.getControl().caretPositionProperty().addListener(caretChanged);
 
         // Aktualisierung bei Dokument- und Textänderungen
-        editor.getControl().documentProperty().addListener((obs, old, nv) -> refresh());
-        editor.getControl().textLengthProperty().addListener((obs, old, nv) -> refresh());
+        editor.getControl().documentProperty().addListener(documentChanged);
+        editor.getControl().skinProperty().addListener(documentChanged);
+        editor.getControl().textLengthProperty().addListener(documentChanged);
         // Dekorationsänderungen (Überschriften setzen/entfernen) meldet die Fassade
-        editor.addChangeListener(this::refresh);
+        editor.addChangeListener(facadeChanged);
+        visibleProperty().addListener(observable -> requestRefresh());
+        sceneProperty().addListener(observable -> requestRefresh());
+        wireBuffer();
 
         headerLabel.getStyleClass().add("structure-header");
         headerLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
@@ -158,9 +204,14 @@ public class DocumentStructureView extends VBox {
      * Editor-Fassade signalisiert werden, explizit synchronisiert werden können.
      */
     public void refresh() {
+        if (closed) return;
+        dirty = false;
+        wireBuffer();
         allHeadings = editor.getHeadings();
-        try { chapters = ChapterModel.chapters(editor.getDocumentSnapshot()); }
-        catch (IllegalStateException notReady) { chapters = java.util.List.of(); }
+        try {
+            var source = editor.getDocumentSnapshot();
+            if (source != structureSnapshot) { chapters = ChapterModel.chapters(source); structureSnapshot = source; }
+        } catch (IllegalStateException notReady) { chapters = java.util.List.of(); structureSnapshot = null; }
         applyFilter();
     }
 
@@ -169,8 +220,9 @@ public class DocumentStructureView extends VBox {
         int level = maximumLevel.getValue() == null ? 6 : maximumLevel.getValue();
         updatingSelection = true;
         try {
-            listView.getItems().setAll(allHeadings.stream().filter(h -> h.level() <= level
-                    && h.text().toLowerCase(java.util.Locale.ROOT).contains(query)).toList());
+            var filtered = allHeadings.stream().filter(h -> h.level() <= level
+                    && h.text().toLowerCase(java.util.Locale.ROOT).contains(query)).toList();
+            if (!listView.getItems().equals(filtered)) listView.getItems().setAll(filtered);
         } finally {
             updatingSelection = false;
         }

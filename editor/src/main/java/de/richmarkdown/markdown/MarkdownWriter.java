@@ -169,7 +169,8 @@ public class MarkdownWriter {
      * @param document Rich-Text-Document als Quelle
      * @return geordnetes Markdown-Modell
      */
-    public MarkdownModel toModel(Document document) {
+    public MarkdownModel toModel(Document source) {
+        Source document = new Source(source);
         String text = document.getText();
         List<Block> blocks = new ArrayList<>();
 
@@ -184,34 +185,54 @@ public class MarkdownWriter {
 
             Block block = classify(paragraphText, pd, decoration, document, start, end);
             if (block != null) {
-                Block merged = blocks.isEmpty() ? null : mergeCodeBlocks(blocks.get(blocks.size() - 1), block);
-                if (merged != null) blocks.set(blocks.size() - 1, merged);
-                else blocks.add(block);
+                blocks.add(block);
             }
         }
 
         // Hinweis: führende/trailing leere Absätze bleiben im Modell – write()
         // entscheidet über deren Wirkung (Leerzeile bzw. abschließendes Newline)
-        return MarkdownModel.of(blocks);
+        return MarkdownModel.of(mergeCodeBlocks(blocks));
     }
 
-    private Block mergeCodeBlocks(Block previous, Block current) {
-        if (previous instanceof CodeBlockBlock a && current instanceof CodeBlockBlock b
-                && a.getLanguage().equals(b.getLanguage())) {
-            var lines = new ArrayList<>(a.getLines()); lines.addAll(b.getLines());
-            return new CodeBlockBlock(a.getLanguage(), lines);
+    private List<Block> mergeCodeBlocks(List<Block> blocks) {
+        List<Block> result = new ArrayList<>();
+        for (int i = 0; i < blocks.size();) {
+            Block first = blocks.get(i++);
+            CodeBlockBlock code = codeAtDepth(first);
+            if (code == null) { result.add(first); continue; }
+            int depth = quoteDepth(first);
+            List<String> lines = new ArrayList<>(code.getLines());
+            while (i < blocks.size()) {
+                Block next = blocks.get(i);
+                CodeBlockBlock other = codeAtDepth(next);
+                if (other == null || quoteDepth(next) != depth
+                        || !code.getLanguage().equals(other.getLanguage())) break;
+                lines.addAll(other.getLines());
+                i++;
+            }
+            Block merged = new CodeBlockBlock(code.getLanguage(), lines);
+            result.add(depth == 0 ? merged : nestedQuote(depth, merged));
         }
-        if (previous instanceof QuoteBlock a && current instanceof QuoteBlock b
-                && a.getChildren().size() == 1 && b.getChildren().size() == 1) {
-            Block merged = mergeCodeBlocks(a.getChildren().get(0), b.getChildren().get(0));
-            if (merged != null) return new QuoteBlock(List.of(merged));
+        return result;
+    }
+
+    private int quoteDepth(Block block) {
+        int depth = 0;
+        while (block instanceof QuoteBlock quote && quote.getChildren().size() == 1) {
+            depth++; block = quote.getChildren().get(0);
         }
-        return null;
+        return depth;
+    }
+
+    private CodeBlockBlock codeAtDepth(Block block) {
+        while (block instanceof QuoteBlock quote && quote.getChildren().size() == 1)
+            block = quote.getChildren().get(0);
+        return block instanceof CodeBlockBlock code ? code : null;
     }
 
     private Block classify(String paragraphText, ParagraphDecoration pd,
                            com.gluonhq.richtextarea.model.Decoration decoration,
-                           Document document, int start, int end) {
+                           Source document, int start, int end) {
         // Bild: ImageDecoration (kein TextDecoration!)
         if (decoration instanceof com.gluonhq.richtextarea.model.ImageDecoration imageDecoration) {
             Block image = new ImageBlock(imageDecoration.getUrl(), imageDecoration.getWidth(),
@@ -278,7 +299,7 @@ public class MarkdownWriter {
      * {@code rows*columns-1} Zellseparatoren enthalten (so legt die Bibliothek
      * native Tabellen an: ein Absatz, Zellen durch {@code \u200b} getrennt).
      */
-    private boolean isTableParagraph(Document document, int start, String paragraphText,
+    private boolean isTableParagraph(Source document, int start, String paragraphText,
                                      TableDecoration tableDecoration) {
         int rows = tableDecoration.getRows();
         int columns = tableDecoration.getColumns();
@@ -299,7 +320,7 @@ public class MarkdownWriter {
      * Absatz endet mit dem Zeilenende. Pro Zelle werden die Inline-Läufe aus
      * den Dekorationen extrahiert (Formatierung in Zellen bleibt erhalten).
      */
-    private Block tableBlock(Document document, int start, int end, TableDecoration tableDecoration) {
+    private Block tableBlock(Source document, int start, int end, TableDecoration tableDecoration) {
         int rows = tableDecoration.getRows();
         int columns = tableDecoration.getColumns();
         String paragraphText = document.getText().substring(start, end);
@@ -339,7 +360,7 @@ public class MarkdownWriter {
         return result;
     }
 
-    private boolean isHorizontalRule(String paragraphText, Document document, int start, int end) {
+    private boolean isHorizontalRule(String paragraphText, Source document, int start, int end) {
         if (paragraphText.isEmpty() || !paragraphText.trim().isEmpty()) {
             return false;
         }
@@ -363,7 +384,7 @@ public class MarkdownWriter {
 
     // ---------- Inline-Extraktion ----------
 
-    private List<Inline> inlineRuns(Document document, int start, int end) {
+    private List<Inline> inlineRuns(Source document, int start, int end) {
         List<Inline> inlines = new ArrayList<>();
         int pos = start;
         while (pos < end) {
@@ -404,23 +425,15 @@ public class MarkdownWriter {
 
     private List<Inline> mergeInlines(List<Inline> inlines) {
         List<Inline> merged = new ArrayList<>();
-        for (Inline inline : inlines) {
-            if (!merged.isEmpty()) {
-                Inline last = merged.get(merged.size() - 1);
-                if (sameFormat(last, inline)) {
-                    merged.set(merged.size() - 1,
-                            Inline.builder(last.getText() + inline.getText())
-                                    .bold(last.isBold())
-                                    .italic(last.isItalic())
-                                    .underline(last.isUnderline())
-                                    .strikethrough(last.isStrikethrough())
-                                    .code(last.isCode())
-                                    .url(last.getUrl())
-                                    .build());
-                    continue;
-                }
+        for (int i = 0; i < inlines.size();) {
+            Inline first = inlines.get(i++);
+            StringBuilder text = new StringBuilder(first.getText());
+            while (i < inlines.size() && sameFormat(first, inlines.get(i))) {
+                text.append(inlines.get(i++).getText());
             }
-            merged.add(inline);
+            merged.add(Inline.builder(text.toString())
+                    .bold(first.isBold()).italic(first.isItalic()).underline(first.isUnderline())
+                    .strikethrough(first.isStrikethrough()).code(first.isCode()).url(first.getUrl()).build());
         }
         return merged;
     }
@@ -432,6 +445,42 @@ public class MarkdownWriter {
                 && a.isStrikethrough() == b.isStrikethrough()
                 && a.isCode() == b.isCode()
                 && java.util.Objects.equals(a.getUrl(), b.getUrl());
+    }
+
+    /** Per-call index; malformed/overlapping inputs retain the public API's original lookup semantics. */
+    private static final class Source {
+        private final Document document;
+        private final boolean indexed;
+        Source(Document document) {
+            this.document = document;
+            long end = -1;
+            boolean valid = true;
+            for (DecorationModel run : document.getDecorations()) {
+                if (run.getLength() <= 0 || run.getStart() < end) { valid = false; break; }
+                end = (long) run.getStart() + run.getLength();
+            }
+            indexed = valid;
+        }
+        String getText() { return document.getText(); }
+        DecorationModel at(int position) {
+            List<DecorationModel> runs = document.getDecorations();
+            if (indexed) {
+                int lo = 0, hi = runs.size();
+                while (lo < hi) {
+                    int mid = (lo + hi) >>> 1;
+                    if (runs.get(mid).getStart() <= position) lo = mid + 1;
+                    else hi = mid;
+                }
+                return lo == 0 ? null : runs.get(lo - 1);
+            }
+            DecorationModel fallback = null;
+            for (DecorationModel dm : runs) {
+                if (position >= dm.getStart() && position < (long) dm.getStart() + dm.getLength()) return dm;
+                if (dm.getStart() == position) fallback = dm;
+                else if (dm.getStart() < position && (fallback == null || fallback.getStart() < dm.getStart())) fallback = dm;
+            }
+            return fallback;
+        }
     }
 
     // ---------- Document-Zugriffshilfen ----------
@@ -449,34 +498,21 @@ public class MarkdownWriter {
         return paragraphs;
     }
 
-    private DecorationModel decorationModelAt(Document document, int position) {
-        DecorationModel fallback = null;
-        for (DecorationModel dm : document.getDecorations()) {
-            if (position >= dm.getStart() && position < dm.getStart() + dm.getLength()) {
-                return dm;
-            }
-            if (dm.getStart() == position) {
-                fallback = dm;
-            } else if (dm.getStart() < position) {
-                if (fallback == null || fallback.getStart() < dm.getStart()) {
-                    fallback = dm;
-                }
-            }
-        }
-        return fallback;
+    private DecorationModel decorationModelAt(Source document, int position) {
+        return document.at(position);
     }
 
-    private com.gluonhq.richtextarea.model.Decoration decorationAt(Document document, int position) {
+    private com.gluonhq.richtextarea.model.Decoration decorationAt(Source document, int position) {
         DecorationModel dm = decorationModelAt(document, position);
         return dm != null ? dm.getDecoration() : null;
     }
 
-    private TextDecoration textDecorationAt(Document document, int position) {
+    private TextDecoration textDecorationAt(Source document, int position) {
         DecorationModel dm = decorationModelAt(document, position);
         return dm != null && dm.getDecoration() instanceof TextDecoration td ? td : null;
     }
 
-    private ParagraphDecoration paragraphDecorationAt(Document document, int position) {
+    private ParagraphDecoration paragraphDecorationAt(Source document, int position) {
         DecorationModel dm = decorationModelAt(document, position);
         return dm != null ? dm.getParagraphDecoration() : null;
     }

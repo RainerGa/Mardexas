@@ -147,11 +147,17 @@ public final class ApplicationSettings {
      *                                      gelesen oder geschrieben werden kann
      */
     public void save(String key, String value) {
-        if (inMemory) {
-            return;
-        }
+        saveAll(java.util.Map.of(key, value));
+    }
+
+    /** Persists a group with one read/write, preserving unrelated settings and skipping unchanged groups. */
+    public synchronized void saveAll(java.util.Map<String, String> values) {
+        if (inMemory || values.isEmpty()) return;
         Properties properties = readProperties();
-        properties.setProperty(key, value);
+        boolean changed = values.entrySet().stream()
+                .anyMatch(entry -> !java.util.Objects.equals(properties.getProperty(entry.getKey()), entry.getValue()));
+        if (!changed) return;
+        properties.putAll(values);
         writeProperties(properties);
     }
 
@@ -203,21 +209,14 @@ public final class ApplicationSettings {
      * @return Liste der Dateipfade (maximal 10), neueste zuerst
      */
     public List<String> readRecentFiles() {
+        return recentFiles(readProperties());
+    }
+
+    private List<String> recentFiles(Properties properties) {
         List<String> files = new ArrayList<>();
-        if (inMemory || settingsFile == null || !Files.exists(settingsFile)) {
-            return files;
-        }
-        try (Reader reader = Files.newBufferedReader(settingsFile, StandardCharsets.UTF_8)) {
-            Properties properties = new Properties();
-            properties.load(reader);
-            for (int i = 0; i < 10; i++) {
-                String path = properties.getProperty("recentFile." + i);
-                if (path != null && !path.isBlank()) {
-                    files.add(path);
-                }
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException("Could not read " + settingsFile, e);
+        for (int i = 0; i < 10; i++) {
+            String path = properties.getProperty("recentFile." + i);
+            if (path != null && !path.isBlank()) files.add(path);
         }
         return files;
     }
@@ -228,17 +227,17 @@ public final class ApplicationSettings {
      *
      * @param filePath Pfad der Datei
      */
-    public void addRecentFile(String filePath) {
+    public synchronized void addRecentFile(String filePath) {
         if (inMemory) {
             return;
         }
-        List<String> files = readRecentFiles();
+        Properties properties = readProperties();
+        List<String> files = recentFiles(properties);
         files.remove(filePath);
         files.add(0, filePath);
         if (files.size() > 10) {
             files = files.subList(0, 10);
         }
-        Properties properties = readProperties();
         // Clear existing recent file entries
         for (int i = 0; i < 10; i++) {
             properties.remove("recentFile." + i);
@@ -255,13 +254,13 @@ public final class ApplicationSettings {
      *
      * @param filePath Pfad der zu entfernenden Datei
      */
-    public void removeRecentFile(String filePath) {
+    public synchronized void removeRecentFile(String filePath) {
         if (inMemory) {
             return;
         }
-        List<String> files = readRecentFiles();
-        files.remove(filePath);
         Properties properties = readProperties();
+        List<String> files = recentFiles(properties);
+        files.remove(filePath);
         for (int i = 0; i < 10; i++) {
             properties.remove("recentFile." + i);
         }

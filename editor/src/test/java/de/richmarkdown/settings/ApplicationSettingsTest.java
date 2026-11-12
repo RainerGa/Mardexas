@@ -63,6 +63,21 @@ class ApplicationSettingsTest {
     }
 
     @Test
+    void batchesWindowPreferencesWithoutDroppingUnrelatedSettings() {
+        ApplicationSettings settings = new ApplicationSettings(tempDirectory);
+        settings.save("language", "fr");
+        settings.saveAll(java.util.Map.of("zoomPercent", "125.0", "lineWrapMode", "CONTINUOUS"));
+        settings.addRecentFile("/tmp/first.md");
+        settings.addRecentFile("/tmp/second.md");
+        settings.removeRecentFile("/tmp/first.md");
+        var reloaded = new ApplicationSettings(tempDirectory);
+        assertEquals("fr", reloaded.read("language"));
+        assertEquals("125.0", reloaded.read("zoomPercent"));
+        assertEquals("CONTINUOUS", reloaded.read("lineWrapMode"));
+        assertEquals(java.util.List.of("/tmp/second.md"), reloaded.readRecentFiles());
+    }
+
+    @Test
     void usesPlatformConfigurationDirectories() {
         assertEquals(Path.of("/home/test/.config"),
                 ApplicationSettings.defaultConfigDirectory("Linux", "/home/test", "", ""));

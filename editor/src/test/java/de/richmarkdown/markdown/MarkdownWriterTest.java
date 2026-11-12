@@ -41,6 +41,17 @@ class MarkdownWriterTest {
 
     private final MarkdownWriter writer = new MarkdownWriter();
 
+    @Test void runIndexPreservesGapsOverlapsUnsortedAndZeroLengthParagraphStyles() {
+        // Heading lookup at offset four must keep the nearest earlier style in a gap.
+        assertTrue(writer.write(doc("one\ntwo", dm(0, 1, heading(2), paragraph()))).contains("## two"));
+        // In overlapping/unsorted input the first covering decoration still wins.
+        assertTrue(writer.write(doc("title", dm(0, 5, heading(2), paragraph()),
+                dm(0, 5, normal(), paragraph()))).startsWith("## "));
+        assertTrue(writer.write(doc("one\ntwo", dm(4, 3, heading(3), paragraph()),
+                dm(0, 4, normal(), paragraph()))).contains("### two"));
+        assertTrue(writer.write(doc("title", dm(0, 0, heading(2), paragraph()))).startsWith("## "));
+    }
+
     // ---------- Test-Helfer ----------
 
     private Document doc(String text, DecorationModel... models) {

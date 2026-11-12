@@ -49,6 +49,7 @@ class EditorWindowFileTest {
 
     @TempDir
     Path tempDir;
+    private final java.util.List<EditorWindow> windows = new java.util.ArrayList<>();
 
     @BeforeAll
     static void initToolkit() throws Exception {
@@ -76,6 +77,7 @@ class EditorWindowFileTest {
         // Standard: Änderungen verwerfen bestätigen (injizierbar, damit kein
         // modaler Dialog den FX-Thread blockiert)
         window.setConfirmationHandler((title, message) -> true);
+        windows.add(window);
         return window;
     }
 
@@ -96,6 +98,11 @@ class EditorWindowFileTest {
     }
 
     private void flush() {
+        for (EditorWindow window : windows) {
+            try { FxTestUtil.callAndWait(window::pendingFileOperation).get(30, java.util.concurrent.TimeUnit.SECONDS); }
+            catch (java.util.concurrent.ExecutionException expectedUiError) { /* assertions inspect lastError */ }
+            catch (Exception failure) { throw new AssertionError(failure); }
+        }
         FxTestUtil.flushFxEvents();
     }
 

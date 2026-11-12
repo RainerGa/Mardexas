@@ -40,7 +40,7 @@ import java.nio.file.Path;
  * schreibgeschützt. Ein erfolgreicher manueller Save loescht die
  * Wiederherstellungsdatei.
  */
-public final class AutoSaveService {
+public final class AutoSaveService implements AutoCloseable {
 
     private static final String AUTOSAVE_FILE_NAME = "autosave.md";
     private static final int DEFAULT_INTERVAL_MS = 300_000; // 5 Minuten
@@ -48,6 +48,14 @@ public final class AutoSaveService {
     private final MarkdownEditor editor;
     private final Path recoveryFile;
     private final AnimationTimer timer;
+    private final java.util.concurrent.ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor(task -> {
+        Thread thread = new Thread(task, "mardexas-recovery"); thread.setDaemon(true); return thread;
+    });
+    private java.util.concurrent.CompletableFuture<Void> pending = java.util.concurrent.CompletableFuture.completedFuture(null);
+    private boolean saving;
+
+    /** Completion barrier for hosts/tests; never wait on it from the FX thread. */
+    public java.util.concurrent.CompletableFuture<Void> pendingWrite() { return pending; }
 
     /**
      * Erstellt den Autosave-Dienst. Der Timer laeuft nur, wenn das Fenster
@@ -137,12 +145,10 @@ public final class AutoSaveService {
 
     /** Loescht die Wiederherstellungsdatei (z. B. nach erfolgreichem Save). */
     public void deleteRecoveryFile() {
-        if (recoveryFile != null) {
-            try {
-                Files.deleteIfExists(recoveryFile);
-            } catch (IOException ignored) {
-            }
-        }
+        pending = java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try { Files.deleteIfExists(recoveryFile); }
+            catch (IOException ignored) { /* recovery cleanup is best effort */ }
+        }, worker);
     }
 
     /**
@@ -152,20 +158,20 @@ public final class AutoSaveService {
      * Editor nie blockiert wird.
      */
     private void saveIfModified() {
-        if (!editor.isModified()) {
-            return;
-        }
-        try {
-            String markdown = editor.getMarkdown();
-            if (recoveryFile != null && markdown != null && !markdown.isBlank()) {
-                Path parent = recoveryFile.getParent();
-                if (parent != null) {
-                    Files.createDirectories(parent);
-                }
-                Files.writeString(recoveryFile, markdown, StandardCharsets.UTF_8);
-            }
-        } catch (IOException ignored) {
-            // Autosave darf den Editor nie blockieren
-        }
+        if (saving || !editor.isModified() || !editor.getControl().isEditable()) return;
+        var snapshot = editor.getDocumentSnapshot();
+        if (snapshot.getText().isBlank()) return;
+        var directory = editor.getCurrentFile().map(file -> file.toPath().toAbsolutePath().getParent()).orElse(null);
+        saving = true;
+        pending = java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                new MarkdownFileHandler().write(recoveryFile.toFile(),
+                        new de.richmarkdown.markdown.MarkdownWriter().write(snapshot, directory));
+            } catch (IOException ignored) { /* recovery must not block editing */ }
+        }, worker);
+        pending.whenComplete((ignored, failure) -> javafx.application.Platform.runLater(() -> saving = false));
     }
+
+    /** Stops timer and drains already ordered recovery writes/deletions. */
+    @Override public void close() { timer.stop(); worker.shutdown(); }
 }

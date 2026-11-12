@@ -71,6 +71,15 @@ import java.text.MessageFormat;
  * Druckinfrastruktur kontrolliert ersetzen können.
  */
 public class EditorWindow extends Stage {
+    private java.util.concurrent.CompletableFuture<Void> pendingFileOperation = java.util.concurrent.CompletableFuture.completedFuture(null);
+    private long fileOperationRevision;
+    private boolean featuresDisposed;
+    private File openingFile;
+    File openingFile() { return openingFile; }
+
+    /** Completes on FX after loading/saving and UI reconciliation; hosts must await it off FX. */
+    public java.util.concurrent.CompletableFuture<Void> pendingFileOperation() { return pendingFileOperation; }
+
 
     /**
      * Strategie für die Benutzerbestätigung beim Verwerfen ungespeicherter
@@ -161,8 +170,7 @@ public class EditorWindow extends Stage {
         this.zoomController.getViewport().getStyleClass().add("rme-zoom-viewport");
         statusBar.addZoomControls(this.zoomController.createControls());
         setOnHiding(event -> {
-            I18n.setZoomPercent(zoomController.getZoom());
-            I18n.setLineWrapModeName(zoomController.getWrapMode().name());
+            I18n.saveViewPreferences(zoomController.getZoom(), zoomController.getWrapMode().name());
         });
 
         // Dokumentstruktur (Navigationsbereich) links vom Editor
@@ -708,6 +716,9 @@ public class EditorWindow extends Stage {
     public void addFeatureDisposer(Runnable disposer) { featureDisposers.add(disposer); }
     public void removeFeatureDisposer(Runnable disposer) { featureDisposers.remove(disposer); }
     public void disposeFeatures() {
+        featuresDisposed = true; fileOperationRevision++;
+        editor.cancelPendingIo();
+        structureView.close(); lineNumberGutter.close();
         var disposers = List.copyOf(featureDisposers);
         featureDisposers.clear();
         RuntimeException failure = null;
@@ -815,24 +826,33 @@ public class EditorWindow extends Stage {
 
     /**
      * Speichert das aktuelle Dokument als UTF-8-Markdown in eine Datei.
-     * Delegiert an {@link MarkdownEditor#save(File)} – Dirty-Check,
+     * Delegiert asynchron an {@link MarkdownEditor#saveAsync(File)} – Dirty-Check,
      * Fehler-UI und Titel bleiben Fenster-Sache.
      *
      * @param file Zieldatei
      */
     public void saveToFile(File file) {
-        if (workspace != null && !workspace.confirmExternalOverwrite(this, file)) return;
-        try {
-            editor.save(file);
-            if (workspace != null) workspace.documentSaved(this);
-            lastError = null;
-            I18n.addRecentFile(file.getAbsolutePath());
-            updateTitle();
-        } catch (IOException e) {
-            lastError = MessageFormat.format(I18n.text("error.save"),
-                    file.getName(), e.getMessage());
-            showError(lastError);
-        }
+        long request = ++fileOperationRevision;
+        var allowed = workspace == null ? java.util.concurrent.CompletableFuture.completedFuture(true)
+                : workspace.confirmExternalOverwriteAsync(this, file);
+        pendingFileOperation = allowed.thenCompose(confirmed -> confirmed && !featuresDisposed && request == fileOperationRevision ? editor.saveAsync(file)
+                : java.util.concurrent.CompletableFuture.failedFuture(new java.util.concurrent.CancellationException()));
+        pendingFileOperation = pendingFileOperation.whenComplete((ignored, failure) -> {
+            if (featuresDisposed || request != fileOperationRevision) return;
+            if (failure == null) {
+                if (workspace != null) workspace.documentSaved(this);
+                lastError = null;
+                I18n.addRecentFile(file.getAbsolutePath()); updateTitle();
+            } else if (!(unwrap(failure) instanceof java.util.concurrent.CancellationException)) {
+                lastError = MessageFormat.format(I18n.text("error.save"), file.getName(), unwrap(failure).getMessage());
+                showError(lastError);
+            }
+        });
+    }
+
+    private static Throwable unwrap(Throwable failure) {
+        while (failure instanceof java.util.concurrent.CompletionException && failure.getCause() != null) failure = failure.getCause();
+        return failure;
     }
 
     /** Schließt das Fenster, wenn der Dirty-Check das Verwerfen erlaubt. */
@@ -1251,20 +1271,21 @@ public class EditorWindow extends Stage {
     // ---------- Interna ----------
 
     private void loadFile(File file) {
-        try {
-            editor.open(file);
-            if (workspace != null) workspace.documentSaved(this);
-            lastError = null;
-            // Normales Öffnen hebt einen allfälligen Schreibschutz auf
-            // (setReadOnly(true) folgt beim schreibgeschützten Öffnen danach)
-            setReadOnly(false);
-            I18n.addRecentFile(file.getAbsolutePath());
-            updateTitle();
-        } catch (IOException e) {
-            lastError = MessageFormat.format(I18n.text("error.open"),
-                    file.getName(), e.getMessage());
-            showError(lastError);
-        }
+        openingFile = file;
+        long request = ++fileOperationRevision;
+        setReadOnly(false);
+        pendingFileOperation = editor.openAsync(file).whenComplete((ignored, failure) -> {
+            if (featuresDisposed || request != fileOperationRevision) return;
+            openingFile = null;
+            if (failure == null) {
+                if (workspace != null) workspace.documentSaved(this);
+                lastError = null;
+                I18n.addRecentFile(file.getAbsolutePath()); updateTitle();
+            } else if (!(unwrap(failure) instanceof java.util.concurrent.CancellationException)) {
+                lastError = MessageFormat.format(I18n.text("error.open"), file.getName(), unwrap(failure).getMessage());
+                showError(lastError);
+            }
+        });
     }
 
     /**

@@ -22,7 +22,11 @@ class WorkspaceWindowTest {
         FxTestUtil.runAndWait(workspace::show);
     }
     @AfterEach void close() { FxTestUtil.runAndWait(workspace::dispose); }
-    private void flush() { for (int i = 0; i < 4; i++) FxTestUtil.flushFxEvents(); }
+    private void await(WorkspaceWindow host) {
+        try { FxTestUtil.callAndWait(host::pendingFileOperations).get(30, java.util.concurrent.TimeUnit.SECONDS); }
+        catch (Exception failure) { throw new AssertionError(failure); }
+    }
+    private void flush() { await(workspace); for (int i = 0; i < 4; i++) FxTestUtil.flushFxEvents(); }
     @Test void tabsKeepIndependentUndoSelectionAndReadOnlyState() {
         EditorWindow first = FxTestUtil.callAndWait(workspace::newDocument); flush();
         FxTestUtil.runAndWait(() -> first.getEditor().setMarkdown("first")); flush();
@@ -64,12 +68,15 @@ class WorkspaceWindowTest {
             assertEquals(2, workspace.captureSession().entries().size());
             assertTrue(workspace.closeActive()); assertEquals(1, workspace.documentCount());
             workspace.reopenClosed(); assertEquals(2, workspace.documentCount());
+        });
+        flush();
+        FxTestUtil.runAndWait(() -> {
             workspace.activeDocument().setReadOnly(true);
             assertTrue(workspace.closeWorkspace());
         });
         WorkspaceWindow restored = FxTestUtil.callAndWait(() -> new WorkspaceWindow(new WorkspaceSession(directory.resolve("session.properties"))));
         try {
-            FxTestUtil.runAndWait(() -> { restored.show(); restored.restoreSession(); }); flush();
+            FxTestUtil.runAndWait(() -> { restored.show(); restored.restoreSession(); }); await(restored); flush();
             FxTestUtil.runAndWait(() -> {
                 assertEquals(2, restored.documentCount());
                 assertEquals(second.toFile(), restored.activeDocument().getCurrentFile());
@@ -98,7 +105,7 @@ class WorkspaceWindowTest {
         session.save(new WorkspaceSession.State(java.util.List.of(new WorkspaceSession.Entry(first.toString(), 0, 0, false)), 0));
         WorkspaceWindow hidden = FxTestUtil.callAndWait(() -> new WorkspaceWindow(session));
         try {
-            FxTestUtil.runAndWait(hidden::restoreSession); flush();
+            FxTestUtil.runAndWait(hidden::restoreSession); await(hidden); flush();
             FxTestUtil.runAndWait(() -> {
                 assertEquals(1, hidden.documentCount());
                 assertEquals(1, hidden.captureSession().entries().size());
@@ -117,7 +124,7 @@ class WorkspaceWindowTest {
                 new WorkspaceSession.Entry(later.toString(), 0, 0, false)), 1));
         WorkspaceWindow restored = FxTestUtil.callAndWait(() -> new WorkspaceWindow(session));
         try {
-            FxTestUtil.runAndWait(() -> { restored.show(); restored.restoreSession(); }); flush();
+            FxTestUtil.runAndWait(() -> { restored.show(); restored.restoreSession(); }); await(restored); flush();
             FxTestUtil.runAndWait(() -> {
                 assertEquals(2, restored.documentCount());
                 assertEquals(active.toFile(), restored.activeDocument().getCurrentFile());

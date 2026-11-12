@@ -53,6 +53,21 @@ public class MarkdownFileHandler {
         return normalizeLineEndings(content);
     }
 
+    /** Normalized text and hash of the exact bytes read, for external-change reconciliation. */
+    public record ReadSnapshot(String content, String fingerprint) { }
+
+    public ReadSnapshot readSnapshot(File file) throws IOException {
+        byte[] bytes = Files.readAllBytes(file.toPath());
+        String content = StandardCharsets.UTF_8.newDecoder().decode(java.nio.ByteBuffer.wrap(bytes)).toString();
+        return new ReadSnapshot(normalizeLineEndings(content), fingerprint(bytes));
+    }
+
+    public static String fingerprint(byte[] bytes) {
+        try {
+            return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes));
+        } catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
+    }
+
     /**
      * Schreibt Markdown-Text als UTF-8 (ohne BOM, Unix-Zeilenenden).
      * Fehlende Verzeichnisse werden angelegt.
@@ -69,7 +84,22 @@ public class MarkdownFileHandler {
         if (parent != null && !parent.exists() && !parent.mkdirs()) {
             throw new IOException("Could not create directories: " + parent);
         }
-        Files.writeString(file.toPath(), content, StandardCharsets.UTF_8);
+        var target = file.toPath().toAbsolutePath();
+        // Preserve symlink targets rather than replacing the link itself.
+        if (Files.isSymbolicLink(target)) target = target.toRealPath();
+        if (Files.exists(target) && !Files.isWritable(target)) throw new IOException("File is not writable: " + target);
+        var temporary = Files.createTempFile(target.getParent(), ".mardexas-", ".tmp");
+        try {
+            if (Files.exists(target) && Files.getFileStore(target).supportsFileAttributeView("posix"))
+                Files.setPosixFilePermissions(temporary, Files.getPosixFilePermissions(target));
+            Files.writeString(temporary, content, StandardCharsets.UTF_8);
+            try {
+                Files.move(temporary, target, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (java.nio.file.AtomicMoveNotSupportedException unsupported) {
+                Files.move(temporary, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally { Files.deleteIfExists(temporary); }
     }
 
     private String normalizeLineEndings(String content) {

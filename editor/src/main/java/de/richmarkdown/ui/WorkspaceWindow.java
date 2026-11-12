@@ -100,13 +100,13 @@ public final class WorkspaceWindow extends Stage {
     public EditorWindow openFile(File file) {
         Path path = file.toPath().toAbsolutePath().normalize();
         for (var entry : documents.entrySet()) {
-            File current = entry.getValue().getCurrentFile();
+            File current = entry.getValue().openingFile() != null ? entry.getValue().openingFile() : entry.getValue().getCurrentFile();
             if (current != null && current.toPath().toAbsolutePath().normalize().equals(path)) {
                 tabs.getSelectionModel().select(entry.getKey()); return entry.getValue();
             }
         }
         EditorWindow active = activeDocument();
-        EditorWindow document = active != null && active.getCurrentFile() == null && !active.getEditor().isModified()
+        EditorWindow document = active != null && active.openingFile() == null && active.getCurrentFile() == null && !active.getEditor().isModified()
                 ? active : newDocument();
         document.openFileInPlace(file);
         return document;
@@ -114,6 +114,11 @@ public final class WorkspaceWindow extends Stage {
 
     public EditorWindow activeDocument() { return documents.get(tabs.getSelectionModel().getSelectedItem()); }
     public int documentCount() { return documents.size(); }
+    /** Snapshot barrier for the host's currently requested document operations. Call on FX, await off FX. */
+    public java.util.concurrent.CompletableFuture<Void> pendingFileOperations() {
+        return java.util.concurrent.CompletableFuture.allOf(documents.values().stream()
+                .map(EditorWindow::pendingFileOperation).toArray(java.util.concurrent.CompletableFuture[]::new));
+    }
     public void selectRelative(int offset) {
         if (!tabs.getTabs().isEmpty()) tabs.getSelectionModel().select(Math.floorMod(
                 tabs.getSelectionModel().getSelectedIndex() + offset, tabs.getTabs().size()));
@@ -175,8 +180,22 @@ public final class WorkspaceWindow extends Stage {
     public void documentSaved(EditorWindow document) {
         File file = document.getCurrentFile();
         if (file == null) return;
-        try { diskContents.put(document, fingerprint(file.toPath())); }
-        catch (IOException failure) { FeatureUi.error(this, failure); }
+        Path path = file.toPath().toAbsolutePath().normalize();
+        var knownFingerprint = document.getEditor().getDiskFingerprint();
+        if (knownFingerprint.isPresent()) {
+            diskContents.put(document, knownFingerprint.orElseThrow());
+            document.showExternalChangeNotice(null); refreshWatches(); return;
+        }
+        if (io.isShutdown()) return;
+        io.submit(() -> {
+            try {
+                String hash = fingerprint(path);
+                Platform.runLater(() -> {
+                    if (!disposed && documents.containsValue(document) && document.getCurrentFile() != null
+                            && path.equals(document.getCurrentFile().toPath().toAbsolutePath().normalize())) diskContents.put(document, hash);
+                });
+            } catch (IOException failure) { Platform.runLater(() -> { if (!disposed) FeatureUi.error(this, failure); }); }
+        });
         document.showExternalChangeNotice(null);
         refreshWatches();
     }
@@ -238,6 +257,30 @@ public final class WorkspaceWindow extends Stage {
                 : FeatureUi.text("Die Datei wurde außerhalb von Mardexas geändert.", "The file was changed outside Mardexas."));
     }
 
+    /** Hash potentially large files on the workspace worker before asking on FX. */
+    public java.util.concurrent.CompletableFuture<Boolean> confirmExternalOverwriteAsync(EditorWindow document, File destination) {
+        var result = new java.util.concurrent.CompletableFuture<Boolean>();
+        File current = document.getCurrentFile();
+        Path path = destination.toPath().toAbsolutePath().normalize();
+        if (current == null || !current.toPath().toAbsolutePath().normalize().equals(path)) return java.util.concurrent.CompletableFuture.completedFuture(true);
+        io.submit(() -> {
+            try {
+                String hash = Files.exists(path) ? fingerprint(path) : null;
+                Platform.runLater(() -> {
+                    if (disposed || !documents.containsValue(document)) { result.complete(false); return; }
+                    if (java.util.Objects.equals(hash, diskContents.get(document))) { result.complete(true); return; }
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                            FeatureUi.text("Die Datei wurde extern geändert. Mit dem Editorinhalt überschreiben?",
+                                    "The file changed externally. Overwrite it with the editor contents?"), ButtonType.YES, ButtonType.CANCEL);
+                    alert.initOwner(this);
+                    alert.setOnHidden(event -> result.complete(alert.getResult() == ButtonType.YES));
+                    alert.show();
+                });
+            } catch (IOException failure) { Platform.runLater(() -> result.completeExceptionally(failure)); }
+        });
+        return result;
+    }
+
     public boolean confirmExternalOverwrite(EditorWindow document, File destination) {
         File current = document.getCurrentFile();
         if (current == null || !current.toPath().toAbsolutePath().normalize().equals(destination.toPath().toAbsolutePath().normalize())) return true;
@@ -278,7 +321,11 @@ public final class WorkspaceWindow extends Stage {
                 EditorWindow document = openFile(path.toFile());
                 if (index == state.active()) active = document;
                 document.setReadOnly(entry.readOnly());
-                Platform.runLater(() -> { document.getEditor().goToPosition(entry.caret()); document.restoreScroll(entry.scroll()); });
+                document.pendingFileOperation().thenRun(() -> {
+                    if (!disposed && documents.containsValue(document)) {
+                        document.getEditor().goToPosition(entry.caret()); document.restoreScroll(entry.scroll());
+                    }
+                });
             }
             if (documents.isEmpty()) newDocument();
             if (active != null) {
@@ -294,7 +341,8 @@ public final class WorkspaceWindow extends Stage {
     public WorkspaceSession.State captureSession() {
         ArrayList<WorkspaceSession.Entry> entries = new ArrayList<>(); int active = 0;
         for (Tab tab : tabs.getTabs()) {
-            EditorWindow document = documents.get(tab); File file = document.getCurrentFile();
+            EditorWindow document = documents.get(tab);
+            File file = document.openingFile() != null ? document.openingFile() : document.getCurrentFile();
             if (file == null) continue;
             if (document == activeDocument()) active = entries.size();
             entries.add(new WorkspaceSession.Entry(file.getAbsolutePath(), Math.max(0, document.getEditor().getInternalCaretPosition()),

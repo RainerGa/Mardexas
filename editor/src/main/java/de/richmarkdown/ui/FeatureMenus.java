@@ -101,7 +101,7 @@ public final class FeatureMenus {
         issues.setTooltip(new javafx.scene.control.Tooltip(FeatureUi.text("Markdown-Prüfung öffnen", "Open Markdown checks")));
         issues.setOnMouseClicked(event -> window.showIssueCheckDialog());
         window.getStatusBar().getChildren().add(issues);
-        var live = new de.richmarkdown.features.checking.LiveMarkdownCheck(editor::getMarkdownSource,
+        var live = de.richmarkdown.features.checking.LiveMarkdownCheck.forEditor(editor,
                 () -> de.richmarkdown.features.checking.CheckingTools.directory(editor), result -> issues.setText(result.isEmpty() ? "" : "⚠ " + result.size()));
         Runnable changed = live::request;
         editor.addChangeListener(changed);

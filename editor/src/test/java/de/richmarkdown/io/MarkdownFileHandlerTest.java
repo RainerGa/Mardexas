@@ -41,6 +41,31 @@ class MarkdownFileHandlerTest {
     @TempDir
     Path tempDir;
 
+    @Test void readSnapshotHashesOriginalBytesBeforeNormalizingLineEndings() throws Exception {
+        Path path = tempDir.resolve("windows.md");
+        byte[] original = "first\r\nsecond\r".getBytes(StandardCharsets.UTF_8);
+        Files.write(path, original);
+        var snapshot = handler.readSnapshot(path.toFile());
+        assertEquals("first\nsecond\n", snapshot.content());
+        assertEquals(MarkdownFileHandler.fingerprint(original), snapshot.fingerprint());
+        Files.write(path, new byte[]{(byte) 0xff});
+        assertThrows(IOException.class, () -> handler.readSnapshot(path.toFile()));
+    }
+
+    @Test void atomicWritePreservesSymlinkAndTargetPermissions() throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue(Files.getFileStore(tempDir).supportsFileAttributeView("posix"));
+        Path target = tempDir.resolve("target.md"), link = tempDir.resolve("link.md");
+        Files.writeString(target, "before");
+        var permissions = java.nio.file.attribute.PosixFilePermissions.fromString("rw-r-----");
+        Files.setPosixFilePermissions(target, permissions);
+        Files.createSymbolicLink(link, target.getFileName());
+        handler.write(link.toFile(), "after");
+        assertTrue(Files.isSymbolicLink(link));
+        assertEquals("after", Files.readString(target));
+        assertEquals(permissions, Files.getPosixFilePermissions(target));
+        try (var files = Files.list(tempDir)) { assertEquals(2, files.count()); }
+    }
+
     @Test
     void writesAndReadsContent() throws IOException {
         File file = tempDir.resolve("test.md").toFile();

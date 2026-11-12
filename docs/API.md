@@ -103,8 +103,16 @@ or action execution. `setMarkdown`, open, format, insert and undo use RichTextAr
 actions and can complete on subsequent FX pulses. A return from such a method
 is not a document-loaded notification. Observe the control's document/text-length
 properties or wait for rendered pulses in GUI tests; do not block the FX thread.
-Large file reads/writes are synchronous in the current file API. A host needing
-background I/O can read UTF-8 on a worker and then apply text on the FX thread.
+Use `MarkdownEditor.openAsync(File)` / `saveAsync(File)` for UI file operations.
+Call on FX after skin creation. Reading, parsing, serialization and atomic file
+replacement run on a bounded shared worker. Their `CompletableFuture<Void>`
+completes on FX after installation/saved-state reconciliation; never `join()` or
+`get()` it on FX. A successful save clears dirty only if the captured buffer
+revision is still current. An obsolete load completes exceptionally with
+`CancellationException`, preserving intervening edits or a replacement document.
+`EditorWindow` file commands use this path; `pendingFileOperation()` is its
+completion barrier. The legacy `open`/`save` methods retain synchronous CPU/I/O
+for compatibility (legacy `open` still queues document installation).
 
 `EditorPane.close()` is idempotent and releases its live checking, speech,
 command listeners and UI-mode subscriptions. It does not ask to save, close the
@@ -135,7 +143,9 @@ Do not wrap one control in multiple MarkdownEditor instances.
 File operations do not open dialogs:
 
 ```java
-editor.open(file);             // UTF-8 Markdown, associated file changes on success
+editor.openAsync(file).thenRun(() -> updateHostTitle()); // Completion on FX
+editor.saveAsync(file).thenRun(() -> updateHostTitle()); // Error via exceptional completion
+editor.open(file);             // Legacy synchronous read/parse, queued installation
 editor.save(file);             // Save as / associate target, throws IOException
 editor.save();                 // Existing association; otherwise IllegalStateException
 editor.getCurrentFile();       // Optional<File>
@@ -144,7 +154,14 @@ editor.clear();                // Explicitly empties document and clears associa
 
 These low-level methods do not prompt before discarding or overwriting. The host
 handles that policy and IOException. `getMarkdownSource()` exports the current
-content; `getDocumentSnapshot()` exposes rich text for the pure engines.
+content without changing dirty; `getDocumentSnapshot()` returns an immutable,
+revision-cached rich-text snapshot for the pure engines. `getMarkdown()` retains
+its legacy saved-state side effect and must not be used for previews or recovery.
+`getDiskFingerprint()` exposes the hash of the last successful file operation's
+actual bytes, including original line endings when reading.
+`cancelPendingIo()` invalidates pending load/save UI callbacks when a standalone
+host disposes or replaces an editor. Accepted writes still finish in order;
+`EditorPane.close()` already invalidates its owned callbacks.
 `replaceDocument(...)` / range replacement provide undoable modifications; use
 `EditingCommands` for the existing selection/caret-preserving transformations.
 

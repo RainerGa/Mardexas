@@ -83,12 +83,14 @@ public final class WritingDashboard {
             if (previous != null) previous.cancel(true);
             long request = ++revision[0];
             Document snapshot = window.getEditor().getDocumentSnapshot();
-            Range range = currentRange(snapshot, Scope.values()[scope.getSelectionModel().getSelectedIndex()]);
-            String text = scopedText(snapshot, range.start(), range.end());
+            Scope selectedScope = Scope.values()[scope.getSelectionModel().getSelectedIndex()];
+            Range selectionRange = currentRange(snapshot, Scope.SELECTION);
+            int caret = Math.max(0, window.getEditorControl().getCaretPosition());
             statistics.setText(FeatureUi.text("Berechnung …", "Analyzing …"));
             pending.set(worker.submit(() -> {
                 try {
-                    var analysis = WritingMetrics.analyze(text);
+                    Range selected = range(snapshot, selectedScope, selectionRange.start(), selectionRange.end(), caret);
+                    var analysis = WritingMetrics.analyze(scopedText(snapshot, selected.start(), selected.end()));
                     javafx.application.Platform.runLater(() -> {
                         if (request != revision[0] || worker.isShutdown()) return;
                         var stats = analysis.statistics();

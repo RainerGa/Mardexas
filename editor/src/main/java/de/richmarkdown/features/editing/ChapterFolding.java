@@ -6,22 +6,33 @@ import de.richmarkdown.editor.MarkdownEditor;
 import java.util.Objects;
 
 /** View-only chapter folding. Any edit or navigation into hidden content safely unfolds it. */
-public final class ChapterFolding {
+public final class ChapterFolding implements AutoCloseable {
     private final MarkdownEditor editor;
     private int hiddenStart = -1, hiddenEnd = -1;
+    private final javafx.beans.value.ChangeListener<Number> caretChanged = (obs, old, value) -> {
+        caretMoved();
+    };
+    private final javafx.beans.value.ChangeListener<Selection> selectionChanged = (obs, old, selection) -> {
+        if (selection != null && selection.isDefined() && hiddenStart >= 0
+                && selection.getEnd() >= hiddenStart && selection.getStart() < hiddenEnd) expandAll();
+    };
+    private final javafx.beans.value.ChangeListener<Number> lengthChanged = (obs, old, value) -> expandAll();
+    private final Runnable changed = this::expandAll;
     public ChapterFolding(MarkdownEditor editor) {
         this.editor = Objects.requireNonNull(editor);
-        editor.getControl().caretPositionProperty().addListener((obs, old, value) -> {
-            int caret = editor.getInternalCaretPosition();
-            if (isHidden(caret)) expandAll();
-        });
-        editor.getControl().selectionProperty().addListener((obs, old, selection) -> {
-            if (selection != null && selection.isDefined() && hiddenStart >= 0
-                    && selection.getEnd() >= hiddenStart && selection.getStart() < hiddenEnd) expandAll();
-        });
-        editor.getControl().textLengthProperty().addListener((obs, old, value) -> expandAll());
-        editor.addChangeListener(this::expandAll);
+        editor.getControl().caretPositionProperty().addListener(caretChanged);
+        editor.getControl().selectionProperty().addListener(selectionChanged);
+        editor.getControl().textLengthProperty().addListener(lengthChanged);
+        editor.addChangeListener(changed);
     }
+    @Override public void close() {
+        editor.getControl().caretPositionProperty().removeListener(caretChanged);
+        editor.getControl().selectionProperty().removeListener(selectionChanged);
+        editor.getControl().textLengthProperty().removeListener(lengthChanged);
+        editor.removeChangeListener(changed);
+        expandAll();
+    }
+    private void caretMoved() { if (isHidden(editor.getInternalCaretPosition())) expandAll(); }
     public boolean isHidden(int internalPosition) {
         return hiddenStart >= 0 && internalPosition >= hiddenStart && internalPosition < hiddenEnd;
     }

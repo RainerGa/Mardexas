@@ -359,6 +359,12 @@ public final class I18n {
      *                Zoom-Controller angewandt
      * @throws IllegalArgumentException wenn der Wert NaN oder unendlich ist
      */
+    /** Writes window preferences together when closing a window. */
+    public static void saveViewPreferences(double percent, String wrapMode) {
+        if (!Double.isFinite(percent)) throw new IllegalArgumentException("Zoom percentage must be finite: " + percent);
+        settingsStore.saveAll(java.util.Map.of(ZOOM_PERCENT_KEY, Double.toString(percent), LINE_WRAP_MODE_KEY, wrapMode));
+    }
+
     public static void setZoomPercent(double percent) {
         if (!Double.isFinite(percent)) {
             throw new IllegalArgumentException("Zoom percentage must be finite: " + percent);

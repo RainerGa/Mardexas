@@ -67,7 +67,7 @@ class AutoSaveServiceTest {
 
     @AfterEach
     void tearDown() {
-        FxTestUtil.runAndWait(() -> { autoSave.stop(); stage.close(); });
+        FxTestUtil.runAndWait(() -> { autoSave.close(); stage.close(); });
     }
 
     private void invokeSaveIfModified() throws Exception {
@@ -80,6 +80,8 @@ class AutoSaveServiceTest {
                 throw new RuntimeException(e);
             }
         });
+        FxTestUtil.callAndWait(autoSave::pendingWrite).get(10, java.util.concurrent.TimeUnit.SECONDS);
+        FxTestUtil.flushFxEvents();
     }
 
     private void setModifiedContent(String text) {
@@ -112,6 +114,7 @@ class AutoSaveServiceTest {
         setModifiedContent("Testinhalt");
         assertTrue(FxTestUtil.callAndWait(editor::isModified), "Editor ist nach Einfügen modifiziert");
         invokeSaveIfModified();
+        assertTrue(FxTestUtil.callAndWait(editor::isModified), "Recovery must preserve unsaved changes");
 
         assertTrue(FxTestUtil.callAndWait(autoSave::hasRecoveryFile),
                 "Wiederherstellungsdatei wurde nach Modifikation erstellt");
@@ -131,6 +134,7 @@ class AutoSaveServiceTest {
         boolean recovered = FxTestUtil.callAndWait(autoSave::recover);
         FxTestUtil.flushFxEvents();
 
+        FxTestUtil.callAndWait(autoSave::pendingWrite).get(10, java.util.concurrent.TimeUnit.SECONDS);
         assertTrue(recovered, "recover() liefert true bei erfolgreicher Wiederherstellung");
         assertEquals("Wiederherstellungstext", FxTestUtil.callAndWait(editor::getMarkdown),
                 "Editor-Inhalt wurde aus Wiederherstellungsdatei wiederhergestellt");

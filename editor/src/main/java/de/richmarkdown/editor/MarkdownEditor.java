@@ -85,6 +85,19 @@ public class MarkdownEditor {
     private final RichTextArea control;
     private final MarkdownFileHandler fileHandler;
     private File currentFile;
+    private String diskFingerprint;
+    private com.gluonhq.richtextarea.model.TextBuffer snapshotBuffer;
+    private long snapshotRevision = -1;
+    private int snapshotLength = -1;
+    private com.gluonhq.richtextarea.model.Document snapshot;
+    private com.gluonhq.richtextarea.model.Document headingsSnapshot, statisticsSnapshot;
+    private List<DocumentHeading> cachedHeadings;
+    private DocumentStatistics cachedStatistics;
+    private volatile long ioGeneration;
+    private static final java.util.concurrent.ThreadPoolExecutor IO = new java.util.concurrent.ThreadPoolExecutor(
+            1, 1, 0, java.util.concurrent.TimeUnit.SECONDS, new java.util.concurrent.ArrayBlockingQueue<>(128), task -> {
+                Thread thread = new Thread(task, "mardexas-document-io"); thread.setDaemon(true); return thread;
+            });
 
     /**
      * Listener für Dokumentänderungen. Die Bibliothek bietet keine öffentliche
@@ -251,7 +264,9 @@ public class MarkdownEditor {
      */
     public void open(File file) throws IOException {
         Objects.requireNonNull(file, "file");
-        setMarkdown(fileHandler.read(file), file.toPath().toAbsolutePath().normalize().getParent());
+        var loaded = fileHandler.readSnapshot(file);
+        setMarkdown(loaded.content(), file.toPath().toAbsolutePath().normalize().getParent());
+        diskFingerprint = loaded.fingerprint();
         currentFile = file;
         // Das open() der Bibliothek läuft doppelt-asynchron (BasicAction +
         // ViewModel je ein runLater). markSaved() wird daher ebenfalls
@@ -263,9 +278,8 @@ public class MarkdownEditor {
     /**
      * Speichert das aktuelle Dokument als UTF-8-Markdown in die Zieldatei.
      *
-     * <p>{@link #getMarkdown()} synchronisiert das ViewModel und setzt dabei
-     * den Gespeichert-Status zurück (Bibliotheksverhalten) – ein separater
-     * Save ist hier nicht nötig.
+     * <p>Serialisiert einen Snapshot und bestätigt den Gespeichert-Status erst
+     * nach erfolgreichem Schreiben. Für UI-Aufrufe {@link #saveAsync(File)} verwenden.
      *
      * @param file Zieldatei
      * @throws IOException wenn die Datei nicht geschrieben werden kann
@@ -273,8 +287,11 @@ public class MarkdownEditor {
     public void save(File file) throws IOException {
         Objects.requireNonNull(file, "file");
         Path targetDirectory = file.toPath().toAbsolutePath().normalize().getParent();
-        fileHandler.write(file, markdownForDirectory(targetDirectory));
+        String markdown = new de.richmarkdown.markdown.MarkdownWriter().write(getDocumentSnapshot(), targetDirectory);
+        fileHandler.write(file, markdown);
         currentFile = file;
+        diskFingerprint = MarkdownFileHandler.fingerprint(markdown.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        markSaved();
     }
 
     /**
@@ -303,6 +320,9 @@ public class MarkdownEditor {
     public Optional<File> getCurrentFile() {
         return Optional.ofNullable(currentFile);
     }
+
+    /** SHA-256 of the exact bytes last read/written successfully for the associated file. */
+    public Optional<String> getDiskFingerprint() { return currentFile == null ? Optional.empty() : Optional.ofNullable(diskFingerprint); }
 
     /**
      * Liefert den Datei-Dienst (stateless UTF-8-I/O-Engine, teilt sich kein
@@ -335,6 +355,7 @@ public class MarkdownEditor {
      * noch keine eigene Datei zugeordnet ist.
      */
     public void clearCurrentFile() {
+        cancelPendingIo();
         currentFile = null;
     }
 
@@ -545,6 +566,7 @@ public class MarkdownEditor {
     }
 
     private void setMarkdown(String markdown, Path imageBaseDirectory) {
+        cancelPendingIo();
         com.gluonhq.richtextarea.model.Document document =
                 new de.richmarkdown.markdown.MarkdownParser().parseInto(markdown, imageBaseDirectory);
         // Kein notifyChanged(): die Bibliothek lädt asynchron (verschachteltes
@@ -565,6 +587,7 @@ public class MarkdownEditor {
         if (model == null || !control.isEditable()) {
             throw new IllegalStateException("Editor is not ready or is read-only");
         }
+        cancelPendingIo();
         model.replaceDocument(document, selection);
         notifyChanged();
     }
@@ -717,8 +740,10 @@ public class MarkdownEditor {
         }
         List<DocumentHeading> headings = new ArrayList<>();
         var buffer = viewModel.getTextBuffer();
-        String text = buffer.getText();
-        List<DecorationModel> models = buffer.getDecorationModelList(0, buffer.getTextLength());
+        var source = getDocumentSnapshot();
+        if (headingsSnapshot == source) return cachedHeadings;
+        String text = source.getText();
+        List<DecorationModel> models = source.getDecorations();
 
         // Decoration offsets refer to exported text; paragraph/caret offsets are
         // internal positions, where an image or emoji occupies a single unit.
@@ -745,7 +770,9 @@ public class MarkdownEditor {
             }
             start = end + 1;
         }
-        return headings;
+        headingsSnapshot = source;
+        cachedHeadings = List.copyOf(headings);
+        return cachedHeadings;
     }
 
     /**
@@ -765,7 +792,9 @@ public class MarkdownEditor {
         if (viewModel == null) {
             return DocumentStatistics.empty();
         }
-        String text = viewModel.getTextBuffer().getText(0, viewModel.getTextLength());
+        var source = getDocumentSnapshot();
+        if (statisticsSnapshot == source) return cachedStatistics;
+        String text = source.getText();
         int tables = 0;
         for (com.gluonhq.richtextarea.model.Paragraph paragraph : viewModel.getParagraphList()) {
             ParagraphDecoration decoration = paragraph.getDecoration();
@@ -775,13 +804,15 @@ public class MarkdownEditor {
         }
         int images = 0;
         List<DecorationModel> models =
-                viewModel.getTextBuffer().getDecorationModelList(0, viewModel.getTextLength());
+                source.getDecorations();
         for (DecorationModel model : models) {
             if (model.getDecoration() instanceof com.gluonhq.richtextarea.model.ImageDecoration) {
                 images++;
             }
         }
-        return DocumentStatistics.of(text, tables, images);
+        statisticsSnapshot = source;
+        cachedStatistics = DocumentStatistics.of(text, tables, images);
+        return cachedStatistics;
     }
 
     /**
@@ -969,19 +1000,80 @@ public class MarkdownEditor {
             throw new IllegalStateException("Editor is not ready");
         }
         var buffer = viewModel.getTextBuffer();
-        return new com.gluonhq.richtextarea.model.Document(buffer.getText(),
-                buffer.getDecorationModelList(0, buffer.getTextLength()), 0,
-                control.getPageFormat(), control.getHeadersFooters());
+        long revision = buffer.getRevision();
+        if (snapshot == null || buffer != snapshotBuffer || revision < 0 || revision != snapshotRevision || buffer.getTextLength() != snapshotLength
+                || !Objects.equals(snapshot.getPageFormat(), control.getPageFormat())
+                || !Objects.equals(snapshot.getHeadersFooters(), control.getHeadersFooters())) {
+            snapshot = new com.gluonhq.richtextarea.model.Document(buffer.getText(),
+                    List.copyOf(buffer.getDecorationModelList(0, buffer.getTextLength())), 0,
+                    control.getPageFormat(), List.copyOf(control.getHeadersFooters()));
+            snapshotBuffer = buffer; snapshotRevision = revision; snapshotLength = buffer.getTextLength();
+        }
+        return snapshot;
     }
 
-    private String markdownForDirectory(Path imageBaseDirectory) {
-        RichTextAreaViewModel viewModel = viewModel();
-        if (viewModel == null) {
-            return "";
-        }
-        new com.gluonhq.richtextarea.viewmodel.ActionCmdFactory().save().apply(viewModel);
-        return new de.richmarkdown.markdown.MarkdownWriter()
-                .write(viewModel.getDocument(), imageBaseDirectory);
+    /** Ordered background serialization and atomic I/O. Completion runs on FX after saved-state reconciliation. */
+    public java.util.concurrent.CompletableFuture<Void> saveAsync(File file) {
+        Objects.requireNonNull(file, "file");
+        var captured = getDocumentSnapshot();
+        var buffer = viewModel().getTextBuffer();
+        long revision = buffer.getRevision(), generation = ioGeneration;
+        Path directory = file.toPath().toAbsolutePath().normalize().getParent();
+        return background(() -> {
+            String markdown = new de.richmarkdown.markdown.MarkdownWriter().write(captured, directory);
+            fileHandler.write(file, markdown);
+            return MarkdownFileHandler.fingerprint(markdown.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }, hash -> {
+            if (generation != ioGeneration || viewModel() == null || viewModel().getTextBuffer() != buffer) return;
+            currentFile = file;
+            diskFingerprint = hash;
+            if (buffer.getRevision() == revision) markSaved();
+        });
+    }
+
+    /** Reads and parses off FX; stale loads never replace a newer document or an intervening edit. */
+    public java.util.concurrent.CompletableFuture<Void> openAsync(File file) {
+        Objects.requireNonNull(file, "file");
+        long generation = ++ioGeneration;
+        var buffer = viewModel() == null ? null : viewModel().getTextBuffer();
+        long revision = buffer == null ? -1 : buffer.getRevision();
+        return background(() -> {
+            if (generation != ioGeneration) throw new java.util.concurrent.CancellationException("Load superseded");
+            var loaded = fileHandler.readSnapshot(file);
+            return new LoadedDocument(new de.richmarkdown.markdown.MarkdownParser().parseInto(loaded.content(),
+                    file.toPath().toAbsolutePath().normalize().getParent()), loaded.fingerprint());
+        }, loaded -> {
+            if (generation != ioGeneration || viewModel() == null || viewModel().getTextBuffer() != buffer
+                    || buffer.getRevision() != revision) throw new java.util.concurrent.CancellationException("Load superseded");
+            viewModel().openImmediately(loaded.document());
+            currentFile = file;
+            diskFingerprint = loaded.fingerprint();
+            markSaved();
+        });
+    }
+
+    private record LoadedDocument(com.gluonhq.richtextarea.model.Document document, String fingerprint) { }
+
+    /** Invalidates pending load/save callbacks when a host disposes or replaces the document. */
+    public void cancelPendingIo() { ioGeneration++; }
+
+    private <T> java.util.concurrent.CompletableFuture<Void> background(java.util.concurrent.Callable<T> operation,
+                                                                      java.util.function.Consumer<T> complete) {
+        var future = new java.util.concurrent.CompletableFuture<Void>();
+        try {
+            IO.execute(() -> {
+                try {
+                    T value = operation.call();
+                    Platform.runLater(() -> {
+                        try { complete.accept(value); future.complete(null); }
+                        catch (RuntimeException failure) { future.completeExceptionally(failure); }
+                    });
+                } catch (Exception failure) {
+                    Platform.runLater(() -> future.completeExceptionally(failure));
+                }
+            });
+        } catch (java.util.concurrent.RejectedExecutionException busy) { future.completeExceptionally(busy); }
+        return future;
     }
 
     private Path currentFileDirectory() {

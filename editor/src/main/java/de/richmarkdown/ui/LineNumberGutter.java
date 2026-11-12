@@ -51,7 +51,7 @@ import java.util.List;
  * Größenänderung und beim Einblenden. Die Nummern bezeichnen sichtbare
  * Absatzzeilen und sind keine Markdown-Quellzeilenzähler.
  */
-public class LineNumberGutter extends Region {
+public class LineNumberGutter extends Region implements AutoCloseable {
 
     private static final String GUTTER_STYLE_CLASS = "line-number-gutter";
     private static final String NUMBER_STYLE_CLASS = "line-number";
@@ -69,8 +69,29 @@ public class LineNumberGutter extends Region {
     private ScrollBar wiredScrollBar;
     private javafx.beans.InvalidationListener scrollBarListener;
     private final List<Label> numberLabels = new ArrayList<>();
-    private boolean syncScheduled;
-    private int layoutRetries;
+    private boolean dirty;
+    private boolean closed;
+    private javafx.scene.Scene pulseScene;
+    private final Runnable postLayout = () -> { if (dirty && !closed) { dirty = false; sync(); } };
+    private final List<Runnable> removers = new ArrayList<>();
+    private final javafx.event.EventHandler<ScrollEvent> scrolled = event -> requestSync();
+
+    private void observe(javafx.beans.Observable observable) {
+        javafx.beans.InvalidationListener listener = ignored -> {
+            if (observable instanceof javafx.beans.value.ObservableValue<?> value) value.getValue();
+            requestSync();
+        };
+        observable.addListener(listener);
+        removers.add(() -> observable.removeListener(listener));
+    }
+
+    @Override public void close() {
+        closed = true;
+        if (pulseScene != null) pulseScene.removePostLayoutPulseListener(postLayout);
+        if (wiredScrollBar != null && scrollBarListener != null) wiredScrollBar.valueProperty().removeListener(scrollBarListener);
+        control.removeEventHandler(ScrollEvent.SCROLL, scrolled);
+        removers.forEach(Runnable::run); removers.clear();
+    }
 
     /**
      * Erstellt eine zunächst ausgeblendete Zeilennummernleiste für ein Editor-Control.
@@ -92,17 +113,14 @@ public class LineNumberGutter extends Region {
         setPrefWidth(MIN_WIDTH);
         minWidthProperty().bind(prefWidthProperty());
 
-        control.sceneProperty().addListener((obs, old, nv) -> requestSync());
-        control.skinProperty().addListener((obs, old, nv) -> paragraphListView = null);
-        control.caretPositionProperty().addListener((obs, old, nv) -> requestSync());
-        control.documentProperty().addListener((obs, old, nv) -> requestSync());
-        control.textLengthProperty().addListener((obs, old, nv) -> requestSync());
-        control.addEventHandler(ScrollEvent.SCROLL, event -> requestSync());
-        zoomPercent.addListener((obs, old, nv) -> requestSync());
+        observe(control.sceneProperty());
+        javafx.beans.InvalidationListener skinChanged = ignored -> { paragraphListView = null; requestSync(); };
+        control.skinProperty().addListener(skinChanged);
+        removers.add(() -> control.skinProperty().removeListener(skinChanged));
+        observe(control.caretPositionProperty()); observe(control.documentProperty()); observe(control.textLengthProperty());
+        control.addEventHandler(ScrollEvent.SCROLL, scrolled);
+        observe(zoomPercent); observe(widthProperty()); observe(heightProperty()); observe(sceneProperty()); observe(visibleProperty());
 
-        widthProperty().addListener((obs, old, nv) -> requestSync());
-        heightProperty().addListener((obs, old, nv) -> requestSync());
-        sceneProperty().addListener((obs, old, nv) -> requestSync());
     }
 
     /**
@@ -116,45 +134,32 @@ public class LineNumberGutter extends Region {
         requestSync();
     }
 
+    private final Rectangle viewportClip = new Rectangle();
+
     @Override
     protected void layoutChildren() {
         // Ausschnitt auf die eigene Fläche begrenzen, damit Nummern nicht in den
         // Editor hineinragen
-        setClip(new Rectangle(0, 0, getWidth(), getHeight()));
+        viewportClip.setWidth(getWidth()); viewportClip.setHeight(getHeight());
+        if (getClip() != viewportClip) setClip(viewportClip);
         super.layoutChildren();
-        sync();
+        requestSync();
     }
 
     // ---------- Interna ----------
 
-    /** Synchronisation anstoßen (sofort plus einmalig nach dem Layout-Pulse). */
+    /** Coalesces geometry reads until layout has completed for this pulse. */
     void requestSync() {
-        if (!Platform.isFxApplicationThread()) {
-            Platform.runLater(this::requestSync);
-            return;
+        if (!Platform.isFxApplicationThread()) { Platform.runLater(this::requestSync); return; }
+        if (closed) return;
+        var scene = getScene();
+        if (scene != pulseScene) {
+            if (pulseScene != null) pulseScene.removePostLayoutPulseListener(postLayout);
+            pulseScene = scene;
+            if (scene != null) scene.addPostLayoutPulseListener(postLayout);
         }
-        if (!isVisible() || control.getScene() == null) {
-            return;
-        }
-        sync();
-        if (getWidth() <= 0 || getHeight() <= 0) {
-            // Direkt nach dem Einblenden ist die Anzeige noch nicht gelayoutet
-            // (der Container legt sie erst auf dem nächsten Puls aus) – solange
-            // begrenzt erneut versuchen.
-            if (layoutRetries < 10) {
-                layoutRetries++;
-                Platform.runLater(this::requestSync);
-            }
-            return;
-        }
-        layoutRetries = 0;
-        if (!syncScheduled) {
-            syncScheduled = true;
-            Platform.runLater(() -> {
-                syncScheduled = false;
-                sync();
-            });
-        }
+        dirty = true;
+        if (isVisible() && scene != null) Platform.requestNextPulse();
     }
 
     /** Liest die sichtbaren Editor-Zellen und positioniert die Nummern. */
@@ -173,7 +178,8 @@ public class LineNumberGutter extends Region {
         double zoomFactor = Math.max(0.01, zoomPercent.get() / 100d);
         double fontSize = BASE_FONT_SIZE * zoomFactor;
 
-        List<ListCell<?>> visible = new ArrayList<>();
+        record VisibleCell(int index, double y) { }
+        List<VisibleCell> visible = new ArrayList<>();
         int itemCount = listView.getItems().size();
         for (Node node : listView.lookupAll(".list-cell")) {
             if (node instanceof ListCell<?> cell && cell.getIndex() >= 0
@@ -181,11 +187,11 @@ public class LineNumberGutter extends Region {
                 Point2D top = cell.localToScene(0, 0);
                 Point2D bottom = cell.localToScene(0, cell.getHeight());
                 if (top.getY() < gutterBottom && bottom.getY() > gutterTop) {
-                    visible.add(cell);
+                    visible.add(new VisibleCell(cell.getIndex(), top.getY() - gutterTop + TOP_OFFSET));
                 }
             }
         }
-        visible.sort(Comparator.comparingInt(ListCell::getIndex));
+        visible.sort(Comparator.comparingInt(VisibleCell::index));
 
         while (numberLabels.size() < visible.size()) {
             Label label = new Label();
@@ -202,14 +208,14 @@ public class LineNumberGutter extends Region {
                 label.setVisible(false);
                 continue;
             }
-            ListCell<?> cell = visible.get(i);
-            label.setText(String.valueOf(cell.getIndex() + 1));
-            label.setFont(Font.font(fontSize));
-            label.setStyle("-fx-text-fill: #8a8a8a; -fx-font-size: " + fontSize + "px;");
+            VisibleCell cell = visible.get(i);
+            label.setText(String.valueOf(cell.index() + 1));
+            if (label.getFont().getSize() != fontSize) label.setFont(Font.font(fontSize));
+            if (label.getStyle().isEmpty()) label.setStyle("-fx-text-fill: #8a8a8a;");
             double labelWidth = label.prefWidth(-1);
             double labelHeight = label.prefHeight(labelWidth);
             double x = Math.max(H_PADDING / 2, getWidth() - H_PADDING - labelWidth);
-            double y = cell.localToScene(0, 0).getY() - gutterTop + TOP_OFFSET;
+            double y = cell.y();
             label.resizeRelocate(x, y, labelWidth, labelHeight);
             label.setVisible(true);
             maxNumberWidth = Math.max(maxNumberWidth, labelWidth);

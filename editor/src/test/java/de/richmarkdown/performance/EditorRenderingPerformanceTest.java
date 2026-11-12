@@ -51,11 +51,24 @@ class EditorRenderingPerformanceTest {
     @EnabledIfSystemProperty(named = "perf.stress", matches = "true")
     void threeThousandParagraphStress() throws Exception { runScenario(3000); }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"table", "long-inline"})
+    @EnabledIfSystemProperty(named = "perf.shapes", matches = "true")
+    void largeSingleParagraphShapes(String shape) throws Exception {
+        String special = shape.equals("table")
+                ? "| A | B | C |\n| --- | --- | --- |\n" + "| **eins** | zwei | `drei` |\n".repeat(500)
+                : "Text **fett** und *kursiv* mit `code`. ".repeat(1000);
+        runScenario("render-" + shape, PerformanceDocuments.markdown(200) + special, 200);
+    }
+
     private void runScenario(int paragraphs) throws Exception {
-        System.out.println("PERF render-" + paragraphs + " starting");
-        String source = PerformanceDocuments.markdown(paragraphs);
+        runScenario("render-" + paragraphs, PerformanceDocuments.markdown(paragraphs), paragraphs);
+    }
+
+    private void runScenario(String name, String source, int paragraphs) throws Exception {
+        System.out.println("PERF " + name + " starting");
         var expected = new MarkdownParser().parseInto(source);
-        var report = new PerformanceReport("render-" + paragraphs);
+        var report = new PerformanceReport(name);
         try {
             onFx(() -> {
                 editor = new MarkdownEditor();

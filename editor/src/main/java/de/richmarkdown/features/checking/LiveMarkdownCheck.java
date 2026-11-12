@@ -11,7 +11,7 @@ import java.util.function.*;
 
 /** Debounced single-worker checking. Source capture and results stay on the FX thread. */
 public final class LiveMarkdownCheck implements AutoCloseable {
-    private final Supplier<String> source;
+    private final Supplier<Supplier<String>> source;
     private final Supplier<Path> directory;
     private final Consumer<List<MarkdownIssue>> consumer;
     private final PauseTransition debounce = new PauseTransition(Duration.millis(600));
@@ -22,22 +22,35 @@ public final class LiveMarkdownCheck implements AutoCloseable {
     private long revision;
     private boolean closed;
     public LiveMarkdownCheck(Supplier<String> source, Supplier<Path> directory, Consumer<List<MarkdownIssue>> consumer) {
+        this(() -> { String captured = source.get(); return () -> captured; }, directory, consumer, true);
+    }
+    private LiveMarkdownCheck(Supplier<Supplier<String>> source, Supplier<Path> directory,
+                              Consumer<List<MarkdownIssue>> consumer, boolean snapshot) {
         this.source = Objects.requireNonNull(source); this.directory = Objects.requireNonNull(directory); this.consumer = Objects.requireNonNull(consumer);
         debounce.setOnFinished(event -> checkNow());
+    }
+    /** Capture a detached document on FX; serialize it only inside the checker worker. */
+    public static LiveMarkdownCheck forEditor(de.richmarkdown.editor.MarkdownEditor editor, Supplier<Path> directory,
+                                              Consumer<List<MarkdownIssue>> consumer) {
+        return new LiveMarkdownCheck(() -> {
+            var document = editor.getDocumentSnapshot();
+            Path base = directory.get();
+            return () -> new de.richmarkdown.markdown.MarkdownWriter().write(document, base);
+        }, directory, consumer, true);
     }
     public void request() { if (!closed) { revision++; debounce.playFromStart(); if (pending != null) pending.cancel(true); } }
     public void ignore(MarkdownIssue issue) { ignored.add(issue.message()); request(); }
     public void clearIgnored() { ignored.clear(); request(); }
     public void checkNow() {
         if (closed) return; debounce.stop(); long requested = ++revision; if (pending != null) pending.cancel(true);
-        String text; Path path;
+        Supplier<String> text; Path path;
         try { text = source.get(); path = directory.get(); }
         catch (RuntimeException failure) { consumer.accept(List.of(failed(failure))); return; }
         Set<String> exclusions = Set.copyOf(ignored);
         try {
             WORKERS.purge(); pending = WORKERS.submit(() -> {
                 List<MarkdownIssue> issues;
-                try { issues = AdvancedMarkdownCheck.check(text, path).stream().filter(issue -> !exclusions.contains(issue.message())).toList(); }
+                try { issues = AdvancedMarkdownCheck.check(text.get(), path).stream().filter(issue -> !exclusions.contains(issue.message())).toList(); }
                 catch (CancellationException interrupted) { return; }
                 catch (RuntimeException failure) { issues = List.of(failed(failure)); }
                 if (Thread.currentThread().isInterrupted()) return;

@@ -1145,8 +1145,7 @@ class MarkdownEditorTest {
     @Test
     void findEngine_selectMatchRevealsOffscreenHit() throws InterruptedException {
         FxTestUtil.runAndWait(() -> editor.setMarkdown(longDocumentWithTarget(60)));
-        flush();
-        flush();
+        de.richmarkdown.GuiTestSupport.pulses();
 
         de.richmarkdown.findreplace.FindReplaceEngine engine =
                 FxTestUtil.callAndWait(() -> new de.richmarkdown.findreplace.FindReplaceEngine(
@@ -1157,8 +1156,7 @@ class MarkdownEditorTest {
                         new de.richmarkdown.findreplace.FindReplaceEngine.FindOptions()).get(0));
 
         FxTestUtil.runAndWait(() -> paragraphListView().scrollTo(0));
-        flush();
-        flush();
+        de.richmarkdown.GuiTestSupport.pulses();
         int targetIndex = paragraphIndexOfPosition(
                 FxTestUtil.callAndWait(() -> target.getEnd()));
         assertFalse(isParagraphVisible(targetIndex),
@@ -1167,7 +1165,18 @@ class MarkdownEditorTest {
         FxTestUtil.runAndWait(() -> engine.selectMatch(target, false));
         de.richmarkdown.GuiTestSupport.pulses();
 
-        de.richmarkdown.GuiTestSupport.awaitCondition(() -> isParagraphVisible(targetIndex), "Search target must render");
+        try {
+            de.richmarkdown.GuiTestSupport.awaitCondition(() -> isParagraphVisible(targetIndex), "Search target must render");
+        } catch (AssertionError failure) {
+            throw new AssertionError(FxTestUtil.callAndWait(() -> "Target=" + targetIndex
+                    + ", selection=" + rta.getSelection() + ", caret=" + rta.getCaretPosition()
+                    + ", editor=" + rta.localToScreen(rta.getBoundsInLocal())
+                    + ", cells=" + paragraphListView().lookupAll(".list-cell").stream()
+                            .filter(ListCell.class::isInstance).map(cell -> {
+                                ListCell<?> item = (ListCell<?>) cell;
+                                return item.getIndex() + ":" + item.localToScreen(item.getBoundsInLocal());
+                            }).toList()), failure);
+        }
         assertTrue(isParagraphVisible(targetIndex),
                 "Markierter Treffer muss nach selectMatch sichtbar sein");
         Selection selection = FxTestUtil.callAndWait(() -> rta.getSelection());

@@ -1,16 +1,14 @@
 # Packaging and release validation
 
-Work takes place on `Packaging_and_IntegrationAPI`. GitHub authentication,
-pushing this branch, and executing the Windows/macOS runners are deferred to
-the maintainer. Local success on Linux is not evidence of a Windows/macOS pass.
+Work takes place on `Packaging_and_IntegrationAPI`. CI and release packages target
+Linux and Windows. Local Linux checks do not replace Windows runner validation.
 
 ## Required release matrix
 
 All builds use Java 25 and JavaFX 25.0.4. Native builds use GraalVM CE 25.0.2
 and support Linux x86-64 and Windows x86-64 only. GraalVM Native Image targets
-for macOS Intel and Apple Silicon have been removed. macOS Intel uses JVM
-packages and regular JavaFX tests. Apple Silicon has been removed from all
-automated build, test and release targets.
+for macOS Intel and Apple Silicon have been removed. Both macOS architectures
+are excluded from all automated build, test and release targets.
 All workflow jobs select Python 3.12 explicitly with `setup-python`, including its
 Windows `python3` alias, rather than depending on the runner's default interpreter.
 See [GitHub's Python setup guidance](https://docs.github.com/en/actions/tutorials/build-and-test-code/python)
@@ -20,11 +18,10 @@ and the [Windows tool-cache installer](https://github.com/actions/python-version
 | --- | --- | --- |
 | Linux x86-64 | Ubuntu 24.04 | Portable TAR.GZ, DEB, RPM, Flatpak, FAT JAR, native TAR.GZ |
 | Windows x86-64 | Windows 2025 | Portable ZIP, MSI, EXE, FAT JAR, native TAR.GZ |
-| macOS Intel | macOS 15 Intel | Portable ZIP, DMG, PKG, FAT JAR |
 | Sources | Ubuntu 24.04 | Source TAR.GZ including the actual RichTextArea fork sources |
 | Integration library | Ubuntu 24.04 | ZIP with custom Maven artifacts, Javadoc, command reference and demo sources |
 
-This produces 17 binary/source assets. `release-inventory.py` requires every
+This produces 13 binary/source assets. `release-inventory.py` requires every
 one, rejects stale versions, unexpected or empty files, and generates
 `SHA256SUMS`. The release workflow requires all jobs to succeed before
 publication; rendering evidence is retained separately and is not published
@@ -32,8 +29,8 @@ as a user package. A missing member of an upload glob cannot silently pass
 the final inventory check.
 
 The FAT-JAR builder installs its pinned reactor dependencies before running
-the separate runtime-dependency copy. This also works on clean Windows and
-macOS runners without previously cached custom Maven artifacts.
+the separate runtime-dependency copy. This also works on clean Windows
+runners without previously cached custom Maven artifacts.
 
 ## Build and test locally
 
@@ -47,17 +44,16 @@ export PATH="$JAVA_HOME/bin:$PATH"
 mvn --batch-mode --no-transfer-progress -Pfork-tests verify
 python3 -B -m unittest discover -s packaging -p 'test_*.py'
 
-export JAVAFX_PLATFORM=linux # win, mac, or mac-aarch64 on matching hosts
+export JAVAFX_PLATFORM=linux # win on a matching host
 bash packaging/build-app-image.sh
-bash packaging/build-installers.sh     # optionally: deb, rpm, msi, exe, dmg, pkg
+bash packaging/build-installers.sh     # optionally: deb, rpm, msi, exe
 bash packaging/build-fat-jar.sh
 bash packaging/build-native-image.sh   # linux or win only; JAVA_HOME must contain native-image
 bash packaging/build-library.sh       # thin JARs, Javadoc, commands and demos
 ```
 
 The installer script builds only types supported by the chosen platform.
-Linux needs `dpkg-deb`, `fakeroot`, and RPM tooling; Windows needs WiX;
-macOS needs the system installer tooling. Installer formats cannot be
+Linux needs `dpkg-deb`, `fakeroot`, and RPM tooling; Windows needs WiX. Installer formats cannot be
 cross-compiled from another operating system. The app image must be built
 first, so installers reuse exactly its runtime, launcher options, and notices.
 

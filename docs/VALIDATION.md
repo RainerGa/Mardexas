@@ -2,6 +2,12 @@
 
 ## Mardexas 1.1.0 release preparation (2026-11-12)
 
+The final supported CI/release matrix contains Linux and Windows only.
+macOS Intel and Apple Silicon jobs and packages have been removed at the
+maintainer's request. The release inventory requires 13 packages plus checksums;
+a regression test prevents macOS runner targets from returning to the workflows.
+The earlier macOS investigation below describes superseded validation work.
+
 Full isolated JDK 25 Maven verification with `-Pfork-tests` passed: 116
 RichTextArea model tests, 1,200 editor tests and 13 integration-demo tests;
 zero failures or errors. One editor test requires an installed printer and

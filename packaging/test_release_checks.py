@@ -372,14 +372,20 @@ class GraalVmTargetsTest(unittest.TestCase):
 
 
 class ReleaseInventoryTest(unittest.TestCase):
-    def test_native_assets_are_linux_and_windows_only_and_macos_jvm_packages_remain(self):
+    def test_automated_build_and_release_workflows_have_no_macos_targets(self):
+        project = Path(__file__).resolve().parent.parent
+        for name in ('.github/workflows/ci.yml', '.github/workflows/release-packages.yml',
+                     'rich-text-area/.github/workflows/build.yml'):
+            with self.subTest(workflow=name):
+                self.assertNotIn('macos-', (project / name).read_text())
+
+    def test_release_assets_are_linux_and_windows_only(self):
         names = load('release-inventory').expected_assets('1.2.3')
         self.assertEqual({
             'Mardexas-1.2.3-linux-x86_64-native.tar.gz',
             'Mardexas-1.2.3-windows-x86_64-native.tar.gz',
         }, {name for name in names if name.endswith('-native.tar.gz')})
-        for suffix in ('-portable.zip', '.dmg', '.pkg', '-fat.jar'):
-            self.assertIn(f'Mardexas-1.2.3-macos-x86_64{suffix}', names)
+        self.assertFalse(any('macos' in name for name in names))
         self.assertFalse(any('aarch64' in name for name in names))
 
     def test_complete_release_has_reproducible_checksums(self):
@@ -387,10 +393,10 @@ class ReleaseInventoryTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             names = checker.expected_assets('1.2.3')
-            self.assertEqual(17, len(names))
+            self.assertEqual(13, len(names))
             for name in names:
                 (root / name).write_bytes(name.encode())
-            self.assertEqual(17, checker.inventory(root, '1.2.3'))
+            self.assertEqual(13, checker.inventory(root, '1.2.3'))
             before = (root / 'SHA256SUMS').read_text()
             for line in before.splitlines():
                 digest, name = line.split('  ')

@@ -273,109 +273,6 @@ jobs:
           path: editor/target/portable-check/win/
           if-no-files-found: warn
 
-  macos:
-    needs: verify
-    name: macOS portable and installers (${{ matrix.architecture }})
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: macos-15-intel
-            architecture: x86_64
-    steps:
-      - name: Check out source and pinned RichTextArea fork
-        uses: actions/checkout@v7.0.1
-        with:
-          submodules: recursive
-
-      - name: Set up reproducible Python tooling
-        uses: actions/setup-python@v7.1.0
-        with:
-          python-version: '3.12'
-
-      - name: Set up Java
-        uses: actions/setup-java@v6.2.0
-        with:
-          distribution: temurin
-          java-version: "25"
-          cache: maven
-
-      - name: Determine release version and architecture
-        id: version
-        shell: bash
-        run: |
-          pom_version="$(sed -n 's/^[[:space:]]*<version>\([^<]*\)<\/version>[[:space:]]*$/\1/p' editor/pom.xml | head -n1)"
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            version="${GITHUB_REF_NAME#v}"
-          else
-            version="$pom_version"
-          fi
-          if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
-            echo "Release tags must use numeric versions such as v1.2.3." >&2
-            exit 1
-          fi
-          if [[ "$version" != "$pom_version" ]]; then
-            echo "Release tag version ($version) must match editor/pom.xml version ($pom_version)." >&2
-            exit 1
-          fi
-          case "$(uname -m)" in
-            x86_64)
-              platform="mac"
-              architecture="x86_64"
-              ;;
-            *)
-              echo "Unsupported macOS architecture: $(uname -m)" >&2
-              exit 1
-              ;;
-          esac
-          echo "value=$version" >> "$GITHUB_OUTPUT"
-          echo "platform=$platform" >> "$GITHUB_OUTPUT"
-          echo "architecture=$architecture" >> "$GITHUB_OUTPUT"
-
-      - name: Build macOS application image
-        env:
-          JAVAFX_PLATFORM: ${{ steps.version.outputs.platform }}
-          APP_VERSION: ${{ steps.version.outputs.value }}
-        run: packaging/build-app-image.sh
-
-      - name: Build macOS DMG and PKG installers
-        env:
-          JAVAFX_PLATFORM: ${{ steps.version.outputs.platform }}
-        run: packaging/build-installers.sh
-
-      - name: Create portable macOS ZIP
-        env:
-          APP_VERSION: ${{ steps.version.outputs.value }}
-          ARCHITECTURE: ${{ steps.version.outputs.architecture }}
-        run: |
-          archive="dist/Mardexas-${APP_VERSION}-macos-${ARCHITECTURE}-portable.zip"
-          app_dir="dist/${{ steps.version.outputs.platform }}"
-          ditto -c -k --sequesterRsrc --keepParent \
-            "$app_dir/Mardexas.app" "$archive"
-          zip -q -j "$archive" \
-            "$app_dir/Mardexas-GPL-3.0.txt" \
-            "$app_dir/RichTextArea-GPL-3.0.txt" \
-            "$app_dir/THIRD-PARTY-NOTICES.md"
-
-      - name: Upload macOS release asset
-        uses: actions/upload-artifact@v7.0.2
-        with:
-          name: mardexas-macos-${{ matrix.architecture }}
-          path: |
-            dist/Mardexas-*-macos-*-portable.zip
-            dist/Mardexas-*-macos-*.dmg
-            dist/Mardexas-*-macos-*.pkg
-          if-no-files-found: error
-
-      - name: Retain GUI and font evidence
-        if: always()
-        uses: actions/upload-artifact@v7.0.2
-        with:
-          name: package-evidence-macos-${{ matrix.architecture }}
-          path: editor/target/portable-check/${{ steps.version.outputs.platform }}/
-          if-no-files-found: warn
-
   fat-jar:
     needs: verify
     name: Executable FAT JAR (${{ matrix.label }})
@@ -388,8 +285,6 @@ jobs:
             label: linux-x86_64
           - runner: windows-2025
             label: windows-x86_64
-          - runner: macos-15-intel
-            label: macos-x86_64
     defaults:
       run:
         shell: bash
@@ -528,7 +423,6 @@ jobs:
     needs:
       - linux
       - windows
-      - macos
       - fat-jar
       - native-image
     runs-on: ubuntu-24.04

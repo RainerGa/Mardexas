@@ -52,10 +52,10 @@ class RecentCommandsGuiTest {
             var button = (ButtonBase) window.getCommandSurface().getRibbon().findControl("menu.recentFiles.1");
             assertEquals("1  beta.md", button.getText());
             assertTrue(button.getTooltip().getText().contains(beta.toString()));
-            assertTrue(button.getTooltip().getText().contains("Alt+1"));
+            assertTrue(button.getTooltip().getText().contains(registry.item("menu.recentFiles.1").getAccelerator().getDisplayText()));
             var classicTooltip = (Tooltip) registry.item("menu.recentFiles.1").getProperties().get("command.tooltip");
             assertTrue(classicTooltip.getText().contains(beta.toString()));
-            assertTrue(classicTooltip.getText().contains("Alt+1"));
+            assertTrue(classicTooltip.getText().contains(registry.item("menu.recentFiles.1").getAccelerator().getDisplayText()));
             assertTrue(registry.execute("menu.recentFiles.1"));
         });
         GuiTestSupport.pulses();

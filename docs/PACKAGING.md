@@ -103,6 +103,23 @@ this check validates complete, positive font metrics and pixel counts rather
 than comparing sandbox font names with host font names. It is a runtime smoke
 check and does not install the exported bundle into the user's application list.
 
+JavaFX 25 uses X11 on Linux. The Flatpak therefore grants the X11 socket and
+sets `GDK_BACKEND=x11`; Wayland sessions require XWayland. Do not replace this
+permission with `fallback-x11`: it hides X11 when Wayland is available, causing
+`Unable to open DISPLAY`. The build-host smoke check uses X11 explicitly and
+does not validate an installed bundle in a real Wayland session.
+
+For an already installed 1.1.0 bundle, apply this per-user correction (also
+works when the application was installed system-wide), then start normally:
+
+```bash
+flatpak override --user --nosocket=wayland --nosocket=fallback-x11 --socket=x11 --env=GDK_BACKEND=x11 io.github.rainerga.Mardexas
+flatpak run io.github.rainerga.Mardexas
+```
+
+The app-image launcher also enables native access for `javafx.graphics` to
+avoid the JDK's restricted native-library loading warning.
+
 The old Windows native metadata contained no reflection registrations.
 JavaFX selects its DirectWrite font factory reflectively and uses JNI font
 structures; target-specific metadata now includes these types and the D3D

@@ -71,6 +71,7 @@ JPACKAGE_ARGS=(
     --module-path "$INPUT_DIR"
     --dest "$OUTPUT_DIR"
     --module RichMarkDownEditor/de.richmarkdown.Launcher
+    --java-options "--enable-native-access=javafx.graphics"
     --java-options "--add-exports=com.gluonhq.richtextarea/com.gluonhq.richtextarea.viewmodel=RichMarkDownEditor"
 )
 

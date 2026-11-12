@@ -5,8 +5,10 @@ sdk: org.freedesktop.Sdk
 command: mardexas
 finish-args:
   - --share=ipc
-  - --socket=wayland
-  - --socket=fallback-x11
+  # JavaFX 25 GTK uses X11, including XWayland in Wayland sessions.
+  # fallback-x11 would hide X11 whenever a Wayland socket is available.
+  - --socket=x11
+  - --env=GDK_BACKEND=x11
   - --device=dri
   # --filesystem=home ist notwendig, damit der Editor beliebige Markdown-Dateien
   # im Home-Verzeichnis öffnen und speichern kann. Der FileChooser-Portal

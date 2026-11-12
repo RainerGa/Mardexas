@@ -153,10 +153,12 @@ class StructureHeadingRegressionTest {
         EditorWindow window = FxTestUtil.callAndWait(() -> {
             EditorWindow created = new EditorWindow();
             stage = created;
+            created.setStructureViewVisible(true);
             created.show();
             created.openFile(file.toFile());
             return created;
         });
+        window.pendingFileOperation().get(20, java.util.concurrent.TimeUnit.SECONDS);
         flush();
         FxTestUtil.runAndWait(() -> {
             var editor = window.getEditor();

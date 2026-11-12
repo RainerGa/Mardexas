@@ -23,7 +23,7 @@ class EditingFeaturesTest {
             stage = new Stage(); stage.setScene(new Scene(new HBox(structure, editor.getControl()), 900, 500)); stage.show();
         }); flush();
     }
-    @AfterEach void close() { FxTestUtil.runAndWait(stage::close); }
+    @AfterEach void close() { FxTestUtil.runAndWait(() -> { structure.close(); stage.close(); }); }
     private void flush() { for (int i = 0; i < 4; i++) FxTestUtil.flushFxEvents(); }
     private void open(String text) { FxTestUtil.runAndWait(() -> editor.setMarkdown(text)); flush(); }
     private String text() { return FxTestUtil.callAndWait(() -> editor.getDocumentSnapshot().getText()); }
@@ -62,47 +62,50 @@ class EditingFeaturesTest {
         open("# Alpha\n\n😀 body\n\n## Child\n\ninside\n\n# Beta\n\ntail");
         String original = text();
         FxTestUtil.runAndWait(() -> {
-            var folding = new ChapterFolding(editor);
-            var chapter = ChapterModel.chapters(editor.getDocumentSnapshot()).getFirst();
-            var skin = (RichTextAreaSkin) editor.getControl().getSkin();
-            int before = skin.getVisibleParagraphStarts().size();
-            folding.fold(chapter);
-            assertTrue(folding.isFolded());
-            assertTrue(skin.getVisibleParagraphStarts().size() < before);
-            assertEquals(original, editor.getDocumentSnapshot().getText());
-            int target = skin.getViewModel().getTextBuffer().getInternalSelection(new Selection(chapter.bodyStart(), chapter.end())).getStart();
-            editor.goToPosition(target);
-            assertFalse(folding.isFolded());
-            assertEquals(before, skin.getVisibleParagraphStarts().size());
-            assertFalse(editor.isModified());
+            try (var folding = new ChapterFolding(editor)) {
+                var chapter = ChapterModel.chapters(editor.getDocumentSnapshot()).getFirst();
+                var skin = (RichTextAreaSkin) editor.getControl().getSkin();
+                int before = skin.getVisibleParagraphStarts().size();
+                folding.fold(chapter);
+                assertTrue(folding.isFolded());
+                assertTrue(skin.getVisibleParagraphStarts().size() < before);
+                assertEquals(original, editor.getDocumentSnapshot().getText());
+                int target = skin.getViewModel().getTextBuffer().getInternalSelection(new Selection(chapter.bodyStart(), chapter.end())).getStart();
+                editor.goToPosition(target);
+                assertFalse(folding.isFolded());
+                assertEquals(before, skin.getVisibleParagraphStarts().size());
+                assertFalse(editor.isModified());
+            }
         });
     }
     @Test void foldingUnfoldsOnSelectionAndEdit() {
         open("# Alpha\n\nbody\n\n# Beta\n\ntail");
         FxTestUtil.runAndWait(() -> {
-            var folding = new ChapterFolding(editor);
-            var chapter = ChapterModel.chapters(editor.getDocumentSnapshot()).getFirst();
-            folding.fold(chapter);
-            ((RichTextAreaSkin) editor.getControl().getSkin()).getViewModel().setSelection(new Selection(0, chapter.end()));
-            assertFalse(folding.isFolded());
-            folding.fold(chapter);
-            new EditingCommands(editor).paste("inserted", false);
-            assertFalse(folding.isFolded());
+            try (var folding = new ChapterFolding(editor)) {
+                var chapter = ChapterModel.chapters(editor.getDocumentSnapshot()).getFirst();
+                folding.fold(chapter);
+                ((RichTextAreaSkin) editor.getControl().getSkin()).getViewModel().setSelection(new Selection(0, chapter.end()));
+                assertFalse(folding.isFolded());
+                folding.fold(chapter);
+                new EditingCommands(editor).paste("inserted", false);
+                assertFalse(folding.isFolded());
+            }
         });
     }
     @Test void searchRevealExpandsHiddenTargetWithoutMovingCaret() {
         open("# Alpha\n\nbody\n\n## Child\n\ninside\n\n# Beta\n\ntail");
         FxTestUtil.runAndWait(() -> {
-            var folding = new ChapterFolding(editor);
-            var chapter = ChapterModel.chapters(editor.getDocumentSnapshot()).getFirst();
-            var skin = (RichTextAreaSkin) editor.getControl().getSkin();
-            int before = skin.getVisibleParagraphStarts().size();
-            folding.fold(chapter); int caret = editor.getInternalCaretPosition();
-            int target = skin.getViewModel().getTextBuffer().getInternalSelection(new Selection(chapter.bodyStart(), chapter.end())).getStart();
-            editor.revealPosition(target);
-            assertEquals(before, skin.getVisibleParagraphStarts().size());
-            assertEquals(caret, editor.getInternalCaretPosition());
-            assertFalse(editor.isModified());
+            try (var folding = new ChapterFolding(editor)) {
+                var chapter = ChapterModel.chapters(editor.getDocumentSnapshot()).getFirst();
+                var skin = (RichTextAreaSkin) editor.getControl().getSkin();
+                int before = skin.getVisibleParagraphStarts().size();
+                folding.fold(chapter); int caret = editor.getInternalCaretPosition();
+                int target = skin.getViewModel().getTextBuffer().getInternalSelection(new Selection(chapter.bodyStart(), chapter.end())).getStart();
+                editor.revealPosition(target);
+                assertEquals(before, skin.getVisibleParagraphStarts().size());
+                assertEquals(caret, editor.getInternalCaretPosition());
+                assertFalse(editor.isModified());
+            }
         });
     }
     @Test void plainAndInterpretedPasteAreUndoableAndDiffer() {

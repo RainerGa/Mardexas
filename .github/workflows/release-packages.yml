@@ -35,7 +35,7 @@ jobs:
           cache: maven
       - name: Verify application and packaging tests
         run: |
-          mvn --batch-mode --no-transfer-progress verify
+          mvn --batch-mode --no-transfer-progress -Pfork-tests verify
           python3 -B -m unittest discover -s packaging -p 'test_*.py'
       - name: Retain test and coverage evidence
         if: always()
@@ -555,6 +555,7 @@ jobs:
           path: dist
           merge-multiple: true
       - name: Validate release tag matches package version
+        id: release
         shell: bash
         env:
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
@@ -571,6 +572,8 @@ jobs:
             echo "Release tag version ($tag_version) does not match package version ($asset_version)." >&2
             exit 1
           fi
+          test -s "releases/$tag_version.md"
+          echo "notes=releases/$tag_version.md" >> "$GITHUB_OUTPUT"
       - name: Require every target and generate checksums
         env:
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
@@ -580,6 +583,7 @@ jobs:
         with:
           draft: false
           tag_name: ${{ inputs.release_tag || github.ref_name }}
+          body_path: ${{ steps.release.outputs.notes }}
           generate_release_notes: ${{ inputs.release_tag == '' }}
           overwrite_files: true
           files: dist/*

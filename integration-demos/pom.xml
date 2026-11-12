@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.richmarkdown</groupId>
   <artifactId>mardexas-integration-demos</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <properties>
     <!-- Allow Maven checks to use a separate output directory from the IDE. -->
     <mardexas.build.directory>${project.basedir}/target</mardexas.build.directory>
@@ -14,7 +14,7 @@
     <dependency>
       <groupId>de.richmarkdown</groupId>
       <artifactId>RichMarkDownEditor</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

@@ -210,7 +210,7 @@ public class LineNumberGutter extends Region implements AutoCloseable {
             }
             VisibleCell cell = visible.get(i);
             label.setText(String.valueOf(cell.index() + 1));
-            if (label.getFont().getSize() != fontSize) label.setFont(Font.font(fontSize));
+            if (Double.compare(label.getFont().getSize(), fontSize) != 0) label.setFont(Font.font(fontSize));
             if (label.getStyle().isEmpty()) label.setStyle("-fx-text-fill: #8a8a8a;");
             double labelWidth = label.prefWidth(-1);
             double labelHeight = label.prefHeight(labelWidth);

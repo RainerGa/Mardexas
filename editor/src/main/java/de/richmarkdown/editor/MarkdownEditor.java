@@ -93,7 +93,7 @@ public class MarkdownEditor {
     private com.gluonhq.richtextarea.model.Document headingsSnapshot, statisticsSnapshot;
     private List<DocumentHeading> cachedHeadings;
     private DocumentStatistics cachedStatistics;
-    private volatile long ioGeneration;
+    private final java.util.concurrent.atomic.AtomicLong ioGeneration = new java.util.concurrent.atomic.AtomicLong();
     private static final java.util.concurrent.ThreadPoolExecutor IO = new java.util.concurrent.ThreadPoolExecutor(
             1, 1, 0, java.util.concurrent.TimeUnit.SECONDS, new java.util.concurrent.ArrayBlockingQueue<>(128), task -> {
                 Thread thread = new Thread(task, "mardexas-document-io"); thread.setDaemon(true); return thread;
@@ -1017,14 +1017,14 @@ public class MarkdownEditor {
         Objects.requireNonNull(file, "file");
         var captured = getDocumentSnapshot();
         var buffer = viewModel().getTextBuffer();
-        long revision = buffer.getRevision(), generation = ioGeneration;
+        long revision = buffer.getRevision(), generation = ioGeneration.get();
         Path directory = file.toPath().toAbsolutePath().normalize().getParent();
         return background(() -> {
             String markdown = new de.richmarkdown.markdown.MarkdownWriter().write(captured, directory);
             fileHandler.write(file, markdown);
             return MarkdownFileHandler.fingerprint(markdown.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }, hash -> {
-            if (generation != ioGeneration || viewModel() == null || viewModel().getTextBuffer() != buffer) return;
+            if (generation != ioGeneration.get() || viewModel() == null || viewModel().getTextBuffer() != buffer) return;
             currentFile = file;
             diskFingerprint = hash;
             if (buffer.getRevision() == revision) markSaved();
@@ -1034,16 +1034,16 @@ public class MarkdownEditor {
     /** Reads and parses off FX; stale loads never replace a newer document or an intervening edit. */
     public java.util.concurrent.CompletableFuture<Void> openAsync(File file) {
         Objects.requireNonNull(file, "file");
-        long generation = ++ioGeneration;
+        long generation = ioGeneration.incrementAndGet();
         var buffer = viewModel() == null ? null : viewModel().getTextBuffer();
         long revision = buffer == null ? -1 : buffer.getRevision();
         return background(() -> {
-            if (generation != ioGeneration) throw new java.util.concurrent.CancellationException("Load superseded");
+            if (generation != ioGeneration.get()) throw new java.util.concurrent.CancellationException("Load superseded");
             var loaded = fileHandler.readSnapshot(file);
             return new LoadedDocument(new de.richmarkdown.markdown.MarkdownParser().parseInto(loaded.content(),
                     file.toPath().toAbsolutePath().normalize().getParent()), loaded.fingerprint());
         }, loaded -> {
-            if (generation != ioGeneration || viewModel() == null || viewModel().getTextBuffer() != buffer
+            if (generation != ioGeneration.get() || viewModel() == null || viewModel().getTextBuffer() != buffer
                     || buffer.getRevision() != revision) throw new java.util.concurrent.CancellationException("Load superseded");
             viewModel().openImmediately(loaded.document());
             currentFile = file;
@@ -1055,7 +1055,7 @@ public class MarkdownEditor {
     private record LoadedDocument(com.gluonhq.richtextarea.model.Document document, String fingerprint) { }
 
     /** Invalidates pending load/save callbacks when a host disposes or replaces the document. */
-    public void cancelPendingIo() { ioGeneration++; }
+    public void cancelPendingIo() { ioGeneration.incrementAndGet(); }
 
     private <T> java.util.concurrent.CompletableFuture<Void> background(java.util.concurrent.Callable<T> operation,
                                                                       java.util.function.Consumer<T> complete) {

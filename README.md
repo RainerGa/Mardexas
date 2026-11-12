@@ -101,7 +101,7 @@ Mardexas can be embedded into your own JavaFX application as an interactive edit
 <dependency>
   <groupId>de.richmarkdown</groupId>
   <artifactId>RichMarkDownEditor</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 

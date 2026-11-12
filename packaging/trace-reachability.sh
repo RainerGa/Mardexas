@@ -18,6 +18,7 @@ MODE="${1:-all}"
 TRACE_BASE="$PROJECT_DIR/packaging/native-image/trace-output"
 TRACE_DIR="$TRACE_BASE/$PLATFORM"
 INPUT_DIR="$PROJECT_DIR/editor/target/native-image-input"
+APP_VERSION="$(sed -n 's/^[[:space:]]*<version>\([^<]*\)<\/version>[[:space:]]*$/\1/p' "$PROJECT_DIR/editor/pom.xml" | head -n1)"
 
 case "$PLATFORM" in
     linux)
@@ -52,12 +53,12 @@ fi
 echo "GraalVM java: $GRAALVM_JAVA"
 
 prepare_input() {
-    if [[ ! -f "$INPUT_DIR/RichMarkDownEditor-1.0.0.jar" ]]; then
+    if [[ ! -f "$INPUT_DIR/RichMarkDownEditor-$APP_VERSION.jar" ]]; then
         echo "native-image-input fehlt – baue Modul-Input wie build-native-image.sh ..."
         (cd "$PROJECT_DIR" && mvn --batch-mode --no-transfer-progress -DskipTests \
             -pl editor -am install)
         mkdir -p "$INPUT_DIR"
-        cp "$PROJECT_DIR/editor/target/RichMarkDownEditor-1.0.0.jar" "$INPUT_DIR/"
+        cp "$PROJECT_DIR/editor/target/RichMarkDownEditor-$APP_VERSION.jar" "$INPUT_DIR/"
         mvn --batch-mode --no-transfer-progress -f "$PROJECT_DIR/editor/pom.xml" \
             -DincludeScope=runtime -DoutputDirectory="$INPUT_DIR" dependency:copy-dependencies
     fi

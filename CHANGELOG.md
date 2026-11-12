@@ -6,6 +6,24 @@ in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-11-12
+
+### Added
+- Extended find/replace, navigation history, configurable wrapping and document statistics.
+- Editing commands, snippets, templates, link checks, document comparison and print options.
+- Public JavaFX embedding API, disposable host-menu contributions and ten integration demos.
+- Asynchronous file operations, revision-cached document snapshots and performance regressions.
+- Integration library ZIP, source archive and package/font verification with release checksums.
+
+### Changed
+- Updated the RichTextArea fork to 3.5-RG, including indexed buffers and virtualized layout improvements.
+- Reduced repeated parsing, serialization and auxiliary-view work for large documents.
+- Moved recovery writes and settings persistence away from the JavaFX application thread.
+- Updated GitHub Actions and runner images; corrected macOS Monocle keyboard handling.
+- Limited GraalVM native targets to Linux and Windows; retained macOS JVM packages.
+
+See [release notes](releases/1.1.0.md) for package selection and current limitations.
+
 ## [1.0.0] - 2026-10-16
 
 ### Added

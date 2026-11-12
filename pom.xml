@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.richmarkdown</groupId>
   <artifactId>Mardexas</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <packaging>pom</packaging>
   <name>Mardexas</name>
   <description>Mardexas (RichMarkDownEditor) — desktop Markdown editor with a rich-text WYSIWYG interface for Linux, Windows, and macOS. Write Markdown visually and save UTF-8 CommonMark/GFM files. Built with JavaFX 25.</description>

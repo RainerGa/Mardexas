@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.richmarkdown</groupId>
   <artifactId>RichMarkDownEditor</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <name>RichMarkDownEditor</name>
   <description>Word-ähnlicher WYSIWYG-Markdown-Editor auf Basis von rich-text-area</description>
   <licenses>
@@ -20,7 +20,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>25</maven.compiler.release>
     <javafx.version>25.0.4</javafx.version>
-    <richtextarea.version>3.0-RG</richtextarea.version>
+    <richtextarea.version>3.5-RG</richtextarea.version>
     <junit.version>5.11.3</junit.version>
     <testfx.version>4.0.19-gluon</testfx.version>
     <monocle.version>21.0.2</monocle.version>
@@ -169,7 +169,6 @@
             <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
             <sourceDirectory>${project.basedir}/src/test/java</sourceDirectory>
           </sourceDirectories>
-          <suppressions>checkstyle-suppressions.xml</suppressions>
         </configuration>
         <executions>
           <execution>

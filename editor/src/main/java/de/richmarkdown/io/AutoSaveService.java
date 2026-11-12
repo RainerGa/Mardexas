@@ -42,6 +42,7 @@ import java.nio.file.Path;
  */
 public final class AutoSaveService implements AutoCloseable {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(AutoSaveService.class.getName());
     private static final String AUTOSAVE_FILE_NAME = "autosave.md";
     private static final int DEFAULT_INTERVAL_MS = 300_000; // 5 Minuten
 
@@ -55,7 +56,7 @@ public final class AutoSaveService implements AutoCloseable {
     private boolean saving;
 
     /** Completion barrier for hosts/tests; never wait on it from the FX thread. */
-    public java.util.concurrent.CompletableFuture<Void> pendingWrite() { return pending; }
+    public java.util.concurrent.CompletableFuture<Void> pendingWrite() { return pending.copy(); }
 
     /**
      * Erstellt den Autosave-Dienst. Der Timer laeuft nur, wenn das Fenster
@@ -147,7 +148,7 @@ public final class AutoSaveService implements AutoCloseable {
     public void deleteRecoveryFile() {
         pending = java.util.concurrent.CompletableFuture.runAsync(() -> {
             try { Files.deleteIfExists(recoveryFile); }
-            catch (IOException ignored) { /* recovery cleanup is best effort */ }
+            catch (IOException failure) { LOG.log(java.util.logging.Level.WARNING, "Could not delete recovery file", failure); }
         }, worker);
     }
 
@@ -167,7 +168,7 @@ public final class AutoSaveService implements AutoCloseable {
             try {
                 new MarkdownFileHandler().write(recoveryFile.toFile(),
                         new de.richmarkdown.markdown.MarkdownWriter().write(snapshot, directory));
-            } catch (IOException ignored) { /* recovery must not block editing */ }
+            } catch (IOException failure) { LOG.log(java.util.logging.Level.WARNING, "Could not write recovery file", failure); }
         }, worker);
         pending.whenComplete((ignored, failure) -> javafx.application.Platform.runLater(() -> saving = false));
     }

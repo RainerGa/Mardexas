@@ -37,7 +37,7 @@ jobs:
           cache: maven
 
       - name: Tests ausführen
-        run: mvn --batch-mode --no-transfer-progress clean verify
+        run: mvn --batch-mode --no-transfer-progress -Pfork-tests clean verify
 
       - name: Testberichte sichern
         if: always()

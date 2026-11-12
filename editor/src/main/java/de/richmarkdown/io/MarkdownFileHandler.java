@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Datei-I/O für Markdown-Dokumente (PROJEKTPLAN 5.2, 7.1).
@@ -88,7 +89,9 @@ public class MarkdownFileHandler {
         // Preserve symlink targets rather than replacing the link itself.
         if (Files.isSymbolicLink(target)) target = target.toRealPath();
         if (Files.exists(target) && !Files.isWritable(target)) throw new IOException("File is not writable: " + target);
-        var temporary = Files.createTempFile(target.getParent(), ".mardexas-", ".tmp");
+        Path directory = target.getParent();
+        if (directory == null) throw new IOException("Target has no parent directory: " + target);
+        var temporary = Files.createTempFile(directory, ".mardexas-", ".tmp");
         try {
             if (Files.exists(target) && Files.getFileStore(target).supportsFileAttributeView("posix"))
                 Files.setPosixFilePermissions(temporary, Files.getPosixFilePermissions(target));

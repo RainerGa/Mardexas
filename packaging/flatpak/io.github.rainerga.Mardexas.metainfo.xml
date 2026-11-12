@@ -43,6 +43,11 @@
   </categories>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="1.1.0" date="2026-11-12">
+      <description>
+        <p>New editing and workspace tools, an embeddable JavaFX API, improved large-document performance, asynchronous file operations, and updated desktop packages.</p>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-10-22">
       <description>
         <p>Release 1.0.0 featuring true WYSIWYG editing, GFM table support, search and replace, document statistics, line numbers, and localization in 10 languages.</p>

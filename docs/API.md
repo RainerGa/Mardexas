@@ -22,14 +22,14 @@ mvn verify
 mvn -pl integration-demos -am install
 ```
 
-Application/library artifact: `de.richmarkdown:RichMarkDownEditor:1.0.0`.
+Application/library artifact: `de.richmarkdown:RichMarkDownEditor:1.1.0`.
 Use the **thin** JAR as a dependency, rather than an executable FAT JAR:
 
 ```xml
 <dependency>
   <groupId>de.richmarkdown</groupId>
   <artifactId>RichMarkDownEditor</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 
@@ -40,14 +40,15 @@ module my.novel.application {
 ```
 
 `javafx.controls` and `com.gluonhq.richtextarea` are transitive module requirements.
-`java.desktop` and `java.prefs` are internal requirements, not transitive ones.
+`java.prefs` is also transitive because the public print API exposes preferences;
+`java.desktop` is an internal requirement.
 The pinned RichTextArea fork exports its viewmodel package: consumers need no
 `--add-exports` or `--add-opens`. Native JavaFX loading on JDK 25 should be enabled
 with `--enable-native-access=javafx.graphics`. Compile and run with matching
 JavaFX native libraries for the host architecture.
 
 `bash packaging/build-library.sh` creates
-`dist/Mardexas-1.0.0-library.zip`, containing the three custom artifacts and their
+`dist/Mardexas-1.1.0-library.zip`, containing the three custom artifacts and their
 POMs in `repository/`, generated `javadoc/`, this reference, the complete command
 catalog, third-party notices and the executable demo project. Point a Maven
 repository at the extracted directory, for example:

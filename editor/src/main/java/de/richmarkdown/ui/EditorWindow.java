@@ -46,7 +46,6 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.text.MessageFormat;
@@ -72,7 +71,7 @@ import java.text.MessageFormat;
  */
 public class EditorWindow extends Stage {
     private java.util.concurrent.CompletableFuture<Void> pendingFileOperation = java.util.concurrent.CompletableFuture.completedFuture(null);
-    private long fileOperationRevision;
+    private final java.util.concurrent.atomic.AtomicLong fileOperationRevision = new java.util.concurrent.atomic.AtomicLong();
     private boolean featuresDisposed;
     private File openingFile;
     File openingFile() { return openingFile; }
@@ -716,7 +715,7 @@ public class EditorWindow extends Stage {
     public void addFeatureDisposer(Runnable disposer) { featureDisposers.add(disposer); }
     public void removeFeatureDisposer(Runnable disposer) { featureDisposers.remove(disposer); }
     public void disposeFeatures() {
-        featuresDisposed = true; fileOperationRevision++;
+        featuresDisposed = true; fileOperationRevision.incrementAndGet();
         editor.cancelPendingIo();
         structureView.close(); lineNumberGutter.close();
         var disposers = List.copyOf(featureDisposers);
@@ -832,13 +831,13 @@ public class EditorWindow extends Stage {
      * @param file Zieldatei
      */
     public void saveToFile(File file) {
-        long request = ++fileOperationRevision;
+        long request = fileOperationRevision.incrementAndGet();
         var allowed = workspace == null ? java.util.concurrent.CompletableFuture.completedFuture(true)
                 : workspace.confirmExternalOverwriteAsync(this, file);
-        pendingFileOperation = allowed.thenCompose(confirmed -> confirmed && !featuresDisposed && request == fileOperationRevision ? editor.saveAsync(file)
+        pendingFileOperation = allowed.thenCompose(confirmed -> confirmed && !featuresDisposed && request == fileOperationRevision.get() ? editor.saveAsync(file)
                 : java.util.concurrent.CompletableFuture.failedFuture(new java.util.concurrent.CancellationException()));
         pendingFileOperation = pendingFileOperation.whenComplete((ignored, failure) -> {
-            if (featuresDisposed || request != fileOperationRevision) return;
+            if (featuresDisposed || request != fileOperationRevision.get()) return;
             if (failure == null) {
                 if (workspace != null) workspace.documentSaved(this);
                 lastError = null;
@@ -1272,10 +1271,10 @@ public class EditorWindow extends Stage {
 
     private void loadFile(File file) {
         openingFile = file;
-        long request = ++fileOperationRevision;
+        long request = fileOperationRevision.incrementAndGet();
         setReadOnly(false);
         pendingFileOperation = editor.openAsync(file).whenComplete((ignored, failure) -> {
-            if (featuresDisposed || request != fileOperationRevision) return;
+            if (featuresDisposed || request != fileOperationRevision.get()) return;
             openingFile = null;
             if (failure == null) {
                 if (workspace != null) workspace.documentSaved(this);

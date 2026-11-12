@@ -1,5 +1,23 @@
 # Local validation and remaining platform checks
 
+## Mardexas 1.1.0 release preparation (2026-11-12)
+
+Full isolated JDK 25 Maven verification with `-Pfork-tests` passed: 116
+RichTextArea model tests, 1,200 editor tests and 13 integration-demo tests;
+zero failures or errors. One editor test requires an installed printer and
+was skipped. Checkstyle and SpotBugs passed with zero findings.
+
+Separate source compilation with the installed Eclipse ECJ 3.46.200 compiler
+and the active VS Code workspace problem settings passed for editor main/test,
+RichTextArea main and integration-demo main/test sources without diagnostics.
+This checks the compiler directly; the live IDE Problems view was not queried.
+All 46 packaging and 12 checkout-script tests passed; actionlint and shell
+syntax checks passed. Cross-platform results must be checked on GitHub runners.
+
+Evidence: `/tmp/mardexas-1.1-final-verify.log`,
+`/tmp/mardexas-release-ecj.log`,
+`/tmp/mardexas-1.1-packaging-tests.log`.
+
 ## GitHub CI repairs (2026-11-07)
 
 The failed CI run `42356582515` was inspected for Linux, Windows and macOS.

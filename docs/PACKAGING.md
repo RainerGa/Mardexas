@@ -40,7 +40,7 @@ packaging tools:
 git submodule update --init --recursive
 export JAVA_HOME=/path/to/jdk-25
 export PATH="$JAVA_HOME/bin:$PATH"
-mvn --batch-mode --no-transfer-progress verify
+mvn --batch-mode --no-transfer-progress -Pfork-tests verify
 python3 -B -m unittest discover -s packaging -p 'test_*.py'
 
 export JAVAFX_PLATFORM=linux # win, mac, or mac-aarch64 on matching hosts
@@ -64,9 +64,10 @@ with a different compiler. They retain SpotBugs checks during `install` and
 perform their own executable GUI checks. A packaging invocation alone does
 not replace `mvn verify`.
 
-The RichTextArea fork's inherited upstream tests were already disabled and
-do not compile against this fork's current API. Both test execution and test
-compilation are skipped in that module; application tests remain enabled.
+The RichTextArea fork's inherited upstream GUI tests do not compile against
+the fork's current API. The `fork-tests` profile selects the compatible model
+regressions; CI and release verification enable it alongside the application
+and integration-demo suites. Legacy API-mismatched tests remain excluded.
 
 FAT JARs contain only the host's JavaFX natives. A combined Intel/ARM macOS
 JAR would overwrite identically named `.dylib` entries. `verify-fat-jar.py`

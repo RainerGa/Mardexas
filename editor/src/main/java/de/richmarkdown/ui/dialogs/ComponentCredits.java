@@ -30,9 +30,9 @@ public final class ComponentCredits {
     private static final String APACHE = "https://www.apache.org/licenses/LICENSE-2.0";
     private static final String CLASSPATH = "https://openjdk.org/legal/gplv2+ce.html";
     private static final List<Component> COMPONENTS = List.of(
-        new Component("application", Group.APPLICATION, "Mardexas", "1.0.0", "Rainer Garbotz",
+        new Component("application", Group.APPLICATION, "Mardexas", "1.1.0", "Rainer Garbotz",
             "GPL-3.0-or-later", "https://github.com/RainerGa/Mardexas", GPL),
-        new Component("rich-text-area", Group.RUNTIME, "RichTextArea fork", "3.0-RG",
+        new Component("rich-text-area", Group.RUNTIME, "RichTextArea fork", "3.5-RG",
             "Gluon / Rainer Garbotz", "GPL-3.0",
             "https://github.com/RainerGa/rich-text-area", GPL),
         new Component("emoji", Group.RUNTIME, "Mardexas Noto Emoji (Gluon fork)", "1.1.0-mardexas-1", "Gluon / Rainer Garbotz",

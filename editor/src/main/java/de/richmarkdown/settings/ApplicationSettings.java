@@ -53,6 +53,7 @@ public final class ApplicationSettings {
     private static final String FILE_NAME = "settings.properties";
     private static final String APPLICATION_DIRECTORY = "RichMarkDownEditor";
 
+    private final Object persistenceLock = new Object();
     private final Path settingsFile;
     private final boolean inMemory;
 
@@ -151,14 +152,16 @@ public final class ApplicationSettings {
     }
 
     /** Persists a group with one read/write, preserving unrelated settings and skipping unchanged groups. */
-    public synchronized void saveAll(java.util.Map<String, String> values) {
-        if (inMemory || values.isEmpty()) return;
-        Properties properties = readProperties();
-        boolean changed = values.entrySet().stream()
-                .anyMatch(entry -> !java.util.Objects.equals(properties.getProperty(entry.getKey()), entry.getValue()));
-        if (!changed) return;
-        properties.putAll(values);
-        writeProperties(properties);
+    public void saveAll(java.util.Map<String, String> values) {
+        synchronized (persistenceLock) {
+            if (inMemory || values.isEmpty()) return;
+            Properties properties = readProperties();
+            boolean changed = values.entrySet().stream()
+                    .anyMatch(entry -> !java.util.Objects.equals(properties.getProperty(entry.getKey()), entry.getValue()));
+            if (!changed) return;
+            properties.putAll(values);
+            writeProperties(properties);
+        }
     }
 
     /**
@@ -172,15 +175,17 @@ public final class ApplicationSettings {
     }
 
     private Properties readProperties() {
-        Properties properties = new Properties();
-        if (inMemory || settingsFile == null || !Files.exists(settingsFile)) {
-            return properties;
-        }
-        try (Reader reader = Files.newBufferedReader(settingsFile, StandardCharsets.UTF_8)) {
-            properties.load(reader);
-            return properties;
-        } catch (IOException e) {
-            throw new UncheckedIOException("Could not read " + settingsFile, e);
+        synchronized (persistenceLock) {
+            Properties properties = new Properties();
+            if (inMemory || settingsFile == null || !Files.exists(settingsFile)) {
+                return properties;
+            }
+            try (Reader reader = Files.newBufferedReader(settingsFile, StandardCharsets.UTF_8)) {
+                properties.load(reader);
+                return properties;
+            } catch (IOException e) {
+                throw new UncheckedIOException("Could not read " + settingsFile, e);
+            }
         }
     }
 
@@ -227,26 +232,28 @@ public final class ApplicationSettings {
      *
      * @param filePath Pfad der Datei
      */
-    public synchronized void addRecentFile(String filePath) {
-        if (inMemory) {
-            return;
+    public void addRecentFile(String filePath) {
+        synchronized (persistenceLock) {
+            if (inMemory) {
+                return;
+            }
+            Properties properties = readProperties();
+            List<String> files = recentFiles(properties);
+            files.remove(filePath);
+            files.add(0, filePath);
+            if (files.size() > 10) {
+                files = files.subList(0, 10);
+            }
+            // Clear existing recent file entries
+            for (int i = 0; i < 10; i++) {
+                properties.remove("recentFile." + i);
+            }
+            // Write updated list
+            for (int i = 0; i < files.size(); i++) {
+                properties.setProperty("recentFile." + i, files.get(i));
+            }
+            writeProperties(properties);
         }
-        Properties properties = readProperties();
-        List<String> files = recentFiles(properties);
-        files.remove(filePath);
-        files.add(0, filePath);
-        if (files.size() > 10) {
-            files = files.subList(0, 10);
-        }
-        // Clear existing recent file entries
-        for (int i = 0; i < 10; i++) {
-            properties.remove("recentFile." + i);
-        }
-        // Write updated list
-        for (int i = 0; i < files.size(); i++) {
-            properties.setProperty("recentFile." + i, files.get(i));
-        }
-        writeProperties(properties);
     }
 
     /**
@@ -254,19 +261,21 @@ public final class ApplicationSettings {
      *
      * @param filePath Pfad der zu entfernenden Datei
      */
-    public synchronized void removeRecentFile(String filePath) {
-        if (inMemory) {
-            return;
+    public void removeRecentFile(String filePath) {
+        synchronized (persistenceLock) {
+            if (inMemory) {
+                return;
+            }
+            Properties properties = readProperties();
+            List<String> files = recentFiles(properties);
+            files.remove(filePath);
+            for (int i = 0; i < 10; i++) {
+                properties.remove("recentFile." + i);
+            }
+            for (int i = 0; i < files.size(); i++) {
+                properties.setProperty("recentFile." + i, files.get(i));
+            }
+            writeProperties(properties);
         }
-        Properties properties = readProperties();
-        List<String> files = recentFiles(properties);
-        files.remove(filePath);
-        for (int i = 0; i < 10; i++) {
-            properties.remove("recentFile." + i);
-        }
-        for (int i = 0; i < files.size(); i++) {
-            properties.setProperty("recentFile." + i, files.get(i));
-        }
-        writeProperties(properties);
     }
 }

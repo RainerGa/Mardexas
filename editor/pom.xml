@@ -83,6 +83,13 @@
     </dependency>
 
     <!-- Test: TestFX + openjfx-monocle (headless UI-Tests) -->
+    <!-- Pin the patched assertion library used transitively by TestFX. -->
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>3.27.7</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.testfx</groupId>
       <artifactId>testfx-core</artifactId>

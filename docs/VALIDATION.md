@@ -18,6 +18,13 @@ Evidence: `/tmp/mardexas-1.1-final-verify.log`,
 `/tmp/mardexas-release-ecj.log`,
 `/tmp/mardexas-1.1-packaging-tests.log`.
 
+The TestFX assertion dependency is pinned to AssertJ 3.27.7 in both editor
+and fork tests to address CVE-2026-24400. File-API tests now wait for background
+image loading and dispose their editor/window before JUnit removes fixtures.
+The dedicated dependency-submission workflow checks out submodules, uses JDK 25
+and installs the pinned reactor artifacts before submitting its graph; GitHub's
+generic auto-submission job does not initialize these source dependencies.
+
 ## GitHub CI repairs (2026-11-07)
 
 The failed CI run `42356582515` was inspected for Linux, Windows and macOS.

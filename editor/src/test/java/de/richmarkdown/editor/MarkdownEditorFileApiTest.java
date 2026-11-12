@@ -23,6 +23,7 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import com.gluonhq.richtextarea.model.TextDecoration;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -44,6 +45,30 @@ class MarkdownEditorFileApiTest {
     @TempDir
     Path tempDir;
 
+    private MarkdownEditor activeEditor;
+    private Stage activeStage;
+
+    @AfterEach
+    void closeEditorBeforeDeletingTemporaryImages() throws Exception {
+        try {
+            // Image loading runs independently of the FX event queue. In particular,
+            // Windows cannot delete an image while its loader still holds the file.
+            if (activeEditor != null) {
+                org.testfx.util.WaitForAsyncUtils.waitFor(FxTestUtil.TIMEOUT_SECONDS,
+                        java.util.concurrent.TimeUnit.SECONDS, () -> FxTestUtil.callAndWait(() ->
+                                activeEditor.getControl().lookupAll("ImageView").stream()
+                                        .map(node -> ((javafx.scene.image.ImageView) node).getImage())
+                                        .filter(java.util.Objects::nonNull)
+                                        .allMatch(image -> image.getProgress() >= 1 || image.isError())));
+            }
+        } finally {
+            FxTestUtil.runAndWait(() -> {
+                if (activeEditor != null) activeEditor.getControl().setSkin(null);
+                if (activeStage != null) activeStage.close();
+            });
+        }
+    }
+
     @BeforeAll
     static void initToolkit() throws Exception {
         FxTestUtil.startToolkit();
@@ -54,7 +79,9 @@ class MarkdownEditorFileApiTest {
         FxTestUtil.runAndWait(() -> {
             MarkdownEditor created = new MarkdownEditor();
             holder[0] = created;
+            activeEditor = created;
             Stage stage = new Stage();
+            activeStage = stage;
             stage.setScene(new Scene(new StackPane(created.getControl()), 600, 400));
             stage.show();
         });

@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>Write Markdown visually without typing formatting markers by hand.</strong><br>
-  <em>A fast, native desktop editor for Linux, Windows, and macOS that saves clean, standard UTF-8 CommonMark & GFM files.</em>
+  <em>A fast, native desktop editor for Linux and Windows that saves clean, standard UTF-8 CommonMark & GFM files.</em>
 </p>
 
 <p align="center">
@@ -11,7 +11,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg" alt="License: GPL-3.0"></a>
   <a href="https://adoptium.net/"><img src="https://img.shields.io/badge/Java-25-orange.svg" alt="Java 25"></a>
   <a href="https://openjfx.io/"><img src="https://img.shields.io/badge/JavaFX-25.0.4-royalblue.svg" alt="JavaFX 25.0.4"></a>
-  <a href="#download--installation"><img src="https://img.shields.io/badge/Platforms-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey.svg" alt="Platforms"></a>
+  <a href="#download--installation"><img src="https://img.shields.io/badge/Platforms-Linux%20%7C%20Windows-lightgrey.svg" alt="Platforms"></a>
   <a href="README-de.md"><img src="https://img.shields.io/badge/README-Deutsch-ffe082" alt="README Deutsch"></a>
 </p>
 
@@ -49,7 +49,6 @@ Ready-to-run release packages bundle an optimized runtime image — **you do not
 | **Linux (x86-64)** | **GraalVM Native Binary** | Extract archive and execute `./Mardexas` directly (instant startup) |
 | **Windows (x86-64)** | **MSI Installer** (`.msi`) | Double-click installer and follow the setup wizard |
 | **Windows (x86-64)** | **Portable ZIP** (`.zip`) | Extract archive and run `Mardexas\Mardexas.exe` |
-| **macOS** | **Portable App** (`.zip`) | Extract archive and drag `Mardexas.app` to your Applications folder |
 
 👉 **[Download the Latest Releases on GitHub](https://github.com/RainerGa/Mardexas/releases)**
 
@@ -188,7 +187,7 @@ mvn -f editor/pom.xml javafx:run
 - `emoji-noto/` — Emoji data Maven module.
 - `integration-demos/` — JavaFX embedding examples and tests.
 - `scripts/` — Standalone Linux checkout and its offline regression tests.
-- `packaging/` — Build and packaging scripts for Linux (Flatpak, portable, native), Windows (MSI, portable), and macOS.
+- `packaging/` — Build and packaging scripts for Linux (Flatpak, portable, native), Windows (MSI, portable).
 - `docs/` — Development, public API, packaging, and validation documentation.
 
 ---

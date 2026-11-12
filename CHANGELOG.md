@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Reduced repeated parsing, serialization and auxiliary-view work for large documents.
 - Moved recovery writes and settings persistence away from the JavaFX application thread.
 - Updated GitHub Actions and runner images; corrected macOS Monocle keyboard handling.
-- Limited GraalVM native targets to Linux and Windows; retained macOS JVM packages.
+- Limited all automated builds and release packages to Linux and Windows; removed macOS Intel and Apple Silicon targets.
 
 See [release notes](releases/1.1.0.md) for package selection and current limitations.
 

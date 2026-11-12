@@ -114,7 +114,7 @@ class RenderingComparisonTest(unittest.TestCase):
                 if mode == 'jar':
                     self.assertIn('-jar', commands[0])
                 if mode == 'portable':
-                    self.assertEqual([root / 'Mardexas'], commands[0])
+                    self.assertEqual([(root / 'Mardexas').resolve()], commands[0])
                     self.assertIn('-Dprism.order=sw', run.call_args_list[1].args[3]['JAVA_TOOL_OPTIONS'])
                 else:
                     self.assertIn('-Dprism.order=sw', commands[1])
@@ -215,7 +215,7 @@ class RuntimeNoticesTest(unittest.TestCase):
             (java / 'legal/java.base/NOTICE').write_text('Copyright notice')
             (java / 'legal/java.logging').mkdir()
             try:
-                (java / 'legal/java.logging/LICENSE').symlink_to('../java.base/LICENSE')
+                (java / 'legal/java.logging/LICENSE').symlink_to(Path('..') / 'java.base' / 'LICENSE')
             except OSError:
                 # Windows runners can lack symbolic-link creation privileges.
                 (java / 'legal/java.logging/LICENSE').write_text('Original vendor license')
@@ -327,10 +327,18 @@ class FatJarArchitectureTest(unittest.TestCase):
 class GraalVmTargetsTest(unittest.TestCase):
     def test_removed_macos_targets_fail_before_building_or_tracing(self):
         packaging = Path(__file__).resolve().parent
+        # Windows also ships a WSL bash shim. Use Git's Bash, as the CI
+        # workflows do, and pass drive paths with forward slashes.
+        bash = 'bash'
+        if os.name == 'nt':
+            git = Path(shutil.which('git')).resolve()
+            bash = str(next(path for path in (
+                git.parent / 'bash.exe', git.parent.parent / 'bin/bash.exe',
+            ) if path.is_file()))
         for platform in ('mac', 'mac-aarch64'):
             commands = [
-                ['bash', str(packaging / 'build-native-image.sh')],
-                ['bash', str(packaging / 'trace-reachability.sh'), platform, 'all'],
+                [bash, (packaging / 'build-native-image.sh').as_posix()],
+                [bash, (packaging / 'trace-reachability.sh').as_posix(), platform, 'all'],
             ]
             for command in commands:
                 with self.subTest(platform=platform, script=command[1]):

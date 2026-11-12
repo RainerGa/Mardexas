@@ -102,6 +102,12 @@ class TableCellHighlightTest {
         FxTestUtil.runAndWait(() -> scrollToParagraph(rta, tableMatch.getStart()));
         de.richmarkdown.GuiTestSupport.pulses();
 
+        de.richmarkdown.GuiTestSupport.awaitCondition(() -> rta.lookupAll(".table .layer").stream()
+                .anyMatch(layer -> {
+                    Path selection = (Path) layer.lookup(".selection");
+                    return selection != null && !selection.getElements().isEmpty();
+                }), "The scrolled table selection must render");
+
         FxTestUtil.runAndWait(() -> {
             rta.applyCss();
             rta.layout();

@@ -25,6 +25,11 @@ public final class GuiTestSupport {
         FxTestUtil.runAndWait(() -> {
             Robot robot = new Robot();
             KeyCode modifier = shortcutModifier();
+            // Monocle KeyState maps COMMAND (768), but not META (157),
+            // to Glass MODIFIER_COMMAND. Native macOS Glass accepts META.
+            if (modifier == KeyCode.META && "Monocle".equals(System.getProperty("glass.platform"))) {
+                modifier = KeyCode.COMMAND;
+            }
             robot.keyPress(modifier);
             try {
                 if (shift) robot.keyPress(KeyCode.SHIFT);
@@ -51,6 +56,23 @@ public final class GuiTestSupport {
         }.start());
         assertTrue(rendered.await(FxTestUtil.TIMEOUT_SECONDS, TimeUnit.SECONDS), "The shown scene must render");
         FxTestUtil.flushFxEvents();
+    }
+
+    /** Wait for a rendered condition rather than assuming a fixed pulse count. */
+    public static void awaitCondition(java.util.function.BooleanSupplier condition, String message)
+            throws InterruptedException {
+        CountDownLatch ready = new CountDownLatch(1);
+        AnimationTimer timer = new AnimationTimer() {
+            @Override public void handle(long now) {
+                if (condition.getAsBoolean()) { stop(); ready.countDown(); }
+            }
+        };
+        FxTestUtil.runAndWait(timer::start);
+        try {
+            assertTrue(ready.await(FxTestUtil.TIMEOUT_SECONDS, TimeUnit.SECONDS), message);
+        } finally {
+            FxTestUtil.runAndWait(timer::stop);
+        }
     }
 
     public static void click(Node node, double localX, double localY) throws InterruptedException {

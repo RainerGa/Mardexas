@@ -1056,7 +1056,7 @@ class MarkdownEditorTest {
     }
 
     @Test
-    void goToPosition_scrollsTargetParagraphIntoView() {
+    void goToPosition_scrollsTargetParagraphIntoView() throws InterruptedException {
         FxTestUtil.runAndWait(() -> editor.setMarkdown(longDocument(60)));
         flush();
         flush();
@@ -1077,6 +1077,7 @@ class MarkdownEditorTest {
         flush();
 
         assertEquals(target.position(), FxTestUtil.callAndWait(rta::getCaretPosition));
+        de.richmarkdown.GuiTestSupport.awaitCondition(() -> isParagraphVisible(targetIndex), "Navigation target must render");
         assertTrue(isParagraphVisible(targetIndex),
                 "Zielabsatz " + targetIndex + " muss nach der Navigation sichtbar sein");
     }
@@ -1106,7 +1107,7 @@ class MarkdownEditorTest {
     }
 
     @Test
-    void revealPosition_scrollsParagraphIntoViewWithoutTouchingSelection() {
+    void revealPosition_scrollsParagraphIntoViewWithoutTouchingSelection() throws InterruptedException {
         FxTestUtil.runAndWait(() -> editor.setMarkdown(longDocument(60)));
         flush();
         flush();
@@ -1132,7 +1133,7 @@ class MarkdownEditorTest {
         flush();
         flush();
 
-        assertTrue(isParagraphVisible(targetIndex),
+        de.richmarkdown.GuiTestSupport.awaitCondition(() -> isParagraphVisible(targetIndex),
                 "Zielabsatz muss nach revealPosition sichtbar sein");
         Selection selection = FxTestUtil.callAndWait(() -> rta.getSelection());
         assertNotNull(selection);
@@ -1166,6 +1167,7 @@ class MarkdownEditorTest {
         FxTestUtil.runAndWait(() -> engine.selectMatch(target, false));
         de.richmarkdown.GuiTestSupport.pulses();
 
+        de.richmarkdown.GuiTestSupport.awaitCondition(() -> isParagraphVisible(targetIndex), "Search target must render");
         assertTrue(isParagraphVisible(targetIndex),
                 "Markierter Treffer muss nach selectMatch sichtbar sein");
         Selection selection = FxTestUtil.callAndWait(() -> rta.getSelection());

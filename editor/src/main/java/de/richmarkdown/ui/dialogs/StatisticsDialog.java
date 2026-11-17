@@ -85,6 +85,7 @@ public class StatisticsDialog extends Dialog<ButtonType> {
         addRow(grid, "dialog.statistics.images");
 
         updateButton.getStyleClass().add("rme-statistics-update");
+        updateButton.getStyleClass().add("rme-dialog-primary");
         updateButton.setDefaultButton(false);
         updateButton.setOnAction(event -> refresh());
 
@@ -96,6 +97,10 @@ public class StatisticsDialog extends Dialog<ButtonType> {
         getDialogPane().setContent(content);
         getDialogPane().setPrefSize(380, 360);
         getDialogPane().getButtonTypes().add(DialogButtons.CLOSE);
+
+        DialogButtons.applyDialogStyles(getDialogPane());
+        Button close = (Button) getDialogPane().lookupButton(DialogButtons.CLOSE);
+        close.setDefaultButton(true);
 
         refresh();
     }

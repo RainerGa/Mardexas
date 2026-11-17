@@ -18,33 +18,53 @@
 package de.richmarkdown.ui.dialogs;
 
 import de.richmarkdown.i18n.I18n;
-import javafx.scene.control.ButtonType;
+import javafx.scene.control.Button;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Window;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Dialog zur Auswahl einer Dokumentvorlage (AddFeatures #17).
  *
- * <p>Vorlagen werden als {@code .md}-Dateien aus dem Klassenpfad
- * ({@code /templates/}) geladen. Der Anwender waehlt eine Vorlage aus; der
- * Dialog liefert den Markdown-Inhalt der ausgewaehlten Datei zurueck.
+ * <p>Vorlagen werden aus dem Klassenpfad ({@code /templates/}) geladen und,
+ * sofern konfiguriert, aus einem Dateisystem-Verzeichnis. Der Anwender wählt
+ * eine Vorlage aus; der Dialog liefert den Markdown-Inhalt der ausgewählten
+ * Datei zurück. Ein konfiguriertes, ungültiges Verzeichnis wird sicher
+ * ignoriert (Degradation auf Klassenpfad-Vorlagen).
  */
 public class TemplateDialog extends Dialog<String> {
 
+    private static final String DIRECTORY_KEY = "templates.directory";
+    private static final String[] CLASSPATH_NAMES = {
+            "article", "letter", "meeting-notes", "readme"
+    };
+
     private final List<TemplateInfo> templates = new ArrayList<>();
     private boolean templatesLoaded;
+    private Path configuredDirectory;
+    private final Label directoryStatus = new Label();
+    private ListView<TemplateInfo> list;
+    private TextArea preview;
 
     /**
      * Erstellt den Vorlagen-Dialog.
@@ -57,11 +77,13 @@ public class TemplateDialog extends Dialog<String> {
         setHeaderText(I18n.text("dialog.template.header"));
         setResizable(true);
 
-        ListView<TemplateInfo> list = new ListView<>();
+        configuredDirectory = readConfiguredDirectory();
+
+        list = new ListView<>();
         list.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         list.setCellFactory(param -> new TemplateCell());
 
-        TextArea preview = new TextArea();
+        preview = new TextArea();
         preview.setEditable(false);
         preview.setWrapText(true);
         preview.setPrefRowCount(12);
@@ -72,15 +94,29 @@ public class TemplateDialog extends Dialog<String> {
                 preview.setText(sel.content());
             }
         });
-        VBox content = new VBox(8.0, list, preview);
+
+        Button directoryButton = new Button(I18n.text("dialog.template.button.directory"));
+        directoryButton.setTooltip(new javafx.scene.control.Tooltip(I18n.text("dialog.template.setting")));
+        directoryButton.setOnAction(event -> chooseDirectory());
+        directoryStatus.setWrapText(true);
+        HBox directoryBar = new HBox(8, directoryButton, directoryStatus);
+        directoryBar.setId("template-directory-bar");
+
+        VBox content = new VBox(8.0, directoryBar, list, preview);
         content.setPrefSize(700, 500);
-        VBox.setVgrow(preview, javafx.scene.layout.Priority.ALWAYS);
-        VBox.setVgrow(list, javafx.scene.layout.Priority.NEVER);
+        VBox.setVgrow(preview, Priority.ALWAYS);
+        VBox.setVgrow(list, Priority.NEVER);
         getDialogPane().setContent(content);
-        getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        DialogButtons.applyDialogStyles(getDialogPane());
+        getDialogPane().getButtonTypes().addAll(DialogButtons.OK, DialogButtons.CANCEL);
+
+        Button ok = (Button) getDialogPane().lookupButton(DialogButtons.OK);
+        ok.setDefaultButton(true);
+        ok.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
 
         setResultConverter(dialogButton -> {
-            if (dialogButton == ButtonType.OK) {
+            if (dialogButton == DialogButtons.OK) {
                 TemplateInfo selected = list.getSelectionModel().getSelectedItem();
                 return selected != null ? selected.content() : null;
             }
@@ -89,6 +125,7 @@ public class TemplateDialog extends Dialog<String> {
 
         setOnShowing(event -> {
             if (!templatesLoaded) {
+                updateDirectoryStatus();
                 loadTemplates();
                 list.getItems().setAll(templates);
                 templatesLoaded = true;
@@ -101,22 +138,77 @@ public class TemplateDialog extends Dialog<String> {
         setOnShown(event -> list.requestFocus());
     }
 
-    private void loadTemplates() {
-        // Vorlagen-Hartcodierung ueber bekannte Dateinamen (kein Ressourcen-Listing
-        // im Modulsystem verfuegbar)
-        String[] names = {
-                "article", "letter", "meeting-notes", "readme"
-        };
-        for (String name : names) {
-            String content = loadTemplateContent(name);
-            if (content != null) {
-                templates.add(new TemplateInfo(name, labelFor(name), content));
-            }
-        }
+    /**
+     * Liefert das konfigurierte Vorlagenverzeichnis oder {@code null}.
+     *
+     * @return konfiguriertes Verzeichnis oder {@code null}
+     */
+    public Path getConfiguredDirectory() {
+        return configuredDirectory;
     }
 
-    private String loadTemplateContent(String name) {
-        try (InputStream is = getClass().getResourceAsStream("/templates/" + name + ".md")) {
+    /** Opens the shared templates-directory setting, also available from File → Settings. */
+    public static void configureDirectory(Window owner) {
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle(I18n.text("dialog.template.directory.title"));
+        Path current = readConfiguredDirectory();
+        if (current != null) chooser.setInitialDirectory(current.toFile());
+        var chosen = chooser.showDialog(owner);
+        if (chosen != null) I18n.setPreference(DIRECTORY_KEY, chosen.toPath().toString());
+    }
+
+    private void chooseDirectory() {
+        configureDirectory(getDialogPane().getScene().getWindow());
+        configuredDirectory = readConfiguredDirectory();
+        listReload();
+    }
+
+    private void listReload() {
+        templatesLoaded = false;
+        updateDirectoryStatus();
+        loadTemplates();
+        list.getItems().setAll(templates);
+        if (!templates.isEmpty()) {
+            list.getSelectionModel().select(0);
+            preview.setText(templates.get(0).content());
+        } else {
+            preview.setText("");
+        }
+        templatesLoaded = true;
+    }
+
+    private void loadTemplates() {
+        Map<String, TemplateInfo> byId = new LinkedHashMap<>();
+        for (String name : CLASSPATH_NAMES) {
+            String content = loadTemplateContent("/templates/" + name + ".md");
+            if (content != null) {
+                byId.put(name, new TemplateInfo(name, labelFor(name), content));
+            }
+        }
+        if (configuredDirectory != null && Files.isDirectory(configuredDirectory)) {
+            try (var stream = Files.list(configuredDirectory)) {
+                for (Path file : stream.filter(Files::isRegularFile)
+                        .filter(path -> java.util.Objects.toString(path.getFileName(), "").endsWith(".md"))
+                        .sorted(java.util.Comparator.comparing(path -> java.util.Objects.toString(path.getFileName(), ""))).toList()) {
+                    String filename = java.util.Objects.toString(file.getFileName(), "");
+                    String id = filename.substring(0, filename.length() - 3);
+                    try {
+                        String content = Files.readString(file, StandardCharsets.UTF_8);
+                        byId.put(id, new TemplateInfo(id, id, content));
+                    } catch (IOException | SecurityException ignored) {
+                        // A single unreadable template must not hide the built-in templates.
+                    }
+                }
+            } catch (IOException | SecurityException | java.io.UncheckedIOException ignored) {
+                // Fall back to bundled templates if directory access fails.
+            }
+        }
+        templates.clear();
+        templates.addAll(byId.values());
+    }
+
+    private String loadTemplateContent(String path) {
+        try (InputStream is = getClass().getResourceAsStream(path)) {
             if (is == null) {
                 return null;
             }
@@ -124,6 +216,26 @@ public class TemplateDialog extends Dialog<String> {
         } catch (IOException e) {
             return null;
         }
+    }
+
+    private static Path readConfiguredDirectory() {
+        String value = I18n.preference(DIRECTORY_KEY, null);
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            Path path = Path.of(value);
+            return Files.isDirectory(path) ? path : null;
+        } catch (InvalidPathException | SecurityException invalid) {
+            return null;
+        }
+    }
+
+    private void updateDirectoryStatus() {
+        configuredDirectory = readConfiguredDirectory();
+        String configured = I18n.preference(DIRECTORY_KEY, "");
+        directoryStatus.setText(configuredDirectory != null ? configuredDirectory.toString()
+                : configured.isBlank() ? "" : I18n.text("dialog.template.directory.missing"));
     }
 
     private String labelFor(String name) {

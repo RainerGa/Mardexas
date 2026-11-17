@@ -1,4 +1,12 @@
 {
+  "reflection": [
+    {
+      "type": "de.richmarkdown.RichMarkDownEditorApp",
+      "methods": [
+        {"name": "<init>", "parameterTypes": []}
+      ]
+    }
+  ],
   "resources": [
     {"module": "com.gluonhq.emoji", "glob": "com/gluonhq/emoji/emoji.csv"},
     {"module": "com.gluonhq.emoji", "glob": "com/gluonhq/emoji/noto/**"},

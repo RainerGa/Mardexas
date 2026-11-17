@@ -2,7 +2,7 @@ package de.richmarkdown.features.printing;
 
 import de.richmarkdown.FxTestUtil;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
+import de.richmarkdown.ui.dialogs.DialogButtons;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,7 +19,7 @@ class PrintOptionsDialogTest {
             try {
                 var pane = dialog.getDialogPane();
                 var scope = (ComboBox<?>) pane.lookup(".combo-box");
-                var ok = (Button) pane.lookupButton(ButtonType.OK);
+                var ok = (Button) pane.lookupButton(DialogButtons.OK);
                 scope.getSelectionModel().select(PrintOptions.Scope.SELECTION.ordinal());
                 ok.fire();
                 assertTrue(dialog.isShowing()); assertNull(dialog.getResult());
@@ -40,7 +40,7 @@ class PrintOptionsDialogTest {
         FxTestUtil.runAndWait(() -> {
             var dialog = new PrintOptionsDialog(null, PrintOptions.defaults(), true);
             dialog.show();
-            ((Button) dialog.getDialogPane().lookupButton(ButtonType.CANCEL)).fire();
+            ((Button) dialog.getDialogPane().lookupButton(DialogButtons.CANCEL)).fire();
             assertFalse(dialog.isShowing()); assertNull(dialog.getResult());
         });
     }

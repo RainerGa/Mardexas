@@ -19,6 +19,7 @@ package de.richmarkdown.ui;
 
 import de.richmarkdown.editor.MarkdownEditor;
 import de.richmarkdown.i18n.I18n;
+import de.richmarkdown.ui.dialogs.DialogButtons;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
@@ -88,6 +89,8 @@ public final class DiffDialog extends Dialog<ButtonType> {
         content.setCenter(loading);
         content.setBottom(status);
         getDialogPane().setContent(content);
+        DialogButtons.applyDialogStyles(getDialogPane());
+        applyPrimaryStyle();
         getDialogPane().addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
             if (ready && !saving) view.handleReviewKey(event);
         });
@@ -262,17 +265,24 @@ public final class DiffDialog extends Dialog<ButtonType> {
         } finally { Files.deleteIfExists(temporary); }
     }
 
+    private void applyPrimaryStyle() {
+        Button apply = (Button) getDialogPane().lookupButton(applyType);
+        apply.getStyleClass().add("rme-dialog-primary");
+        apply.setDefaultButton(true);
+    }
+
     private void fail(Throwable failure) {
         String detail = failure == null || failure.getMessage() == null
                 ? I18n.text("trackChanges.failed") : failure.getMessage();
         String message = MessageFormat.format(I18n.text("trackChanges.error"), detail);
         status.setText(message);
         if (onError != null) onError.accept(message);
-        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        Alert alert = new Alert(Alert.AlertType.ERROR, message, DialogButtons.OK);
         alert.initOwner(getDialogPane().getScene().getWindow());
         alert.setHeaderText(null);
         alert.setTitle(I18n.text("dialog.diff.title"));
-        ((Button) alert.getDialogPane().lookupButton(ButtonType.OK)).setTooltip(new Tooltip(I18n.text("dialog.ok")));
+        DialogButtons.applyDialogStyles(alert.getDialogPane());
+        ((Button) alert.getDialogPane().lookupButton(DialogButtons.OK)).setTooltip(new Tooltip(I18n.text("dialog.ok")));
         alert.show();
     }
 
@@ -282,13 +292,13 @@ public final class DiffDialog extends Dialog<ButtonType> {
         if (view.getChanges().stream().anyMatch(change -> change.comment() != null)) {
             message += "\n\n" + I18n.text("trackChanges.apply.confirm.comments");
         }
-        ButtonType applyAndClose = new ButtonType(I18n.text("trackChanges.apply.confirm.button"),
-                ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancel = new ButtonType(I18n.text("dialog.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType applyAndClose = DialogButtons.confirmation("trackChanges.apply.confirm.button");
+        ButtonType cancel = DialogButtons.CANCEL;
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, applyAndClose, cancel);
         alert.initOwner(getDialogPane().getScene().getWindow());
         alert.setTitle(I18n.text("dialog.diff.title"));
         alert.setHeaderText(null);
+        DialogButtons.applyDialogStyles(alert.getDialogPane());
         alert.getDialogPane().getButtonTypes().forEach(type ->
                 ((Button) alert.getDialogPane().lookupButton(type)).setTooltip(new Tooltip(type.getText())));
         return alert.showAndWait().orElse(cancel) == applyAndClose;
@@ -296,13 +306,14 @@ public final class DiffDialog extends Dialog<ButtonType> {
 
     private boolean confirmClose() {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, I18n.text("trackChanges.discard"),
-                de.richmarkdown.ui.dialogs.DialogButtons.DISCARD, de.richmarkdown.ui.dialogs.DialogButtons.KEEP);
+                DialogButtons.DISCARD, DialogButtons.KEEP);
         alert.initOwner(getDialogPane().getScene().getWindow());
         alert.setHeaderText(null);
+        DialogButtons.applyDialogStyles(alert.getDialogPane());
         alert.getDialogPane().getButtonTypes().forEach(type ->
                 ((Button) alert.getDialogPane().lookupButton(type)).setTooltip(new Tooltip(type.getText())));
-        return alert.showAndWait().orElse(de.richmarkdown.ui.dialogs.DialogButtons.KEEP)
-                == de.richmarkdown.ui.dialogs.DialogButtons.DISCARD;
+        return alert.showAndWait().orElse(DialogButtons.KEEP)
+                == DialogButtons.DISCARD;
     }
 
     /** Returns the live JavaFX comparison component; access it on the FX application thread. */

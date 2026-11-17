@@ -133,6 +133,24 @@ localized logging lookups and shutdown-time XML service lookups. They use
 exact reachability metadata and fail on missing registrations. These extra
 registrations address paths a single virtual display trace cannot cover.
 
+The normal JavaFX application also requires reflective access to
+`de.richmarkdown.RichMarkDownEditorApp()` (its public no-argument constructor).
+This registration lives in `native-image/common/reachability-metadata.json`
+and applies to both Windows and Linux independently of agent traces.
+`--verify-package` launches the separate `PackageVerification` application,
+so its successful trace and rendering checks do not cover the normal
+application constructor. The packaging regression test checks the effective
+common/target metadata without relying on a startup trace.
+
+If a Windows executable exits with `MissingReflectionRegistrationError` for
+`RichMarkDownEditorApp#<init>()`, rebuild it on Windows with the corrected
+metadata using `JAVAFX_PLATFORM=win bash packaging/build-native-image.sh`.
+Editing JSON beside an already built EXE cannot repair it: Native Image
+embeds registrations at build time. After rebuilding, also launch
+`Mardexas.exe` without `--verify-package` on Windows to check normal startup.
+The same error observed under Wine identifies a missing registration;
+Wine rendering messages alone do not establish Windows compatibility.
+
 Reports are stored under `editor/target/package-check/<platform>`,
 `portable-check/<platform>`, and `fat-check/<platform>`.
 

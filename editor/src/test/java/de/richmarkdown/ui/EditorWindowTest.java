@@ -206,10 +206,20 @@ class EditorWindowTest {
                     .map(item -> item.getText())
                     .toList();
         });
-        // Datei-Reihenfolge wie in LibreOffice Writer: … Speichern unter…, Dateivergleich, Drucken…, Beenden
+        // Datei-Reihenfolge mit Vorlagen-Einstellungen vor Beenden.
         assertEquals(List.of("Neu", "Neu aus Vorlage…", "Öffnen...", "Öffnen (schreibgeschützt)...",
                 "Zuletzt geöffnet", "Speichern", "Speichern unter...", I18n.text("menu.file.compareWith"),
-                "Drucken...", "Beenden", "Druckbereich und Gestaltung …"), labels);
+                "Drucken...", I18n.text("menu.settings"), "Beenden", "Druckbereich und Gestaltung …"), labels);
+        FxTestUtil.runAndWait(() -> {
+            var root = (javafx.scene.layout.BorderPane) window.getScene().getRoot();
+            var top = (VBox) root.getTop();
+            var file = ((MenuBar) top.getChildren().get(0)).getMenus().get(0);
+            var settings = (javafx.scene.control.Menu) file.getItems().stream()
+                    .filter(item -> "menu.settings".equals(item.getId())).findFirst().orElseThrow();
+            assertEquals(1, settings.getItems().size());
+            assertEquals("menu.settings.templatesDirectory", settings.getItems().getFirst().getId());
+            assertEquals(I18n.text("menu.settings.templatesDirectory"), settings.getItems().getFirst().getText());
+        });
     }
 
     @Test

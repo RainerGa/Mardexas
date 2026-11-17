@@ -27,6 +27,7 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -74,8 +75,9 @@ public class IssueDialog extends Dialog<ButtonType> {
         });
 
         checkButton.getStyleClass().add("rme-issues-check");
-        checkButton.setDefaultButton(false);
-        checkButton.setTooltip(new javafx.scene.control.Tooltip("Das aktuelle Dokument erneut auf Markdown-Probleme prüfen."));
+        checkButton.getStyleClass().add("rme-dialog-primary");
+        checkButton.setDefaultButton(true);
+        checkButton.setTooltip(new Tooltip(I18n.text("dialog.issues.tooltip.check")));
         checkButton.setOnAction(event -> refresh());
 
         HBox buttonRow = new HBox(checkButton);
@@ -88,6 +90,10 @@ public class IssueDialog extends Dialog<ButtonType> {
         getDialogPane().setPrefSize(520, 400);
         getDialogPane().getButtonTypes().add(DialogButtons.CLOSE);
 
+        DialogButtons.applyDialogStyles(getDialogPane());
+        Button close = (Button) getDialogPane().lookupButton(DialogButtons.CLOSE);
+        close.setDefaultButton(false);
+
         refresh();
     }
 
@@ -96,22 +102,37 @@ public class IssueDialog extends Dialog<ButtonType> {
                                  java.util.function.Consumer<MarkdownIssue> ignore) {
         HBox row = (HBox) ((VBox) getDialogPane().getContent()).getChildren().get(1);
         if (fix != null) {
-            Button button = new Button("Korrekturvorschlag übernehmen");
-            button.setTooltip(new javafx.scene.control.Tooltip("Einen verfügbaren Korrekturvorschlag als rückgängig machbare Textänderung übernehmen."));
-            button.disableProperty().bind(javafx.beans.binding.Bindings.createBooleanBinding(() -> { MarkdownIssue selected = listView.getSelectionModel().getSelectedItem(); return selected == null || !selected.message().equals("Ungeschlossener Code-Fence"); }, listView.getSelectionModel().selectedItemProperty()));
-            button.setOnAction(event -> { MarkdownIssue selected = listView.getSelectionModel().getSelectedItem(); if (selected != null) { fix.accept(selected); refresh(); } }); row.getChildren().add(button);
+            Button button = new Button(I18n.text("dialog.issues.button.fix"));
+            button.setTooltip(new Tooltip(I18n.text("dialog.issues.tooltip.fix")));
+            button.disableProperty().bind(javafx.beans.binding.Bindings.createBooleanBinding(() -> {
+                MarkdownIssue selected = listView.getSelectionModel().getSelectedItem();
+                return selected == null || !selected.message().equals("Ungeschlossener Code-Fence");
+            }, listView.getSelectionModel().selectedItemProperty()));
+            button.setOnAction(event -> {
+                MarkdownIssue selected = listView.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    fix.accept(selected);
+                    refresh();
+                }
+            });
+            row.getChildren().add(button);
         }
         if (ignore != null) {
-            Button button = new Button("Prüfung ignorieren"); button.setTooltip(new javafx.scene.control.Tooltip("Gleiche Hinweise für diesen Prüfdialog ausblenden; das Dokument wird nicht verändert."));
-            button.disableProperty().bind(listView.getSelectionModel().selectedItemProperty().isNull()); button.setOnAction(event -> { MarkdownIssue selected = listView.getSelectionModel().getSelectedItem(); if (selected != null) { ignore.accept(selected); refresh(); } }); row.getChildren().add(button);
+            Button button = new Button(I18n.text("dialog.issues.button.ignore"));
+            button.setTooltip(new Tooltip(I18n.text("dialog.issues.tooltip.ignore")));
+            button.disableProperty().bind(listView.getSelectionModel().selectedItemProperty().isNull());
+            button.setOnAction(event -> {
+                MarkdownIssue selected = listView.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    ignore.accept(selected);
+                    refresh();
+                }
+            });
+            row.getChildren().add(button);
         }
     }
 
-    /**
-     * Liest die Issues neu ein und aktualisiert die Liste.
-     *
-     * <p>Entspricht der "Alle prüfen"-Schaltfläche.
-     */
+    /** Liest die Issues neu ein und aktualisiert die Liste. */
     public void refresh() {
         listView.setItems(FXCollections.observableArrayList(issuesSupplier.get()));
     }

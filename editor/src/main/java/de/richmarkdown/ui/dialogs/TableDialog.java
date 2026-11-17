@@ -19,6 +19,7 @@ package de.richmarkdown.ui.dialogs;
 
 import de.richmarkdown.i18n.I18n;
 import de.richmarkdown.ui.TableSize;
+import javafx.scene.control.Button;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
@@ -31,7 +32,8 @@ import javafx.scene.layout.GridPane;
  * <p>Ergebnis ist ein {@link TableSize}; beim Abbruch bleibt {@code showAndWait()}
  * leer. Standardmäßig sind drei Zeilen und drei Spalten ausgewählt; Zeilen
  * können bis 20 und Spalten bis 12 eingestellt werden. Die erste Zeile wird
- * beim Speichern als GFM-Kopfzeile serialisiert.
+ * beim Speichern als GFM-Kopfzeile serialisiert. Die zuletzt gewählte Größe
+ * wird dauerhaft im Anwendungsprofil gespeichert (D7).
  */
 public class TableDialog extends Dialog<TableSize> {
 
@@ -39,6 +41,9 @@ public class TableDialog extends Dialog<TableSize> {
     private static final int DEFAULT_COLUMNS = 3;
     private static final int MAX_ROWS = 20;
     private static final int MAX_COLUMNS = 12;
+
+    private static final String LAST_ROWS_KEY = "table.lastRows";
+    private static final String LAST_COLUMNS_KEY = "table.lastColumns";
 
     private final Spinner<Integer> rowsSpinner = new Spinner<>();
     private final Spinner<Integer> columnsSpinner = new Spinner<>();
@@ -48,21 +53,49 @@ public class TableDialog extends Dialog<TableSize> {
         setTitle(I18n.text("dialog.table.title"));
         setHeaderText(I18n.text("dialog.table.header"));
 
-        configureSpinner(rowsSpinner, DEFAULT_ROWS, MAX_ROWS);
-        configureSpinner(columnsSpinner, DEFAULT_COLUMNS, MAX_COLUMNS);
+        int rows = readSaved(LAST_ROWS_KEY, DEFAULT_ROWS, MAX_ROWS);
+        int columns = readSaved(LAST_COLUMNS_KEY, DEFAULT_COLUMNS, MAX_COLUMNS);
+
+        configureSpinner(rowsSpinner, rows, MAX_ROWS);
+        configureSpinner(columnsSpinner, columns, MAX_COLUMNS);
 
         GridPane grid = new GridPane();
         grid.setHgap(8);
         grid.setVgap(8);
         grid.addRow(0, new Label(I18n.text("dialog.table.rows")), rowsSpinner);
         grid.addRow(1, new Label(I18n.text("dialog.table.columns")), columnsSpinner);
-        getDialogPane().setContent(grid);
-        getDialogPane().setPrefSize(260, 160);
 
+        getDialogPane().setContent(grid);
+        DialogButtons.applyDialogStyles(getDialogPane());
         getDialogPane().getButtonTypes().addAll(DialogButtons.OK, DialogButtons.CANCEL);
-        setResultConverter(buttonType -> buttonType == DialogButtons.OK
-                ? new TableSize(rowsSpinner.getValue(), columnsSpinner.getValue())
-                : null);
+
+        Button ok = (Button) getDialogPane().lookupButton(DialogButtons.OK);
+        ok.setDefaultButton(true);
+
+        Label error = new Label();
+        error.getStyleClass().add("rme-dialog-error");
+        grid.add(error, 0, 2, 2, 1);
+        Runnable validate = () -> {
+            boolean valid = DialogButtons.validInteger(rowsSpinner, 1, MAX_ROWS)
+                    && DialogButtons.validInteger(columnsSpinner, 1, MAX_COLUMNS);
+            ok.setDisable(!valid);
+            error.setText(valid ? "" : I18n.text("dialog.validation.integer"));
+        };
+        rowsSpinner.getEditor().textProperty().addListener((obs, old, value) -> validate.run());
+        columnsSpinner.getEditor().textProperty().addListener((obs, old, value) -> validate.run());
+        validate.run();
+        setResultConverter(buttonType -> {
+            if (buttonType == DialogButtons.OK) {
+                rowsSpinner.commitValue();
+                columnsSpinner.commitValue();
+                I18n.setPreference(LAST_ROWS_KEY, Integer.toString(rowsSpinner.getValue()));
+                I18n.setPreference(LAST_COLUMNS_KEY, Integer.toString(columnsSpinner.getValue()));
+                return new TableSize(rowsSpinner.getValue(), columnsSpinner.getValue());
+            }
+            return null;
+        });
+
+        setOnShown(event -> rowsSpinner.requestFocus());
     }
 
     /**
@@ -87,5 +120,19 @@ public class TableDialog extends Dialog<TableSize> {
         IntegerSpinnerValueFactory factory = new IntegerSpinnerValueFactory(1, maxValue, initialValue);
         spinner.setValueFactory(factory);
         spinner.setEditable(true);
+    }
+
+    private static int readSaved(String key, int fallback, int maxValue) {
+        String value = I18n.preference(key, null);
+        if (value != null) {
+            try {
+                int parsed = Integer.parseInt(value);
+                if (parsed >= 1 && parsed <= maxValue) {
+                    return parsed;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return fallback;
     }
 }

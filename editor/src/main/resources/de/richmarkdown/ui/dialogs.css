@@ -1,0 +1,152 @@
+/* Dialog-Design des RichMarkDownEditor.
+ *
+ * Orientierung am Anwendungs-Theme (app.css):
+ *   - blauer Akzent #2b579a (-fx-accent) für den Primär-Button
+ *   - Dark-Mode-Variablen -rme-dark / -rme-high-contrast
+ *   - Word/LibreOffice Writer anmutende, flache Dialoge mit Sektionen
+ *
+ * Jeder Dialog bindet dieses Stylesheet defensiv (Null-Check auf die
+ * Ressource) und nutzt die hier definierten Stil-Klassen für konsistente
+ * Abstände, Sektion-Karten, Primär-Button und Inline-Fehlermeldungen.
+ */
+
+.root {
+    -fx-accent: #2b579a;
+    -fx-focus-color: #2b579a;
+    -rme-dialog-padding: 16;
+    -rme-dialog-section-padding: 12;
+    -rme-dialog-gap: 10;
+    -rme-dialog-field-width: 260;
+    -rme-dialog-error-color: #c0392b;
+    -rme-dialog-error-color-dark: #ef7a7a;
+}
+
+/* ---------- Dialog-Pane (Grundgerüst) ---------- */
+
+.dialog-pane {
+    -fx-padding: 14 16 12 16;
+    -fx-header-color: transparent;
+}
+
+.dialog-pane > .header-panel {
+    -fx-padding: 0 0 10 0;
+}
+
+.dialog-pane > .header-panel .label {
+    -fx-font-size: 1.15em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-base-color;
+}
+
+.dialog-pane > .content {
+    -fx-padding: 0;
+}
+
+.dialog-pane .button-bar {
+    -fx-padding: 10 0 0 0;
+    -fx-alignment: bottom-right;
+}
+
+/* ---------- Primär-Button (empfohlene Erst-Aktion) ---------- */
+
+.rme-dialog-primary {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: white;
+    -fx-cursor: hand;
+}
+.rme-dialog-primary:hover {
+    -fx-background-color: derive(-fx-accent, -15%);
+}
+.rme-dialog-primary:focused {
+    -fx-border-color: -fx-accent;
+    -fx-border-width: 1;
+    -fx-border-radius: 3;
+}
+
+/* ---------- Sektion-Karten ---------- */
+
+.rme-dialog-section {
+    -fx-padding: 12;
+    -fx-background-color: -fx-control-inner-background;
+    -fx-background-radius: 6;
+    -fx-border-color: -fx-box-border;
+    -fx-border-radius: 6;
+}
+
+.rme-dialog-section > .label {
+    -fx-font-size: 1.05em;
+    -fx-padding: 0 0 6 0;
+}
+
+/* ---------- Inline-Fehlermeldung ---------- */
+
+.rme-dialog-error {
+    -fx-text-fill: -rme-dialog-error-color;
+    -fx-padding: 4 0 0 0;
+    -fx-wrap-text: true;
+    -fx-max-width: 420;
+}
+
+/* ---------- Eingabefelder ---------- */
+
+.rme-dialog-field {
+    -fx-pref-width: -rme-dialog-field-width;
+}
+
+/* ---------- Dark Mode ---------- */
+
+.rme-dark .dialog-pane {
+    -fx-background-color: -rme-panel;
+}
+.rme-dark .rme-dialog-section {
+    -fx-background-color: -rme-panel;
+    -fx-border-color: derive(-rme-panel, 20%);
+}
+.rme-dark .rme-dialog-error {
+    -fx-text-fill: -rme-dialog-error-color-dark;
+}
+.rme-dark .dialog-pane > .header-panel .label {
+    -fx-text-fill: -rme-ink;
+}
+
+/* ---------- High Contrast ---------- */
+
+.rme-high-contrast .dialog-pane {
+    -fx-background-color: black;
+    -fx-border-color: white;
+}
+.rme-high-contrast .rme-dialog-section {
+    -fx-background-color: black;
+    -fx-border-color: white;
+}
+.rme-high-contrast .rme-dialog-error {
+    -fx-text-fill: #ff6b6b;
+}
+
+/* The dialog/panel is itself the root carrying the selected theme. */
+.rme-dialog.rme-dark {
+    -fx-base: #303238;
+    -fx-background: #25272b;
+    -fx-control-inner-background: #25272b;
+    -fx-text-base-color: #eeeeee;
+    -fx-text-inner-color: #eeeeee;
+    -fx-accent: #6ea5ed;
+    -fx-focus-color: #6ea5ed;
+    -rme-panel: #303238;
+    -rme-ink: #eeeeee;
+}
+.rme-dialog.rme-high-contrast {
+    -fx-base: black;
+    -fx-background: black;
+    -fx-control-inner-background: black;
+    -fx-text-base-color: white;
+    -fx-text-inner-color: white;
+    -fx-accent: yellow;
+    -fx-focus-color: yellow;
+    -rme-panel: black;
+    -rme-ink: white;
+}
+.rme-dialog.rme-dark, .rme-dialog.rme-high-contrast { -fx-background-color: -fx-background; }
+.rme-high-contrast .rme-dialog-primary { -fx-text-fill: black; }
+.rme-template-label { -fx-fill: -fx-text-base-color; -fx-font-weight: bold; }
+.rme-template-preview { -fx-fill: -fx-text-base-color; }

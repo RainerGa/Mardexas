@@ -32,8 +32,8 @@ class WritingAssistDialogsTest {
             TemplateFieldsDialog dialog = new TemplateFieldsDialog(owner(), "# ${Titel}\n${Name}");
             ((TextField) ((javafx.scene.control.ScrollPane) dialog.getDialogPane().getContent()).getContent().lookup("#template-field-0")).setText("Hallo");
             ((TextField) ((javafx.scene.control.ScrollPane) dialog.getDialogPane().getContent()).getContent().lookup("#template-field-1")).setText("Welt");
-            assertEquals("# Hallo\nWelt", dialog.getResultConverter().call(ButtonType.OK));
-            assertNull(dialog.getResultConverter().call(ButtonType.CANCEL));
+            assertEquals("# Hallo\nWelt", dialog.getResultConverter().call(DialogButtons.OK));
+            assertNull(dialog.getResultConverter().call(DialogButtons.CANCEL));
             assertEquals("plain", TemplateFieldsDialog.resolve(null, "plain").orElseThrow());
         });
     }
@@ -44,7 +44,7 @@ class WritingAssistDialogsTest {
             WritingLibraryDialog dialog = new WritingLibraryDialog(owner(), store,
                     MarkdownLibraryStore.Kind.TEMPLATE, "# Current\nText");
             assertEquals("# Current\nText", ((TextArea) dialog.getDialogPane().lookup("#library-content")).getText());
-            assertNull(dialog.getResultConverter().call(ButtonType.CANCEL));
+            assertNull(dialog.getResultConverter().call(DialogButtons.CANCEL));
             var use = dialog.getDialogPane().getButtonTypes().getFirst();
             assertEquals("# Current\nText", dialog.getResultConverter().call(use));
             for (var type : dialog.getDialogPane().getButtonTypes()) {

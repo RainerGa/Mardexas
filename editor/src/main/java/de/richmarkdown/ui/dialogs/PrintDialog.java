@@ -24,6 +24,7 @@ import javafx.print.Paper;
 import javafx.print.PrintColor;
 import javafx.print.PrintSides;
 import javafx.print.Printer;
+import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
@@ -42,6 +43,13 @@ import java.util.List;
  * Rein JavaFX-nativer Druckdialog ohne AWT/Swing.
  */
 public class PrintDialog extends Dialog<PrintDialogResult> {
+
+    private static final String LAST_PRINTER = "print.lastPrinter";
+    private static final String LAST_COPIES = "print.lastCopies";
+    private static final String LAST_ORIENTATION = "print.lastOrientation";
+    private static final String LAST_PAPER = "print.lastPaper";
+    private static final String LAST_SIDES = "print.lastSides";
+    private static final String LAST_COLOR = "print.lastColor";
 
     private final ComboBox<Printer> printerBox = new ComboBox<>();
     private final Spinner<Integer> copiesSpinner = new Spinner<>();
@@ -68,36 +76,41 @@ public class PrintDialog extends Dialog<PrintDialogResult> {
         printerBox.setItems(FXCollections.observableArrayList(sorted));
         printerBox.setConverter(printerConverter(sorted));
         printerBox.setCellFactory(list -> printerCell());
-        if (sorted.contains(defaultPrinter)) {
-            printerBox.getSelectionModel().select(defaultPrinter);
+        Printer selectedPrinter = restorePrinter(sorted, defaultPrinter);
+        if (selectedPrinter != null) {
+            printerBox.getSelectionModel().select(selectedPrinter);
         } else if (!sorted.isEmpty()) {
             printerBox.getSelectionModel().select(0);
         }
 
+        int savedCopies = readInt(LAST_COPIES, 1, 1, 99);
         copiesSpinner.setValueFactory(
-                new IntegerSpinnerValueFactory(1, 99, 1));
+                new IntegerSpinnerValueFactory(1, 99, savedCopies));
         copiesSpinner.setEditable(true);
 
         orientationBox.setItems(FXCollections.observableArrayList(
                 PageOrientation.PORTRAIT, PageOrientation.LANDSCAPE));
         orientationBox.setConverter(orientationConverter());
-        orientationBox.getSelectionModel().select(PageOrientation.PORTRAIT);
+        selectEnum(orientationBox, readEnum(LAST_ORIENTATION, PageOrientation.class,
+                PageOrientation.PORTRAIT));
 
         paperBox.setItems(FXCollections.observableArrayList(
                 Paper.A4, Paper.NA_LETTER, Paper.NA_8X10, Paper.LEGAL,
                 Paper.A5, Paper.A3, Paper.EXECUTIVE, Paper.TABLOID));
         paperBox.setConverter(paperConverter());
-        paperBox.getSelectionModel().select(Paper.A4);
+        paperBox.setValue(paperBox.getItems().stream()
+                .filter(p -> p.getName().equals(I18n.preference(LAST_PAPER, "")))
+                .findFirst().orElse(Paper.A4));
 
         sidesBox.setItems(FXCollections.observableArrayList(
                 PrintSides.ONE_SIDED, PrintSides.DUPLEX, PrintSides.TUMBLE));
         sidesBox.setConverter(sidesConverter());
-        sidesBox.getSelectionModel().select(PrintSides.ONE_SIDED);
+        selectEnum(sidesBox, readEnum(LAST_SIDES, PrintSides.class, PrintSides.ONE_SIDED));
 
         colorBox.setItems(FXCollections.observableArrayList(
                 PrintColor.COLOR, PrintColor.MONOCHROME));
         colorBox.setConverter(colorConverter());
-        colorBox.getSelectionModel().select(PrintColor.COLOR);
+        selectEnum(colorBox, readEnum(LAST_COLOR, PrintColor.class, PrintColor.COLOR));
 
         GridPane grid = new GridPane();
         grid.setHgap(8);
@@ -111,17 +124,80 @@ public class PrintDialog extends Dialog<PrintDialogResult> {
         getDialogPane().setContent(grid);
         getDialogPane().setPrefWidth(420);
 
+        DialogButtons.applyDialogStyles(getDialogPane());
         getDialogPane().getButtonTypes().addAll(
                 DialogButtons.PRINT, DialogButtons.CANCEL);
-        setResultConverter(buttonType -> buttonType == DialogButtons.PRINT
-                ? new PrintDialogResult(
-                        printerBox.getSelectionModel().getSelectedItem(),
-                        copiesSpinner.getValue(),
-                        orientationBox.getValue(),
-                        paperBox.getValue(),
-                        sidesBox.getValue(),
-                        colorBox.getValue())
-                : null);
+        Button print = (Button) getDialogPane().lookupButton(DialogButtons.PRINT);
+        print.setDefaultButton(true);
+
+        setResultConverter(buttonType -> {
+            if (buttonType != DialogButtons.PRINT) return null;
+            copiesSpinner.commitValue();
+            savePreferences();
+            return new PrintDialogResult(printerBox.getValue(), copiesSpinner.getValue(),
+                    orientationBox.getValue(), paperBox.getValue(), sidesBox.getValue(), colorBox.getValue());
+        });
+        Label error = new Label();
+        error.getStyleClass().add("rme-dialog-error");
+        grid.add(error, 0, 6, 2, 1);
+        Runnable validate = () -> {
+            boolean valid = DialogButtons.validInteger(copiesSpinner, 1, 99);
+            print.setDisable(!valid || printerBox.getValue() == null);
+            error.setText(valid ? "" : I18n.text("dialog.validation.integer"));
+        };
+        copiesSpinner.getEditor().textProperty().addListener((obs, old, value) -> validate.run());
+        printerBox.valueProperty().addListener((obs, old, value) -> validate.run());
+        validate.run();
+        setOnShown(event -> printerBox.requestFocus());
+    }
+
+    private Printer restorePrinter(List<Printer> sorted, Printer defaultPrinter) {
+        String saved = I18n.preference(LAST_PRINTER, null);
+        if (saved != null) {
+            Printer byName = sorted.stream().filter(p -> p.getName().equals(saved)).findFirst().orElse(null);
+            if (byName != null) {
+                return byName;
+            }
+        }
+        return defaultPrinter;
+    }
+
+    private static <T extends Enum<T>> T readEnum(String key, Class<T> type, T fallback) {
+        try {
+            return Enum.valueOf(type, I18n.preference(key, fallback.name()));
+        } catch (IllegalArgumentException invalid) {
+            return fallback;
+        }
+    }
+
+    private static int readInt(String key, int fallback, int min, int max) {
+        String value = I18n.preference(key, null);
+        if (value != null) {
+            try {
+                int parsed = Integer.parseInt(value);
+                if (parsed >= min && parsed <= max) {
+                    return parsed;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return fallback;
+    }
+
+    private static <T> void selectEnum(javafx.scene.control.ChoiceBox<T> box, T value) {
+        box.getSelectionModel().select(value);
+    }
+
+    private void savePreferences() {
+        Printer printer = printerBox.getSelectionModel().getSelectedItem();
+        if (printer != null) {
+            I18n.setPreference(LAST_PRINTER, printer.getName());
+        }
+        I18n.setPreference(LAST_COPIES, Integer.toString(copiesSpinner.getValue()));
+        I18n.setPreference(LAST_ORIENTATION, orientationBox.getValue().name());
+        I18n.setPreference(LAST_PAPER, paperBox.getValue().getName());
+        I18n.setPreference(LAST_SIDES, sidesBox.getValue().name());
+        I18n.setPreference(LAST_COLOR, colorBox.getValue().name());
     }
 
     private static StringConverter<Printer> printerConverter(List<Printer> sorted) {

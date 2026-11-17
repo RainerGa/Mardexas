@@ -18,10 +18,12 @@
 package de.richmarkdown.ui.dialogs;
 
 import de.richmarkdown.i18n.I18n;
+import javafx.scene.control.Button;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 
 /**
  * Erfasst die Ziel-URL eines in das Dokument einzufügenden Bildes.
@@ -33,22 +35,51 @@ import javafx.scene.layout.GridPane;
 public class ImageDialog extends Dialog<String> {
 
     private final TextField urlField = new TextField();
+    private final Label error = new Label();
 
     /** Erstellt den lokalisierten Dialog zur Eingabe einer Bild-URL. */
     public ImageDialog() {
         setTitle(I18n.text("dialog.image.title"));
         setHeaderText(I18n.text("dialog.image.header"));
 
+        urlField.setPromptText(I18n.text("dialog.image.path"));
+        urlField.setAccessibleText(I18n.text("dialog.image.path"));
+        urlField.setId("image-path");
+
+        error.getStyleClass().add("rme-dialog-error");
+        error.setWrapText(true);
+        error.setVisible(false);
+        error.setManaged(false);
+
         GridPane grid = new GridPane();
         grid.setHgap(8);
         grid.setVgap(8);
         grid.add(new Label(I18n.text("dialog.image.path")), 0, 0);
         grid.add(urlField, 1, 0);
-        getDialogPane().setContent(grid);
 
+        VBox content = new VBox(8, grid, error);
+        content.setId("image-dialog-content");
+        getDialogPane().setContent(content);
+
+        DialogButtons.applyDialogStyles(getDialogPane());
         getDialogPane().getButtonTypes().addAll(DialogButtons.OK, DialogButtons.CANCEL);
+
+        Button ok = (Button) getDialogPane().lookupButton(DialogButtons.OK);
+        ok.setDefaultButton(true);
+        ok.setDisable(true);
+
+        urlField.textProperty().addListener((observable, oldValue, newValue) -> {
+            boolean valid = newValue != null && !newValue.isBlank();
+            ok.setDisable(!valid);
+            error.setVisible(!valid);
+            error.setManaged(!valid);
+            error.setText(valid ? "" : I18n.text("dialog.validation.required"));
+        });
+
         setResultConverter(buttonType ->
                 buttonType == DialogButtons.OK ? urlField.getText() : null);
+
+        setOnShown(event -> urlField.requestFocus());
     }
 
     /**

@@ -172,8 +172,16 @@ public final class MenuBarFactory {
                     menuItem("menu.file.compareWith", window::showDiffDialog),
                     menuItem("menu.print", window::print),
                     separator(),
+                    buildSettingsMenu(),
                     menuItem("menu.quit", window::exit));
             return menu;
+        }
+
+        private Menu buildSettingsMenu() {
+            Menu settings = menu("menu.settings");
+            settings.getItems().add(menuItem("menu.settings.templatesDirectory", () ->
+                    de.richmarkdown.ui.dialogs.TemplateDialog.configureDirectory(window.getDialogOwner())));
+            return settings;
         }
 
         /**

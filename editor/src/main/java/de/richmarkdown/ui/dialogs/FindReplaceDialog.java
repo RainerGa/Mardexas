@@ -19,6 +19,7 @@ package de.richmarkdown.ui.dialogs;
 
 import de.richmarkdown.findreplace.FindReplaceEngine;
 import de.richmarkdown.i18n.I18n;
+import de.richmarkdown.ui.FeatureUi;
 import com.gluonhq.richtextarea.Selection;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -42,8 +43,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.control.TextInputDialog;
 import javafx.util.StringConverter;
 import de.richmarkdown.io.SearchPresetStore;
-import de.richmarkdown.ui.FeatureUi;
-import static de.richmarkdown.ui.FeatureUi.text;
+
 
 /**
  * Suchen-und-Ersetzen-Dialog nach LibreOffice Writer.
@@ -128,46 +128,56 @@ public class FindReplaceDialog extends Stage {
             @Override public String toString(FindReplaceEngine.FormatFilter value) {
                 if (value == null) return "";
                 return switch (value) {
-                    case ANY -> text("Alle Formatierungen", "Any formatting");
-                    case BOLD -> text("Fett", "Bold"); case ITALIC -> text("Kursiv", "Italic");
-                    case UNDERLINE -> text("Unterstrichen", "Underline");
-                    case STRIKETHROUGH -> text("Durchgestrichen", "Strikethrough");
-                    case LINK -> text("Links", "Links"); case HEADING -> text("Überschriften", "Headings");
-                    case CODE -> text("Code", "Code");
+                    case ANY -> I18n.text("dialog.findReplace.format.any");
+                    case BOLD -> I18n.text("dialog.findReplace.format.bold");
+                    case ITALIC -> I18n.text("dialog.findReplace.format.italic");
+                    case UNDERLINE -> I18n.text("dialog.findReplace.format.underline");
+                    case STRIKETHROUGH -> I18n.text("dialog.findReplace.format.strikethrough");
+                    case LINK -> I18n.text("dialog.findReplace.format.link");
+                    case HEADING -> I18n.text("dialog.findReplace.format.heading");
+                    case CODE -> I18n.text("dialog.findReplace.format.code");
                 };
             }
             @Override public FindReplaceEngine.FormatFilter fromString(String value) { return FindReplaceEngine.FormatFilter.valueOf(value); }
         });
-        formatBox.setTooltip(new Tooltip(text("Treffer müssen vollständig diese Auszeichnung besitzen", "Matches must fully have this formatting")));
+        formatBox.setTooltip(new Tooltip(I18n.text("dialog.findReplace.tooltip.format")));
         VBox opts = new VBox(4, matchCaseBox, wholeWordsBox, regexBox, wildcardsBox, backwardsBox, selectionOnlyBox, strikethroughOnlyBox,
-                new HBox(8, new Label(text("Formatfilter", "Format filter")), formatBox));
+                new HBox(8, new Label(I18n.text("dialog.findReplace.label.format")), formatBox));
         TitledPane pane = new TitledPane(I18n.text("dialog.findReplace.options"), opts);
         pane.setExpanded(false);
         pane.setCollapsible(true);
         HBox buttons = new HBox(8, findAllButton, findNextButton, findPreviousButton, replaceButton, replaceAllButton);
         statusLabel.setWrapText(true);
         statusLabel.setMaxWidth(Double.MAX_VALUE);
-        Button results = FeatureUi.button(text("Trefferliste", "Results"), text("Alle Treffer anzeigen und zu Textstellen springen", "List matches and jump to their positions"), () -> runSearchAction(() -> showResults(false)));
+        Button results = FeatureUi.button(I18n.text("dialog.findReplace.button.results"),
+                I18n.text("dialog.findReplace.tooltip.results"), () -> runSearchAction(() -> showResults(false)));
         results.setId("search-results");
-        Button preview = FeatureUi.button(text("Ersetzungen prüfen…", "Preview replacements…"), text("Vorschau anzeigen und nur ausgewählte Treffer ersetzen", "Preview and replace selected matches only"), () -> runSearchAction(() -> showResults(true)));
+        Button preview = FeatureUi.button(I18n.text("dialog.findReplace.button.preview"),
+                I18n.text("dialog.findReplace.tooltip.preview"), () -> runSearchAction(() -> showResults(true)));
         preview.setId("search-replacement-preview");
-        Button load = FeatureUi.button(text("Laden", "Load"), text("Gespeicherte Suchen auflisten und ausgewählte Suche laden", "List saved searches and load the selected search"), () -> {
+        Button load = FeatureUi.button(I18n.text("dialog.findReplace.button.load"),
+                I18n.text("dialog.findReplace.tooltip.load"), () -> {
             try {
                 if (presetBox.getValue() != null) applyPreset(presetBox.getValue());
                 presetBox.getItems().setAll(presets.list());
                 presetBox.show();
             } catch (Exception error) { statusLabel.setText(error.getMessage()); }
         });
-        presetBox.setPromptText(text("Gespeicherte Suchen", "Saved searches"));
+        presetBox.setPromptText(I18n.text("dialog.findReplace.preset.prompt"));
         presetBox.setOnAction(event -> { if (presetBox.getValue() != null) applyPreset(presetBox.getValue()); });
-        Button save = FeatureUi.button(text("Speichern…", "Save…"), text("Suchbegriff, Ersatz und Optionen im Benutzerprofil speichern", "Save query, replacement and options in the user profile"), () -> {
+        Button save = FeatureUi.button(I18n.text("dialog.findReplace.button.save"),
+                I18n.text("dialog.findReplace.tooltip.save"), () -> {
             TextInputDialog name = new TextInputDialog(findText());
-            name.initOwner(this); name.setHeaderText(text("Name der gespeicherten Suche", "Saved search name"));
+            name.initOwner(this);
+            name.setTitle(I18n.text("dialog.findReplace.title"));
+            name.setHeaderText(I18n.text("dialog.findReplace.preset.name"));
+            DialogButtons.applyDialogStyles(name.getDialogPane());
             name.showAndWait().ifPresent(value -> {
                 try { savePreset(value); } catch (Exception error) { statusLabel.setText(error.getMessage()); }
             });
         });
-        Button delete = FeatureUi.button(text("Löschen", "Delete"), text("Ausgewählte gespeicherte Suche löschen", "Delete the selected saved search"), () -> {
+        Button delete = FeatureUi.button(I18n.text("dialog.findReplace.button.delete"),
+                I18n.text("dialog.findReplace.tooltip.delete"), () -> {
             if (presetBox.getValue() == null) return;
             try { presets.delete(presetBox.getValue().id()); presetBox.getItems().setAll(presets.list()); }
             catch (Exception error) { statusLabel.setText(error.getMessage()); }
@@ -179,9 +189,17 @@ public class FindReplaceDialog extends Stage {
         root.setPadding(new Insets(12));
         root.getStyleClass().add("rme-find-replace");
         Scene scene = new Scene(root, 760, 470);
-        var css = getClass().getResource("/de/richmarkdown/ui/app.css");
-        if (css != null) scene.getStylesheets().add(css.toExternalForm());
+        var appCss = getClass().getResource("/de/richmarkdown/ui/app.css");
+        if (appCss != null) {
+            scene.getStylesheets().add(appCss.toExternalForm());
+        }
+        var dialogCss = getClass().getResource("/de/richmarkdown/ui/dialogs.css");
+        if (dialogCss != null) {
+            scene.getStylesheets().add(dialogCss.toExternalForm());
+        }
+        DialogButtons.applyPanelStyles(scene.getRoot(), findNextButton);
         setScene(scene);
+        setOnShown(event -> findBox.requestFocus());
         findAllButton.setOnAction(e -> runSearchAction(this::findAll));
         findNextButton.setOnAction(e -> runSearchAction(this::findNext));
         findPreviousButton.setOnAction(e -> runSearchAction(this::findPrevious));
@@ -191,7 +209,7 @@ public class FindReplaceDialog extends Stage {
     private void runSearchAction(Runnable action) {
         try { action.run(); }
         catch (RuntimeException error) { statusLabel.setText(error.getMessage()); }
-        catch (StackOverflowError error) { statusLabel.setText(text("Regulärer Ausdruck ist zu komplex.", "Regular expression is too complex.")); }
+        catch (StackOverflowError error) { statusLabel.setText(I18n.text("dialog.findReplace.error.regexComplex")); }
     }
     FindReplaceEngine.FindOptions buildOptions() {
         FindReplaceEngine.FindOptions o = new FindReplaceEngine.FindOptions();
@@ -318,7 +336,7 @@ public class FindReplaceDialog extends Stage {
         strikethroughOnlyBox.setSelected(o.isStrikethroughOnly()); formatBox.setValue(o.getFormatFilter());
     }
     void savePreset(String name) throws java.io.IOException {
-        if (findText().isEmpty()) throw new IllegalArgumentException(text("Suchbegriff fehlt", "Search query is empty"));
+        if (findText().isEmpty()) throw new IllegalArgumentException(I18n.text("dialog.findReplace.error.queryEmpty"));
         presets.save(name, findText(), replaceText(), buildOptions());
         presetBox.getItems().setAll(presets.list());
     }

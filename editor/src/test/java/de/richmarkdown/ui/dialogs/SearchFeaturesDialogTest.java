@@ -18,11 +18,11 @@ class SearchFeaturesDialogTest {
             var p = new FindReplaceEngine.ReplacementPreview("old", "new", new FindReplaceEngine.Match(0, 3));
             var dialog = new SearchResultsDialog(null, List.of(p), true, ignored -> { });
             dialog.show();
-            assertEquals(1, dialog.getResultConverter().call(ButtonType.OK).size());
+            assertEquals(1, dialog.getResultConverter().call(DialogButtons.OK).size());
             var none = dialog.getDialogPane().lookupAll(".button").stream()
                     .filter(node -> node instanceof Button b && (b.getText().equals("Keine auswählen") || b.getText().equals("Select none")))
                     .map(node -> (Button) node).findFirst().orElseThrow();
-            none.fire(); assertTrue(dialog.getResultConverter().call(ButtonType.OK).isEmpty());
+            none.fire(); assertTrue(dialog.getResultConverter().call(DialogButtons.OK).isEmpty());
             for (var node : dialog.getDialogPane().lookupAll(".button")) assertNotNull(((Button) node).getTooltip());
             dialog.close();
         });

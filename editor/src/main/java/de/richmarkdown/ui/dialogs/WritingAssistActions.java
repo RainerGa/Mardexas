@@ -2,9 +2,9 @@ package de.richmarkdown.ui.dialogs;
 
 import de.richmarkdown.io.InsertionContent;
 import de.richmarkdown.io.MarkdownLibraryStore;
+import de.richmarkdown.i18n.I18n;
 import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
@@ -37,21 +37,21 @@ public final class WritingAssistActions {
     public static Menu createMenuWithOwner(Supplier<Window> owner, Supplier<String> currentMarkdown, Supplier<String> selectedMarkdown,
                                   Consumer<String> insertMarkdown, Consumer<String> insertLiteral,
                                   Consumer<String> newDocument) {
-        Menu menu = new Menu("Textbausteine und Vorlagen");
+        Menu menu = new Menu(I18n.text("menu.writingAssist"));
         menu.setId("menu.writingAssist");
-        menu.getItems().add(item("insert.manageSnippets", "Textbausteine verwalten / einfügen…", () -> library(owner.get(),
+        menu.getItems().add(item("insert.manageSnippets", () -> library(owner.get(),
                 MarkdownLibraryStore.Kind.SNIPPET, "", insertMarkdown)));
-        menu.getItems().add(item("insert.saveSnippet", "Auswahl als Textbaustein speichern…", () -> library(owner.get(),
+        menu.getItems().add(item("insert.saveSnippet", () -> library(owner.get(),
                 MarkdownLibraryStore.Kind.SNIPPET, selectedMarkdown.get(), insertMarkdown)));
-        menu.getItems().add(item("insert.insertShortcut", "Textbaustein über Kürzel einfügen…", () -> shortcut(owner.get(), insertMarkdown)));
+        menu.getItems().add(item("insert.insertShortcut", () -> shortcut(owner.get(), insertMarkdown)));
         menu.getItems().add(new SeparatorMenuItem());
-        menu.getItems().add(item("insert.manageTemplates", "Eigene Dokumentvorlagen…", () -> library(owner.get(),
+        menu.getItems().add(item("insert.manageTemplates", () -> library(owner.get(),
                 MarkdownLibraryStore.Kind.TEMPLATE, "", newDocument)));
-        menu.getItems().add(item("insert.saveTemplate", "Dokument als Vorlage speichern…", () -> library(owner.get(),
+        menu.getItems().add(item("insert.saveTemplate", () -> library(owner.get(),
                 MarkdownLibraryStore.Kind.TEMPLATE, currentMarkdown.get(), newDocument)));
         menu.getItems().add(new SeparatorMenuItem());
-        menu.getItems().add(item("insert.dateTime", "Datum / Uhrzeit einfügen…", () -> dateTime(owner.get(), insertLiteral)));
-        menu.getItems().add(item("insert.specialCharacter", "Sonderzeichen einfügen…", () -> specialCharacter(owner.get(), insertLiteral)));
+        menu.getItems().add(item("insert.dateTime", () -> dateTime(owner.get(), insertLiteral)));
+        menu.getItems().add(item("insert.specialCharacter", () -> specialCharacter(owner.get(), insertLiteral)));
         return menu;
     }
 
@@ -63,8 +63,9 @@ public final class WritingAssistActions {
     private static void shortcut(Window owner, Consumer<String> insert) {
         TextInputDialog dialog = new TextInputDialog();
         dialog.initOwner(owner);
-        dialog.setTitle("Textbaustein-Kürzel");
-        dialog.setHeaderText("Kürzel exakt eingeben, zum Beispiel ;adresse");
+        dialog.setTitle(I18n.text("dialog.shortcut.title"));
+        dialog.setHeaderText(I18n.text("dialog.shortcut.header"));
+        DialogButtons.applyDialogStyles(dialog.getDialogPane());
         dialog.showAndWait().ifPresent(shortcut -> {
             if (shortcut.isBlank()) return;
             Task<List<MarkdownLibraryStore.Entry>> task = new Task<>() {
@@ -75,7 +76,7 @@ public final class WritingAssistActions {
             task.setOnSucceeded(event -> task.getValue().stream()
                     .filter(entry -> entry.shortcut().equals(shortcut.strip())).findFirst()
                     .ifPresentOrElse(entry -> TemplateFieldsDialog.resolve(owner, entry.content()).ifPresent(insert),
-                            () -> error(owner, "Für dieses Kürzel ist kein Textbaustein gespeichert.")));
+                            () -> error(owner, I18n.text("dialog.shortcut.noSnippet"))));
             task.setOnFailed(event -> error(owner, task.getException().getMessage()));
             Thread.ofVirtual().name("snippet-lookup").start(task);
         });
@@ -89,33 +90,37 @@ public final class WritingAssistActions {
                 InsertionContent.time(clock, locale, true));
         ChoiceDialog<String> dialog = new ChoiceDialog<>(values.getFirst(), values);
         dialog.initOwner(owner);
-        dialog.setTitle("Datum / Uhrzeit");
-        dialog.setHeaderText("Der gewählte Wert wird als gewöhnlicher Text eingefügt.");
+        dialog.setTitle(I18n.text("dialog.dateTime.title"));
+        dialog.setHeaderText(I18n.text("dialog.dateTime.header"));
+        DialogButtons.applyDialogStyles(dialog.getDialogPane());
         dialog.showAndWait().ifPresent(insert);
     }
 
     private static void specialCharacter(Window owner, Consumer<String> insert) {
         TextInputDialog dialog = new TextInputDialog("U+00A9");
         dialog.initOwner(owner);
-        dialog.setTitle("Sonderzeichen");
-        dialog.setHeaderText("Unicode-Codepunkt eingeben, z. B. U+00A9 (©), U+2014 (—), U+1F600 (😀)");
+        dialog.setTitle(I18n.text("dialog.specialCharacter.title"));
+        dialog.setHeaderText(I18n.text("dialog.specialCharacter.header"));
+        DialogButtons.applyDialogStyles(dialog.getDialogPane());
         dialog.showAndWait().ifPresent(value -> {
             try { insert.accept(InsertionContent.codePoint(value)); }
             catch (IllegalArgumentException error) { error(owner, error.getMessage()); }
         });
     }
 
-    private static MenuItem item(String id, String label, Runnable action) {
-        MenuItem item = new MenuItem(label);
-        item.setId(id);
+    private static MenuItem item(String key, Runnable action) {
+        MenuItem item = new MenuItem(I18n.text(key));
+        item.setId(key);
         item.setOnAction(event -> action.run());
         return item;
     }
 
     private static void error(Window owner, String text) {
-        Alert alert = new Alert(Alert.AlertType.ERROR, text, ButtonType.OK);
+        Alert alert = new Alert(Alert.AlertType.ERROR, text, DialogButtons.OK);
         alert.initOwner(owner);
-        alert.setHeaderText("Einfügen nicht möglich");
+        alert.setTitle(I18n.text("dialog.insertError.title"));
+        alert.setHeaderText(I18n.text("dialog.insertError.header"));
+        DialogButtons.applyDialogStyles(alert.getDialogPane());
         alert.showAndWait();
     }
 }

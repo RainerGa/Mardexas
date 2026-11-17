@@ -159,6 +159,23 @@ class RenderingComparisonTest(unittest.TestCase):
 
 
 class TargetMetadataTest(unittest.TestCase):
+    def test_application_constructor_is_registered_without_startup_traces(self):
+        merge = load('merge-reachability-metadata')
+        configs = Path(__file__).resolve().parent / 'native-image'
+        constructor = {'name': '<init>', 'parameterTypes': []}
+        for platform in metadata.BACKENDS:
+            with self.subTest(platform=platform):
+                # PackageVerification launches a separate Application subclass;
+                # its agent trace does not exercise the normal app constructor.
+                paths = [configs / platform / 'reachability-metadata.json',
+                         configs / 'common/reachability-metadata.json']
+                data = merge.merge_files(paths)
+                entries = [entry for entry in data['reflection']
+                           if entry['type'] == 'de.richmarkdown.RichMarkDownEditorApp'
+                           and 'condition' not in entry]
+                self.assertEqual(1, len(entries))
+                self.assertIn(constructor, entries[0].get('methods', []))
+
     def test_registers_each_platform_font_backend_and_all_runtime_resources(self):
         for platform, prefixes in metadata.BACKENDS.items():
             with self.subTest(platform=platform), tempfile.TemporaryDirectory() as temporary:

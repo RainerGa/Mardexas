@@ -18,10 +18,12 @@
 package de.richmarkdown.ui.dialogs;
 
 import de.richmarkdown.i18n.I18n;
+import javafx.scene.control.Button;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 
 /**
  * Bestätigungsdialog beim Klick auf einen HTTP/HTTPS/mailto-Link.
@@ -43,22 +45,30 @@ public class LinkConfirmDialog extends Dialog<javafx.scene.control.ButtonType> {
         setTitle(I18n.text("dialog.linkConfirm.title"));
         setHeaderText(I18n.text("dialog.linkConfirm.header"));
 
+        urlField.setText(url);
+        urlField.setEditable(false);
+        urlField.setAccessibleText(I18n.text("dialog.linkConfirm.url"));
+        urlField.setId("urlField");
+
         GridPane grid = new GridPane();
         grid.setHgap(8);
         grid.setVgap(8);
         grid.add(new Label(I18n.text("dialog.linkConfirm.url")), 0, 0);
         grid.add(urlField, 1, 0);
 
-        urlField.setText(url);
-        urlField.setEditable(false);
-        urlField.setPrefColumnCount(50);
-        urlField.setId("urlField");
+        VBox content = new VBox(8, grid);
+        content.setId("link-confirm-dialog-content");
+        getDialogPane().setContent(content);
 
-        getDialogPane().setContent(grid);
-
+        DialogButtons.applyDialogStyles(getDialogPane());
         getDialogPane().getButtonTypes().addAll(DialogButtons.OK, DialogButtons.CANCEL);
+
+        Button ok = (Button) getDialogPane().lookupButton(DialogButtons.OK);
+        ok.setDefaultButton(true);
 
         setResultConverter(buttonType ->
                 buttonType == DialogButtons.OK ? DialogButtons.OK : null);
+
+        setOnShown(event -> ok.requestFocus());
     }
 }

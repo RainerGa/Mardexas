@@ -48,13 +48,17 @@ public final class CreditsDialog extends Dialog<ButtonType> {
         setHeaderText(I18n.text(thanks ? "credits.thanksHeader" : "license.header"));
         setResizable(true);
         getDialogPane().setId(thanks ? "thanks-dialog" : "license-dialog");
-        getDialogPane().getStylesheets().add(CreditsDialog.class
-                .getResource("/de/richmarkdown/ui/credits.css").toExternalForm());
+        var creditsCss = CreditsDialog.class.getResource("/de/richmarkdown/ui/credits.css");
+        if (creditsCss != null) {
+            getDialogPane().getStylesheets().add(creditsCss.toExternalForm());
+        }
+        DialogButtons.applyDialogStyles(getDialogPane());
         var screen = javafx.stage.Screen.getPrimary().getVisualBounds();
         getDialogPane().setPrefSize(Math.min(820, screen.getWidth() - 64),
                 Math.min(640, screen.getHeight() - 80));
         var close = new ButtonType(I18n.text("dialog.close"), ButtonBar.ButtonData.CANCEL_CLOSE);
         getDialogPane().getButtonTypes().add(close);
+        ((Button) getDialogPane().lookupButton(close)).getStyleClass().add("rme-dialog-primary");
         ((Button) getDialogPane().lookupButton(close)).setTooltip(new Tooltip(close.getText()));
         if (thanks) {
             var licenses = new ButtonType(I18n.text("menu.licensing"), ButtonBar.ButtonData.LEFT);

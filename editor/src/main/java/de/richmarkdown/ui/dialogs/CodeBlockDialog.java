@@ -18,6 +18,7 @@
 package de.richmarkdown.ui.dialogs;
 
 import de.richmarkdown.i18n.I18n;
+import javafx.scene.control.Button;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
@@ -34,21 +35,46 @@ import javafx.scene.layout.VBox;
 public class CodeBlockDialog extends Dialog<String> {
 
     private final TextArea codeArea = new TextArea();
+    private final Label error = new Label();
 
     /** Erstellt und konfiguriert den lokalisierten Codeblockdialog. */
     public CodeBlockDialog() {
+        setResizable(true);
         setTitle(I18n.text("dialog.code.title"));
         setHeaderText(I18n.text("dialog.code.header"));
 
         codeArea.setPromptText(I18n.text("dialog.code.prompt"));
-        VBox box = new VBox(8, new Label(I18n.text("dialog.code.label")), codeArea);
+        codeArea.setAccessibleText(I18n.text("dialog.code.label"));
+        codeArea.setId("code-area");
+
+        error.getStyleClass().add("rme-dialog-error");
+        error.setWrapText(true);
+        error.setVisible(false);
+        error.setManaged(false);
+
+        VBox box = new VBox(8, new Label(I18n.text("dialog.code.label")), codeArea, error);
         VBox.setVgrow(codeArea, Priority.ALWAYS);
         getDialogPane().setContent(box);
-        getDialogPane().setPrefSize(500, 300);
 
+        DialogButtons.applyDialogStyles(getDialogPane());
         getDialogPane().getButtonTypes().addAll(DialogButtons.OK, DialogButtons.CANCEL);
+
+        Button ok = (Button) getDialogPane().lookupButton(DialogButtons.OK);
+        ok.setDefaultButton(true);
+        ok.setDisable(true);
+
+        codeArea.textProperty().addListener((observable, oldValue, newValue) -> {
+            boolean valid = newValue != null && !newValue.isBlank();
+            ok.setDisable(!valid);
+            error.setVisible(!valid);
+            error.setManaged(!valid);
+            error.setText(valid ? "" : I18n.text("dialog.validation.required"));
+        });
+
         setResultConverter(buttonType ->
                 buttonType == DialogButtons.OK ? codeArea.getText() : null);
+
+        setOnShown(event -> codeArea.requestFocus());
     }
 
     /**

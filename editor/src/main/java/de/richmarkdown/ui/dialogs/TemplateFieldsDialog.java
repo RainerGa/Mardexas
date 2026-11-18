@@ -41,6 +41,7 @@ public final class TemplateFieldsDialog extends Dialog<String> {
 
         GridPane grid = new GridPane(10, 8);
         Map<String, TextField> fields = new LinkedHashMap<>();
+        Map<String, String> multiline = new LinkedHashMap<>();
         int row = 0;
         for (String name : TemplateFields.names(template)) {
             TextField input = new TextField();
@@ -48,7 +49,20 @@ public final class TemplateFieldsDialog extends Dialog<String> {
             input.setAccessibleText(name);
             input.setId("template-field-" + row);
             fields.put(name, input);
-            grid.addRow(row++, new Label(name), input);
+                        Button edit = WorkflowDialogs.button("context", () -> {
+                Dialog<String> editor = new Dialog<>(); editor.initOwner(getDialogPane().getScene().getWindow()); editor.setTitle(name); editor.setResizable(true);
+                javafx.scene.control.TextArea area = new javafx.scene.control.TextArea(multiline.getOrDefault(name, input.getText()));
+                editor.getDialogPane().setContent(area); editor.getDialogPane().getButtonTypes().addAll(DialogButtons.OK, DialogButtons.CANCEL);
+                DialogButtons.applyDialogStyles(editor.getDialogPane());
+                editor.setResultConverter(button -> button == DialogButtons.OK ? area.getText() : null);
+                editor.showAndWait().ifPresent(value -> {
+                    input.setText(value.replace("\n", " ↵ "));
+                    multiline.put(name, value);
+                    input.setUserData(value);
+                    input.fireEvent(new javafx.event.ActionEvent());
+                });
+            });
+            grid.addRow(row++, new Label(name + " *"), input, edit);
         }
         ScrollPane scroll = new ScrollPane(grid);
         scroll.setFitToWidth(true);
@@ -68,19 +82,27 @@ public final class TemplateFieldsDialog extends Dialog<String> {
         Label error = new Label(I18n.text("dialog.validation.required"));
         error.getStyleClass().add("rme-dialog-error");
         grid.add(error, 0, row, 2, 1);
+        javafx.scene.control.TextArea preview = WorkflowDialogs.output(template);
+        grid.add(new Label(WorkflowDialogs.text("required") + " *"), 0, row + 1, 2, 1);
+        grid.add(preview, 0, row + 2, 3, 1);
         Runnable validate = () -> {
+            Map<String, String> current = new LinkedHashMap<>(); fields.forEach((name, field) -> current.put(name, multiline.getOrDefault(name, field.getText())));
+            preview.setText(TemplateFields.resolve(template, current));
             boolean invalid = fields.values().stream().anyMatch(field -> field.getText().isBlank());
             ok.setDisable(invalid);
             error.setVisible(invalid);
             error.setManaged(invalid);
         };
-        fields.values().forEach(field -> field.textProperty().addListener((obs, old, value) -> validate.run()));
+        fields.forEach((name, field) -> {
+            field.textProperty().addListener((obs, old, value) -> { multiline.remove(name); validate.run(); });
+            field.addEventHandler(javafx.event.ActionEvent.ACTION, event -> validate.run());
+        });
         validate.run();
         setResizable(true);
         setResultConverter(button -> {
             if (button != DialogButtons.OK) return null;
             Map<String, String> values = new LinkedHashMap<>();
-            fields.forEach((name, field) -> values.put(name, field.getText()));
+            fields.forEach((name, field) -> values.put(name, multiline.getOrDefault(name, field.getText())));
             return TemplateFields.resolve(template, values);
         });
 

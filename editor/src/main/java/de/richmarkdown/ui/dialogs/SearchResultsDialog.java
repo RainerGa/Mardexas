@@ -40,12 +40,18 @@ public final class SearchResultsDialog extends Dialog<List<FindReplaceEngine.Rep
 
     public SearchResultsDialog(Window owner, List<FindReplaceEngine.ReplacementPreview> previews,
                                boolean replacements, java.util.function.Consumer<FindReplaceEngine.Match> reveal) {
+        this(owner, previews, replacements, reveal, null);
+    }
+    public SearchResultsDialog(Window owner, List<FindReplaceEngine.ReplacementPreview> previews,
+                               boolean replacements, java.util.function.Consumer<FindReplaceEngine.Match> reveal, String source) {
         initOwner(owner);
         setTitle(replacements ? I18n.text("dialog.searchResults.title.replacements")
                 : I18n.text("dialog.searchResults.title.matches"));
         setHeaderText(I18n.text("dialog.searchResults.header"));
         setResizable(true);
         List<Row> rows = previews.stream().map(preview -> new Row(preview, new SimpleBooleanProperty(replacements))).toList();
+        int[] lineStarts = source == null ? new int[]{0} : java.util.stream.IntStream.concat(java.util.stream.IntStream.of(0),
+                java.util.stream.IntStream.range(0, source.length()).filter(i -> source.charAt(i) == '\n').map(i -> i + 1)).toArray();
         ListView<Row> list = new ListView<>();
         list.getItems().setAll(rows);
         list.setId("search-preview-list");
@@ -65,7 +71,15 @@ public final class SearchResultsDialog extends Dialog<List<FindReplaceEngine.Rep
                 }
                 String before = excerpt(row.preview().text());
                 String after = excerpt(row.preview().replacement());
-                check.setText(row.preview().match().getStart() + ": " + before + (replacements ? " → " + after : ""));
+                int offset = row.preview().match().getStart();
+                String location = Integer.toString(offset);
+                if (source != null && offset <= source.length()) {
+                    int found = java.util.Arrays.binarySearch(lineStarts, offset);
+                    int line = found >= 0 ? found : -found - 2;
+                    int column = offset - lineStarts[line] + 1;
+                    location = WorkflowDialogs.text("line") + " " + (line + 1) + ", " + WorkflowDialogs.text("column") + " " + column;
+                }
+                check.setText(location + ": " + before + (replacements ? " → " + after : ""));
                 check.setTooltip(new Tooltip(I18n.text("dialog.searchResults.tooltip.select")));
                 check.selectedProperty().bindBidirectional(row.selected());
                 check.setMouseTransparent(!replacements);
@@ -77,13 +91,30 @@ public final class SearchResultsDialog extends Dialog<List<FindReplaceEngine.Rep
                 reveal.accept(list.getSelectionModel().getSelectedItem().preview().match());
             }
         });
+        javafx.scene.control.TextArea context = WorkflowDialogs.output(""); context.setPrefRowCount(4);
+        list.getSelectionModel().selectedItemProperty().addListener((obs, old, row) -> {
+            if (row == null) { context.clear(); return; }
+            int start = row.preview().match().getStart(), end = row.preview().match().getEnd();
+            if (source != null) {
+                int from = Math.max(0, start - 180), to = Math.min(source.length(), end + 180);
+                context.setText(source.substring(from, to)); context.selectRange(start - from, end - from);
+            } else context.setText(row.preview().text());
+        });
+        list.setOnKeyPressed(event -> {
+            Row row = list.getSelectionModel().getSelectedItem(); if (row == null) return;
+            if (event.getCode() == javafx.scene.input.KeyCode.ENTER) { reveal.accept(row.preview().match()); event.consume(); }
+            if (event.getCode() == javafx.scene.input.KeyCode.SPACE && replacements) { row.selected().set(!row.selected().get()); event.consume(); }
+        });
+        var totalSelected = new javafx.beans.property.SimpleIntegerProperty(replacements ? rows.size() : 0);
+        Label selectedCount = new Label(); selectedCount.textProperty().bind(totalSelected.asString(WorkflowDialogs.text("selected") + ": %d / " + rows.size()));
+        rows.forEach(row -> row.selected().addListener((obs, old, value) -> totalSelected.set(totalSelected.get() + (value ? 1 : -1))));
         Button all = new Button(I18n.text("dialog.searchResults.button.selectAll"));
         all.setTooltip(new Tooltip(I18n.text("dialog.searchResults.tooltip.selectAll")));
         all.setOnAction(event -> rows.forEach(row -> row.selected().set(true)));
         Button none = new Button(I18n.text("dialog.searchResults.button.selectNone"));
         none.setTooltip(new Tooltip(I18n.text("dialog.searchResults.tooltip.selectNone")));
         none.setOnAction(event -> rows.forEach(row -> row.selected().set(false)));
-        VBox body = new VBox(8, new Label(MessageFormat.format(I18n.text("dialog.searchResults.count"), previews.size())), list);
+        VBox body = new VBox(8, new Label(MessageFormat.format(I18n.text("dialog.searchResults.count"), previews.size())), selectedCount, list, context);
         if (replacements) {
             body.getChildren().add(new javafx.scene.layout.HBox(8, all, none));
         }
@@ -95,7 +126,7 @@ public final class SearchResultsDialog extends Dialog<List<FindReplaceEngine.Rep
         if (replacements) {
             getDialogPane().getButtonTypes().addAll(DialogButtons.OK, DialogButtons.CANCEL);
             Button ok = (Button) getDialogPane().lookupButton(DialogButtons.OK);
-            ok.setDefaultButton(true);
+            ok.setDefaultButton(true); ok.disableProperty().bind(totalSelected.isEqualTo(0));
             ok.setTooltip(new Tooltip(I18n.text("dialog.searchResults.button.ok")));
         } else {
             getDialogPane().getButtonTypes().addAll(DialogButtons.CLOSE, DialogButtons.CANCEL);

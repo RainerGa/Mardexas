@@ -49,6 +49,15 @@ public final class WritingLibraryDialog extends Dialog<String> {
     private final VBox body = new VBox(8);
     private String selectedId;
     private boolean busy;
+    private boolean selecting;
+    private String baseline = "";
+    private final javafx.collections.ObservableList<Entry> allEntries = javafx.collections.FXCollections.observableArrayList();
+    private final TextField filter = new TextField();
+    private final javafx.beans.property.BooleanProperty working = new javafx.beans.property.SimpleBooleanProperty();
+    private String snapshot() { return name.getText() + "\0" + shortcut.getText() + "\0" + content.getText(); }
+    private boolean mayDiscard() { return snapshot().equals(baseline) || WorkflowDialogs.discard(getDialogPane().getScene().getWindow()); }
+    private void clean() { baseline = snapshot(); }
+
 
     public WritingLibraryDialog(Window owner, MarkdownLibraryStore store, MarkdownLibraryStore.Kind kind,
                                 String initialMarkdown) {
@@ -74,21 +83,26 @@ public final class WritingLibraryDialog extends Dialog<String> {
         entries.setId("library-list");
         entries.setPrefHeight(140);
         entries.getSelectionModel().selectedItemProperty().addListener((obs, previous, entry) -> {
+            if (selecting) return;
             if (entry != null) {
+                if (!mayDiscard()) { selecting = true; entries.getSelectionModel().select(previous); selecting = false; return; }
                 selectedId = entry.id();
                 name.setText(entry.name());
                 shortcut.setText(entry.shortcut());
                 content.setText(entry.content());
+                clean();
             }
         });
         Button create = button(I18n.text("dialog.writingLibrary.button.new"),
                 I18n.text("dialog.writingLibrary.button.new"),
                 () -> {
+                    if (!mayDiscard()) return;
                     entries.getSelectionModel().clearSelection();
                     selectedId = null;
                     name.clear();
                     shortcut.clear();
                     content.clear();
+                    clean();
                     name.requestFocus();
                 });
         Button save = button(I18n.text("dialog.writingLibrary.button.save"),
@@ -98,8 +112,24 @@ public final class WritingLibraryDialog extends Dialog<String> {
         Button load = button(I18n.text("dialog.writingLibrary.button.load"),
                 I18n.text("dialog.writingLibrary.button.load"), this::importFile);
         delete.disableProperty().bind(entries.getSelectionModel().selectedItemProperty().isNull());
-        HBox commands = new HBox(8, create, save, delete, load);
-        body.getChildren().addAll(entries, commands, name, shortcut, content, status);
+        Button export = WorkflowDialogs.button("export", this::exportFile);
+        Button preview = WorkflowDialogs.button("preview", () -> {
+            Dialog<Void> dialog = new Dialog<>(); dialog.initOwner(getDialogPane().getScene().getWindow()); dialog.setTitle(WorkflowDialogs.text("preview"));
+            dialog.setResizable(true); dialog.getDialogPane().setContent(WorkflowDialogs.markdownPreview(content.getText()));
+            dialog.getDialogPane().getButtonTypes().add(DialogButtons.CLOSE); DialogButtons.applyDialogStyles(dialog.getDialogPane()); dialog.show();
+        });
+        HBox commands = new HBox(8, create, save, delete, load, export, preview);
+        filter.setPromptText(WorkflowDialogs.text("search")); filter.setId("library-filter");
+        var filtered = new javafx.collections.transformation.FilteredList<>(allEntries, entry -> true);
+        entries.setItems(filtered);
+        filter.textProperty().addListener((obs, old, value) -> {
+            if (selecting) return;
+            String query = value.toLowerCase(java.util.Locale.ROOT);
+            selecting = true;
+            filtered.setPredicate(entry -> (entry.name() + " " + entry.shortcut()).toLowerCase(java.util.Locale.ROOT).contains(query));
+            selecting = false;
+        });
+        body.getChildren().addAll(filter, entries, commands, name, shortcut, content, status);
         body.setPrefSize(720, 600);
         VBox.setVgrow(content, Priority.ALWAYS);
         getDialogPane().setContent(body);
@@ -111,7 +141,11 @@ public final class WritingLibraryDialog extends Dialog<String> {
         use.setTooltip(new Tooltip(I18n.text("dialog.codeAssistant.button.ok.tooltip")));
         ((Button) getDialogPane().lookupButton(DialogButtons.CANCEL))
                 .setTooltip(new Tooltip(I18n.text("dialog.codeAssistant.button.cancel.tooltip")));
-        use.disableProperty().bind(content.textProperty().isEmpty());
+        use.setText(WorkflowDialogs.text("insert"));
+        use.disableProperty().bind(content.textProperty().isEmpty().or(working));
+        getDialogPane().lookupButton(DialogButtons.CANCEL).disableProperty().bind(working);
+        setOnCloseRequest(event -> { if (busy || getResult() == null && !mayDiscard()) event.consume(); });
+        clean();
         setResultConverter(button -> button == DialogButtons.OK ? content.getText() : null);
         setOnShowing(event -> refresh(null));
         setOnShown(event -> name.requestFocus());
@@ -122,7 +156,7 @@ public final class WritingLibraryDialog extends Dialog<String> {
         String entryName = name.getText();
         String entryShortcut = shortcut.getText();
         String markdown = content.getText();
-        runIo(() -> store.save(id, entryName, entryShortcut, markdown), entry -> refresh(entry.id()));
+        runIo(() -> store.save(id, entryName, entryShortcut, markdown), entry -> { clean(); refresh(entry.id()); });
     }
 
     private void delete() {
@@ -144,11 +178,12 @@ public final class WritingLibraryDialog extends Dialog<String> {
             name.clear();
             shortcut.clear();
             content.clear();
-            refresh(null);
+            clean(); refresh(null);
         });
     }
 
     private void importFile() {
+        if (!mayDiscard()) return;
         FileChooser chooser = new FileChooser();
         chooser.setTitle(I18n.text("dialog.writingLibrary.button.load"));
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Markdown", "*.md", "*.markdown"));
@@ -163,9 +198,20 @@ public final class WritingLibraryDialog extends Dialog<String> {
         });
     }
 
+    private void exportFile() {
+        FileChooser chooser = new FileChooser(); chooser.setTitle(WorkflowDialogs.text("export"));
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Markdown", "*.md"));
+        chooser.setInitialFileName("snippet.md");
+        var target = chooser.showSaveDialog(getDialogPane().getScene().getWindow());
+        if (target == null) return;
+        String markdown = content.getText();
+        runIo(() -> { java.nio.file.Files.writeString(target.toPath(), markdown, java.nio.charset.StandardCharsets.UTF_8); return true; },
+                ignored -> status.setText(target.toString()));
+    }
+
     private void refresh(String selectId) {
         runIo(store::list, loaded -> {
-            entries.getItems().setAll(loaded);
+            allEntries.setAll(loaded);
             if (selectId != null) {
                 loaded.stream().filter(entry -> entry.id().equals(selectId))
                         .findFirst().ifPresent(entry -> entries.getSelectionModel().select(entry));
@@ -176,7 +222,7 @@ public final class WritingLibraryDialog extends Dialog<String> {
 
     private <T> void runIo(Callable<T> operation, java.util.function.Consumer<T> success) {
         if (busy) return;
-        busy = true;
+        busy = true; working.set(true);
         body.setDisable(true);
         status.setText(I18n.text("dialog.writingLibrary.status.processing"));
         Task<T> task = new Task<>() {
@@ -186,12 +232,12 @@ public final class WritingLibraryDialog extends Dialog<String> {
             }
         };
         task.setOnSucceeded(event -> {
-            busy = false;
+            busy = false; working.set(false);
             body.setDisable(false);
             success.accept(task.getValue());
         });
         task.setOnFailed(event -> {
-            busy = false;
+            busy = false; working.set(false);
             body.setDisable(false);
             status.setText(MessageFormat.format(I18n.text("dialog.writingLibrary.status.error"), task.getException().getMessage()));
         });

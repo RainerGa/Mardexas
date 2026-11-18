@@ -246,11 +246,19 @@ public class ReviewPane extends VBox {
         private void showCommentDialog() {
             Change change = getItem();
             if (change == null) return;
-            TextInputDialog dialog = new TextInputDialog(change.comment() == null ? "" : change.comment());
+            javafx.scene.control.Dialog<String> dialog = new javafx.scene.control.Dialog<>();
+            javafx.scene.control.TextArea area = new javafx.scene.control.TextArea(change.comment() == null ? "" : change.comment());
+            area.setWrapText(true); area.setPrefRowCount(6);
+            dialog.setResizable(true);
+            dialog.getDialogPane().setContent(area);
+            dialog.getDialogPane().getButtonTypes().addAll(de.richmarkdown.ui.dialogs.DialogButtons.OK, de.richmarkdown.ui.dialogs.DialogButtons.CANCEL);
+            de.richmarkdown.ui.dialogs.DialogButtons.applyDialogStyles(dialog.getDialogPane());
+            dialog.setResultConverter(type -> type == de.richmarkdown.ui.dialogs.DialogButtons.OK ? area.getText() : null);
+            de.richmarkdown.ui.dialogs.WorkflowDialogs.multilineKeys(dialog, (Button) dialog.getDialogPane().lookupButton(de.richmarkdown.ui.dialogs.DialogButtons.OK));
             if (getScene() != null) dialog.initOwner(getScene().getWindow());
             dialog.setTitle(I18n.text("trackChanges.comment.title"));
             dialog.setHeaderText(I18n.text("trackChanges.comment.header"));
-            dialog.setContentText(I18n.text("trackChanges.comment.content"));
+            area.setAccessibleText(I18n.text("trackChanges.comment.content"));
             dialog.getDialogPane().getButtonTypes().forEach(type -> {
                 if (dialog.getDialogPane().lookupButton(type) instanceof Button button) {
                     button.setTooltip(new Tooltip(type.getText()));

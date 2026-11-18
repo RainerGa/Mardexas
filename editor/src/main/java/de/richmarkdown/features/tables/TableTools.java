@@ -28,31 +28,22 @@ public final class TableTools {
             item("table.exportDelimited", "Tabelle als CSV/TSV exportieren…", () -> exportFile(editor, owner.get()), owner),
             item("table.copyRegion", "Zellbereich kopieren (TSV)…", () -> {
                 TableData table = current(editor, editor.getDocumentSnapshot()).data();
-                int firstRow = index(owner.get(), "Erste Zeile", table.rows().size()), firstColumn = index(owner.get(), "Erste Spalte", table.width());
-                int lastRow = index(owner.get(), "Letzte Zeile", table.rows().size()), lastColumn = index(owner.get(), "Letzte Spalte", table.width());
-                ClipboardContent content = new ClipboardContent(); content.putString(DelimitedTables.write(table.region(firstRow, firstColumn, lastRow, lastColumn), '\t')); Clipboard.getSystemClipboard().setContent(content);
+                var result = operation(editor, owner.get(), table, de.richmarkdown.ui.dialogs.TableOperationDialog.Operation.COPY, null);
+                if (result != null) { ClipboardContent content = new ClipboardContent(); content.putString(DelimitedTables.write(result.getFirst(), '\t')); Clipboard.getSystemClipboard().setContent(content); }
             }, owner),
-            item("table.pasteRegion", "Zellen aus Zwischenablage einsetzen (TSV)…", () -> edit(editor, table -> {
-                TableData cells = DelimitedTables.parse(Clipboard.getSystemClipboard().getString(), '\t');
-                int row = index(owner.get(), "Erste Zielzeile (vorhandene Inhalte werden ersetzt)", table.rows().size()), column = index(owner.get(), "Erste Zielspalte", table.width());
-                return List.of(table.paste(row, column, cells));
-            }), owner),
+            item("table.pasteRegion", "Zellen aus Zwischenablage einsetzen (TSV)…", () -> edit(editor, table -> operation(editor, owner.get(), table,
+                    de.richmarkdown.ui.dialogs.TableOperationDialog.Operation.PASTE, DelimitedTables.parse(Clipboard.getSystemClipboard().getString(), '\t'))), owner),
             new SeparatorMenuItem(),
-            item("table.sortColumns", "Nach Spalten sortieren…", () -> edit(editor, table -> {
-                TextInputDialog columnsDialog = new TextInputDialog("1"); columnsDialog.initOwner(owner.get()); columnsDialog.setTitle("Sortierspalten"); columnsDialog.setHeaderText("Spaltennummern nach Priorität, beispielsweise 1,3");
-                String input = columnsDialog.showAndWait().orElseThrow(Cancelled::new); List<Integer> columns;
-                try { columns = Arrays.stream(input.split(",", -1)).map(String::strip).map(Integer::parseInt).map(n -> n - 1).toList(); } catch (NumberFormatException failure) { throw new IllegalArgumentException("Bitte gültige Spaltennummern eingeben."); }
-                ChoiceDialog<String> mode = new ChoiceDialog<>("Text aufsteigend", "Text aufsteigend", "Text absteigend", "Zahlen aufsteigend", "Zahlen absteigend"); mode.setTitle("Sortierung (Kopfzeile bleibt erhalten)"); mode.initOwner(owner.get());
-                return mode.showAndWait().map(value -> table.sort(columns, value.startsWith("Zahlen"), value.endsWith("absteigend"))).map(List::of).orElse(null);
-            }), owner),
+            item("table.sortColumns", "Nach Spalten sortieren…", () -> edit(editor, table -> operation(editor, owner.get(), table, de.richmarkdown.ui.dialogs.TableOperationDialog.Operation.SORT, null)), owner),
             item("table.transpose", "Transponieren", () -> edit(editor, table -> List.of(table.transpose())), owner),
-            item("table.duplicateRow", "Zeile duplizieren…", () -> edit(editor, table -> List.of(table.duplicateRow(index(owner.get(), "Zeile duplizieren (1 = Kopfzeile)", table.rows().size())))), owner),
-            item("table.duplicateColumn", "Spalte duplizieren…", () -> edit(editor, table -> List.of(table.duplicateColumn(index(owner.get(), "Spalte duplizieren", table.width())))), owner),
-            item("table.moveRow", "Zeile verschieben…", () -> edit(editor, table -> List.of(table.moveRow(index(owner.get(), "Ausgangszeile", table.rows().size()), index(owner.get(), "Zielzeile", table.rows().size())))), owner),
-            item("table.moveColumn", "Spalte verschieben…", () -> edit(editor, table -> List.of(table.moveColumn(index(owner.get(), "Ausgangsspalte", table.width()), index(owner.get(), "Zielspalte", table.width())))), owner),
-            item("table.split", "Tabelle teilen…", () -> edit(editor, table -> table.split(index(owner.get(), "Vor welcher Zeile teilen? (ab 2)", table.rows().size()))), owner),
+            item("table.duplicateRow", "Zeile duplizieren…", () -> edit(editor, table -> operation(editor, owner.get(), table, de.richmarkdown.ui.dialogs.TableOperationDialog.Operation.DUPLICATE_ROW, null)), owner),
+            item("table.duplicateColumn", "Spalte duplizieren…", () -> edit(editor, table -> operation(editor, owner.get(), table, de.richmarkdown.ui.dialogs.TableOperationDialog.Operation.DUPLICATE_COLUMN, null)), owner),
+            item("table.moveRow", "Zeile verschieben…", () -> edit(editor, table -> operation(editor, owner.get(), table, de.richmarkdown.ui.dialogs.TableOperationDialog.Operation.MOVE_ROW, null)), owner),
+            item("table.moveColumn", "Spalte verschieben…", () -> edit(editor, table -> operation(editor, owner.get(), table, de.richmarkdown.ui.dialogs.TableOperationDialog.Operation.MOVE_COLUMN, null)), owner),
+            item("table.split", "Tabelle teilen…", () -> edit(editor, table -> operation(editor, owner.get(), table, de.richmarkdown.ui.dialogs.TableOperationDialog.Operation.SPLIT, null)), owner),
             item("table.joinNext", "Mit nächster Tabelle verbinden…", () -> join(editor, owner.get()), owner),
-            item("table.calculateColumn", "Spalte berechnen…", () -> calculate(editor, owner.get()), owner)
+            item("table.calculateColumn", "Spalte berechnen…", () -> edit(editor, table -> operation(editor, owner.get(), table, de.richmarkdown.ui.dialogs.TableOperationDialog.Operation.CALCULATE, null)), owner)
+
         );
         menu.getProperties().put(de.richmarkdown.ui.CommandIdentity.REFRESH, (Runnable) () -> updateAvailability(menu, editor));
         menu.setOnShowing(event -> updateAvailability(menu, editor));
@@ -75,7 +66,7 @@ public final class TableTools {
         }
     }
     private static MenuItem item(String id, String text, Runnable action, Supplier<Window> owner) {
-        MenuItem item = new MenuItem(text); item.setId(id); item.setOnAction(event -> { try { action.run(); } catch (Cancelled ignored) { /* explicit cancellation */ } catch (RuntimeException failure) { error(owner.get(), failure); } }); return item;
+        MenuItem item = new MenuItem(text); item.setId(id); item.setOnAction(event -> { try { action.run(); } catch (RuntimeException failure) { error(owner.get(), failure); } }); return item;
     }
     private static void error(Window owner, Throwable failure) { Alert alert = new Alert(Alert.AlertType.ERROR); alert.initOwner(owner); alert.setTitle("Tabellenbearbeitung"); alert.setHeaderText("Die Tabellenaktion konnte nicht ausgeführt werden."); alert.setContentText(failure.getMessage()); alert.showAndWait(); }
     private static int exportedCaret(MarkdownEditor editor) {
@@ -124,47 +115,52 @@ public final class TableTools {
         editor.replaceRange(caret, caret, TableDocuments.insertion(source, caret, table), Selection.UNDEFINED);
         javafx.application.Platform.runLater(editor.getControl()::requestFocus);
     }
-    private static int index(Window owner, String prompt, int maximum) { TextInputDialog dialog = new TextInputDialog("1"); dialog.initOwner(owner); dialog.setTitle("Tabellenposition"); dialog.setHeaderText(prompt); dialog.setContentText("Nummer (1–" + maximum + "):"); String result = dialog.showAndWait().orElseThrow(Cancelled::new); try { int index = Integer.parseInt(result.strip()) - 1; Objects.checkIndex(index, maximum); return index; } catch (NumberFormatException | IndexOutOfBoundsException failure) { throw new IllegalArgumentException("Bitte eine Nummer zwischen 1 und " + maximum + " eingeben."); } }
-    private static void calculate(MarkdownEditor editor, Window owner) {
-        edit(editor, table -> {
-            int column = index(owner, "Spalte berechnen (ohne Kopfzeile, leere Zellen werden ignoriert)", table.width());
-            ChoiceDialog<String> choice = new ChoiceDialog<>("Summe", "Summe", "Mittelwert", "Minimum", "Maximum"); choice.initOwner(owner); choice.setTitle("Berechnung"); choice.setHeaderText("Zahlenformat: Dezimalpunkt, keine Tausendertrennzeichen.");
-            String mode = choice.showAndWait().orElseThrow(Cancelled::new);
-            TableData.Calculation calculation = switch (mode) { case "Mittelwert" -> TableData.Calculation.AVERAGE; case "Minimum" -> TableData.Calculation.MINIMUM; case "Maximum" -> TableData.Calculation.MAXIMUM; default -> TableData.Calculation.SUM; };
-            String result = table.calculate(column, calculation).toPlainString();
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Ergebnis: " + result + "\nAls normalen Text in eine Zielzelle einsetzen? Deren bisheriger Inhalt wird ersetzt.", ButtonType.OK, ButtonType.CANCEL); alert.initOwner(owner); alert.setHeaderText(mode);
-            if (alert.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return null;
-            int row = index(owner, "Zielzeile für " + result, table.rows().size()); int target = index(owner, "Zielspalte für " + result, table.width());
-            return List.of(table.replaceCell(row, target, result));
-        });
+    private static List<TableData> operation(MarkdownEditor editor, Window owner, TableData table,
+            de.richmarkdown.ui.dialogs.TableOperationDialog.Operation operation, TableData other) {
+        var located = current(editor, editor.getDocumentSnapshot());
+        String prefix = editor.getDocumentSnapshot().getText().substring(located.start(), Math.clamp(exportedCaret(editor), located.start(), located.end()));
+        int cell = (int) prefix.chars().filter(c -> c == '\u200b').count();
+        return new de.richmarkdown.ui.dialogs.TableOperationDialog(owner, de.richmarkdown.ui.dialogs.WorkflowDialogs.text(operation == de.richmarkdown.ui.dialogs.TableOperationDialog.Operation.SORT ? "sort" : "apply"),
+                table, operation, other, cell / table.width(), cell % table.width()).showAndWait().orElse(null);
     }
     private static void join(MarkdownEditor editor, Window owner) {
         editable(editor);
         Document source = editor.getDocumentSnapshot(); TableDocuments.Located first = current(editor, source); int next = first.end(); String text = source.getText(); while (next < text.length() && (text.charAt(next) == '\n' || text.charAt(next) == '\r')) next++;
         if (next >= text.length()) throw new IllegalArgumentException("Keine unmittelbar folgende Tabelle vorhanden.");
         TableDocuments.Located second = TableDocuments.at(source, next).orElseThrow(() -> new IllegalArgumentException("Keine unmittelbar folgende Tabelle vorhanden."));
-        ChoiceDialog<String> choice = new ChoiceDialog<>("Zweite Kopfzeile weglassen", "Zweite Kopfzeile weglassen", "Zweite Kopfzeile als Daten behalten"); choice.initOwner(owner); choice.setTitle("Tabellen verbinden"); String selection = choice.showAndWait().orElseThrow(Cancelled::new);
-        TableData joined = first.data().join(second.data(), selection.equals("Zweite Kopfzeile weglassen"));
-        apply(editor, source, new TableDocuments.Located(first.start(), second.end(), first.data()), List.of(joined));
+        List<TableData> result = operation(editor, owner, first.data(), de.richmarkdown.ui.dialogs.TableOperationDialog.Operation.JOIN, second.data());
+        if (result != null) apply(editor, source, new TableDocuments.Located(first.start(), second.end(), first.data()), result);
     }
+
     private static FileChooser chooser() { FileChooser chooser = new FileChooser(); chooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("CSV", "*.csv"), new FileChooser.ExtensionFilter("TSV", "*.tsv")); return chooser; }
-    private static char separator(File file, Window owner) {
-        if (file.getName().toLowerCase(Locale.ROOT).endsWith(".tsv")) return '\t';
-        ChoiceDialog<String> choice = new ChoiceDialog<>("Komma", "Komma", "Semikolon", "Tabulator"); choice.initOwner(owner); choice.setTitle("Trennzeichen"); choice.setHeaderText("Die erste Zeile wird als Tabellenkopf übernommen.");
-        return switch (choice.showAndWait().orElseThrow(Cancelled::new)) { case "Semikolon" -> ';'; case "Tabulator" -> '\t'; default -> ','; };
-    }
     private static void importFile(MarkdownEditor editor, Window owner) {
         editable(editor);
-        File file = chooser().showOpenDialog(owner); if (file == null) return; char separator = separator(file, owner);
+        File file = chooser().showOpenDialog(owner); if (file == null) return;
         Document before = editor.getDocumentSnapshot(); int caret = exportedCaret(editor);
-        Task<TableData> task = new Task<>() { @Override protected TableData call() throws Exception { if (Files.size(file.toPath()) > DelimitedTables.MAX_CHARACTERS * 4L) throw new IllegalArgumentException("Die Datei ist zu groß."); return DelimitedTables.parse(Files.readString(file.toPath(), StandardCharsets.UTF_8), separator); } };
-        task.setOnSucceeded(event -> { try { editable(editor); Document now = editor.getDocumentSnapshot(); if (!now.getText().equals(before.getText()) || !now.getDecorations().equals(before.getDecorations())) throw new IllegalStateException("Das Dokument wurde während des Imports geändert. Bitte den Import erneut starten."); editor.replaceRange(caret, caret, TableDocuments.insertion(before, caret, task.getValue()), Selection.UNDEFINED); javafx.application.Platform.runLater(editor.getControl()::requestFocus); } catch (RuntimeException failure) { error(owner, failure); } });
+        Task<String> task = new Task<>() {
+            @Override protected String call() throws Exception {
+                int byteLimit = DelimitedTables.MAX_CHARACTERS * 4;
+                try (var input = Files.newInputStream(file.toPath())) {
+                    byte[] bytes = input.readNBytes(byteLimit + 1);
+                    if (bytes.length > byteLimit) throw new IllegalArgumentException("Die Datei ist zu groß.");
+                    return StandardCharsets.UTF_8.newDecoder().decode(java.nio.ByteBuffer.wrap(bytes)).toString();
+                }
+            }
+        };
+        task.setOnSucceeded(event -> { try {
+            var dialog = new de.richmarkdown.ui.dialogs.DelimitedTableDialog(owner, task.getValue(), null);
+            var chosen = dialog.showAndWait(); if (chosen.isEmpty()) return;
+            editable(editor); Document now = editor.getDocumentSnapshot(); if (!now.getText().equals(before.getText()) || !now.getDecorations().equals(before.getDecorations())) throw new IllegalStateException("Das Dokument wurde während des Imports geändert. Bitte den Import erneut starten."); editor.replaceRange(caret, caret, TableDocuments.insertion(before, caret, chosen.get()), Selection.UNDEFINED); javafx.application.Platform.runLater(editor.getControl()::requestFocus); } catch (RuntimeException failure) { error(owner, failure); } });
         task.setOnFailed(event -> error(owner, task.getException())); start(task);
     }
     private static void exportFile(MarkdownEditor editor, Window owner) {
-        TableData table = current(editor, editor.getDocumentSnapshot()).data(); File file = chooser().showSaveDialog(owner); if (file == null) return; char separator = separator(file, owner);
-        Task<Void> task = new Task<>() { @Override protected Void call() throws Exception { DelimitedTables.writeFile(file.toPath(), table, separator); return null; } }; task.setOnFailed(event -> error(owner, task.getException())); start(task);
+        TableData table = current(editor, editor.getDocumentSnapshot()).data();
+        var dialog = new de.richmarkdown.ui.dialogs.DelimitedTableDialog(owner, null, table);
+        if (dialog.showAndWait().isEmpty()) return;
+        FileChooser chooser = chooser(); chooser.setInitialFileName(dialog.separator() == '\t' ? "table.tsv" : "table.csv");
+        File file = chooser.showSaveDialog(owner); if (file == null) return; char separator = dialog.separator();
+        Task<Void> task = new Task<>() { @Override protected Void call() throws Exception { DelimitedTables.writeFile(file.toPath(), table, separator); return null; } };
+        task.setOnFailed(event -> error(owner, task.getException())); start(task);
     }
     private static void start(Task<?> task) { Thread thread = new Thread(task, "mardexas-table-io"); thread.setDaemon(true); thread.start(); }
-    private static final class Cancelled extends RuntimeException { private static final long serialVersionUID = 1L; }
 }

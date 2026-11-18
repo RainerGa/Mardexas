@@ -27,6 +27,7 @@ public final class CommandCenter {
     };
     private final HBox quickAccess = new HBox(4);
     private final Set<String> pinned = new HashSet<>();
+    private final java.util.Map<String, KeyCombination> defaults = new java.util.HashMap<>();
     public CommandCenter(EditorWindow window, MenuBar menuBar) {
         this(window, null, collect(menuBar));
     }
@@ -43,6 +44,7 @@ public final class CommandCenter {
         if (!stored.isBlank()) pinned.addAll(List.of(stored.split("\\|")));
         boolean migrated = false;
         for (Command command : commands) {
+            defaults.put(command.id(), command.item().getAccelerator());
             Object legacy = command.item().getProperties().get(CommandIdentity.LEGACY_ID);
             String key = "shortcut." + command.id();
             String shortcut = preferences.getOrDefault(key, "");
@@ -228,6 +230,19 @@ public final class CommandCenter {
         list.getItems().setAll(commands);
         filter.textProperty().addListener((observable, oldValue, value) -> list.getItems().setAll(matching(value)));
         TextField shortcut = new TextField(); shortcut.setPromptText("Shortcut+Shift+K");
+        shortcut.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
+            KeyCode code = event.getCode();
+            if (code == KeyCode.TAB || code == KeyCode.ESCAPE) return;
+            event.consume();
+            if (code == KeyCode.SHIFT || code == KeyCode.CONTROL || code == KeyCode.ALT || code == KeyCode.META) return;
+            if ((code == KeyCode.BACK_SPACE || code == KeyCode.DELETE) && !event.isShortcutDown()) { shortcut.clear(); return; }
+            java.util.List<KeyCombination.Modifier> modifiers = new java.util.ArrayList<>();
+            if (event.isShiftDown()) modifiers.add(KeyCombination.SHIFT_DOWN);
+            if (event.isControlDown()) modifiers.add(KeyCombination.CONTROL_DOWN);
+            if (event.isAltDown()) modifiers.add(KeyCombination.ALT_DOWN);
+            if (event.isMetaDown()) modifiers.add(KeyCombination.META_DOWN);
+            shortcut.setText(new KeyCodeCombination(code, modifiers.toArray(KeyCombination.Modifier[]::new)).getName());
+        });
         CheckBox favorite = new CheckBox(FeatureUi.text("In Symbolleiste anzeigen", "Show in toolbar"));
         list.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, value) -> {
             shortcut.setText(value == null || value.item().getAccelerator() == null ? "" : value.item().getAccelerator().getName());
@@ -252,7 +267,25 @@ public final class CommandCenter {
             }
         });
         list.setOnMouseClicked(event -> { if (event.getClickCount() == 2) execute.fire(); });
-        dialog.getDialogPane().setContent(new VBox(8, filter, list, shortcut, assign, favorite, execute));
+        Label explanation = new Label(); explanation.setWrapText(true);
+        Runnable validate = () -> {
+            Command command = list.getSelectionModel().getSelectedItem();
+            execute.setDisable(command == null || !available(command.item()));
+            try {
+                if (command != null) validateShortcut(command, shortcut.getText().isBlank() ? null : KeyCombination.keyCombination(shortcut.getText()));
+                assign.setDisable(command == null);
+                explanation.setText(command == null ? "" : explanation(command));
+            } catch (IllegalArgumentException invalid) { assign.setDisable(true); explanation.setText(invalid.getMessage()); }
+        };
+        shortcut.textProperty().addListener((obs, old, value) -> validate.run());
+        list.getSelectionModel().selectedItemProperty().addListener((obs, old, value) -> validate.run());
+        Button reset = de.richmarkdown.ui.dialogs.WorkflowDialogs.button("reset", () -> {
+            Command command = list.getSelectionModel().getSelectedItem();
+            if (command != null) { KeyCombination original = defaults.get(command.id()); shortcut.setText(original == null ? "" : original.getName()); assign.fire(); }
+        });
+        validate.run();
+        dialog.getDialogPane().setContent(new VBox(8, filter, list, explanation, shortcut, new HBox(8, assign, reset), favorite, execute));
+        de.richmarkdown.ui.dialogs.DialogButtons.applyDialogStyles(dialog.getDialogPane());
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         dialog.getDialogPane().setPrefSize(650, 600); dialog.setResizable(true); dialog.show();
         filter.requestFocus();

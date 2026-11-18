@@ -161,6 +161,9 @@ public class MarkdownEditor {
      * Behandelt einen Klick auf einen Link: Zeigt einen Bestätigungsdialog
      * und öffnet den Link nur bei Bestätigung im Standardbrowser.
      */
+    /** Explicit reviewed-link action, using the same scheme allowlist and confirmation as document clicks. */
+    public void openReviewedLink(String url) { handleLinkClick(url); }
+
     private void handleLinkClick(String url) {
         if (!isSafeLinkUrl(url)) {
             return;

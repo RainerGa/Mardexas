@@ -52,11 +52,11 @@ class DiffDialogTest {
         @Override protected File chooseFileToOpen() { selections++; return selected; }
     }
 
-    @Test void noOpenFileShowsUsefulErrorWithoutOpeningChooser() {
+    @Test void unsavedDocumentCanChooseComparisonFile() {
         FileWindow window = FxTestUtil.callAndWait(() -> { FileWindow w = new FileWindow(); w.show(); return w; });
         FxTestUtil.runAndWait(window::showDiffDialog);
-        assertEquals(I18n.text("dialog.diff.noFile"), window.getLastError());
-        assertEquals(0, window.selections);
+        assertNull(window.getLastError());
+        assertEquals(1, window.selections);
     }
 
     @Test void cancellingChooserDoesNotModifyDocument() throws Exception {

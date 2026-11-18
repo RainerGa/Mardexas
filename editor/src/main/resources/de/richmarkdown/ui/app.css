@@ -478,7 +478,19 @@
 }
 .rme-ribbon .tab-pane { -fx-tab-min-height: 29; -fx-tab-max-height: 29; }
 .rme-ribbon .tab-header-area { -fx-padding: 0 30 0 6; }
-.rme-ribbon .tab-header-background { -fx-background-color: -rme-panel; }
+.rme-ribbon .tab-header-background {
+    -fx-background-color: #eceef1;
+    -fx-border-color: #d1d5db;
+    -fx-border-width: 0 0 1 0;
+}
+.rme-dark .rme-ribbon .tab-header-background {
+    -fx-background-color: derive(-rme-panel, 15%);
+    -fx-border-color: derive(-rme-panel, 30%);
+}
+.rme-high-contrast .rme-ribbon .tab-header-background {
+    -fx-background-color: -rme-panel;
+    -fx-border-color: -rme-ink;
+}
 .rme-ribbon .tab {
     -fx-background-color: transparent; -fx-padding: 5 12 5 12;
     -fx-border-color: transparent; -fx-border-width: 0 0 2 0;

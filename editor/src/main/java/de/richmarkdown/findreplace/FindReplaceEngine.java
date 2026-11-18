@@ -36,6 +36,9 @@ public class FindReplaceEngine {
         NOT_FOUND
     }
 
+    public boolean isEditable() { return control.isEditable(); }
+    public javafx.beans.property.ReadOnlyBooleanProperty editableProperty() { return control.editableProperty(); }
+
     public enum FormatFilter { ANY, BOLD, ITALIC, UNDERLINE, STRIKETHROUGH, LINK, HEADING, CODE }
 
     /** Suchoptionen analog zum LO-Dialog. */

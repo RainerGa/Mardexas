@@ -185,7 +185,7 @@ public class FindReplaceDialog extends Stage {
         for (Button button : List.of(findAllButton, findNextButton, findPreviousButton, replaceButton, replaceAllButton))
             button.setTooltip(new Tooltip(button.getText()));
         VBox root = new VBox(10, fields, pane, buttons, new HBox(8, results, preview),
-                new HBox(8, presetBox, load, save, delete), statusLabel);
+                new HBox(8, presetBox, load, save, delete), new Label(WorkflowDialogs.text("regexHelp")), statusLabel);
         root.setPadding(new Insets(12));
         root.getStyleClass().add("rme-find-replace");
         Scene scene = new Scene(root, 760, 470);
@@ -199,7 +199,22 @@ public class FindReplaceDialog extends Stage {
         }
         DialogButtons.applyPanelStyles(scene.getRoot(), findNextButton);
         setScene(scene);
-        setOnShown(event -> findBox.requestFocus());
+        Runnable validate = () -> {
+            boolean valid = !findText().isEmpty() && engine.compilePattern(findText(), buildOptions()) != null;
+            for (Button button : List.of(findAllButton, findNextButton, findPreviousButton, results)) button.setDisable(!valid);
+            for (Button button : List.of(replaceButton, replaceAllButton, preview)) button.setDisable(!valid || !engine.isEditable());
+            if (!findText().isEmpty() && !valid) statusLabel.setText(I18n.text("dialog.findReplace.invalidRegex"));
+            else statusLabel.setText("");
+        };
+        findBox.getEditor().textProperty().addListener((obs, old, value) -> validate.run());
+        regexBox.selectedProperty().addListener((obs, old, value) -> validate.run());
+        wildcardsBox.selectedProperty().addListener((obs, old, value) -> validate.run());
+        presetBox.valueProperty().addListener((obs, old, value) -> { load.setDisable(value == null); delete.setDisable(value == null); });
+        load.setDisable(presetBox.getValue() == null); delete.setDisable(presetBox.getValue() == null);
+        validate.run();
+        javafx.beans.value.ChangeListener<Boolean> editability = (obs, old, value) -> validate.run();
+        setOnShown(event -> { engine.editableProperty().addListener(editability); validate.run(); findBox.requestFocus(); });
+        addEventHandler(javafx.stage.WindowEvent.WINDOW_HIDDEN, event -> engine.editableProperty().removeListener(editability));
         findAllButton.setOnAction(e -> runSearchAction(this::findAll));
         findNextButton.setOnAction(e -> runSearchAction(this::findNext));
         findPreviousButton.setOnAction(e -> runSearchAction(this::findPrevious));
@@ -350,7 +365,7 @@ public class FindReplaceDialog extends Stage {
             String original = engine.getText();
             var rows = engine.previewReplacements(findText(), replacements ? replaceText() : "", options);
             if (rows.isEmpty()) { statusLabel.setText(I18n.text("dialog.findReplace.noMatch")); return; }
-            var dialog = new SearchResultsDialog(this, rows, replacements, match -> engine.selectMatch(match, false));
+            var dialog = new SearchResultsDialog(this, rows, replacements, match -> engine.selectMatch(match, false), original);
             dialog.showAndWait().ifPresent(selected -> {
                 try {
                     int count = engine.applyPreview(original, selected);

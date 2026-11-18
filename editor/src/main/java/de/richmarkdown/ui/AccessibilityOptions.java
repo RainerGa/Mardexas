@@ -33,16 +33,29 @@ public final class AccessibilityOptions {
         size.setTooltip(new Tooltip(FeatureUi.text("Schriftgröße der Bedienoberfläche", "Interface text size")));
         Dialog<ButtonType> dialog = new Dialog<>(); dialog.initOwner(window.getDialogOwner());
         dialog.setTitle(FeatureUi.text("Lesbarkeit und Bedienung", "Readability and accessibility"));
-        dialog.getDialogPane().setContent(new VBox(10, dark, contrast, new Label(FeatureUi.text("Oberflächenschriftgröße", "Interface text size")), size));
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-        dialog.showAndWait().filter(result -> result == ButtonType.OK).ifPresent(result -> {
-            try {
+        var reset = de.richmarkdown.ui.dialogs.WorkflowDialogs.button("reset", () -> {
+            dark.setSelected(false); contrast.setSelected(false); size.getValueFactory().setValue(13);
+        });
+        Label error = new Label(); error.getStyleClass().add("rme-dialog-error");
+        dialog.getDialogPane().setContent(new VBox(10, dark, contrast, new Label(FeatureUi.text("Oberflächenschriftgröße", "Interface text size")), size, reset, error));
+        dialog.getDialogPane().getButtonTypes().addAll(de.richmarkdown.ui.dialogs.DialogButtons.OK, de.richmarkdown.ui.dialogs.DialogButtons.CANCEL);
+        de.richmarkdown.ui.dialogs.DialogButtons.applyDialogStyles(dialog.getDialogPane());
+        Runnable preview = () -> {
+            boolean valid = de.richmarkdown.ui.dialogs.DialogButtons.validInteger(size, 10, 32);
+            dialog.getDialogPane().lookupButton(de.richmarkdown.ui.dialogs.DialogButtons.OK).setDisable(!valid);
+            error.setText(valid ? "" : I18n.text("dialog.validation.integer"));
+            if (valid) apply(dark.isSelected(), contrast.isSelected(), Integer.parseInt(size.getEditor().getText()));
+        };
+        dark.selectedProperty().addListener((obs, old, value) -> preview.run());
+        contrast.selectedProperty().addListener((obs, old, value) -> preview.run());
+        size.getEditor().textProperty().addListener((obs, old, value) -> preview.run());
+        try {
+            dialog.showAndWait().filter(result -> result == de.richmarkdown.ui.dialogs.DialogButtons.OK).ifPresent(result -> {
                 size.commitValue();
                 I18n.setPreference("access.dark", Boolean.toString(dark.isSelected()));
                 I18n.setPreference("access.contrast", Boolean.toString(contrast.isSelected()));
                 I18n.setPreference("access.size", size.getValue().toString());
-                apply(dark.isSelected(), contrast.isSelected(), size.getValue());
-            } catch (RuntimeException failure) { FeatureUi.error(window.getDialogOwner(), failure); }
-        });
+            });
+        } finally { applySaved(); }
     }
 }

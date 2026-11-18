@@ -33,6 +33,13 @@ import javafx.stage.Window;
 /** Print-only preferences and scope; no document metadata is added. */
 public final class PrintOptionsDialog extends Dialog<PrintOptions> {
 
+    private java.util.function.Supplier<PrintOptions> currentOptions;
+    private Runnable saveCurrent;
+    private final javafx.beans.property.ReadOnlyBooleanWrapper valid = new javafx.beans.property.ReadOnlyBooleanWrapper();
+    public PrintOptions currentOptions() { return currentOptions.get(); }
+    public PrintOptions commitOptions() { PrintOptions result = currentOptions(); saveCurrent.run(); return result; }
+    public javafx.beans.property.ReadOnlyBooleanProperty validProperty() { return valid.getReadOnlyProperty(); }
+
     private static final String P_SCOPE = "printOptions.scope";
     private static final String P_RANGES = "printOptions.pageRanges";
     private static final String P_TOP = "printOptions.top";
@@ -63,7 +70,8 @@ public final class PrintOptionsDialog extends Dialog<PrintOptions> {
         TextField right = field(Double.toString(restored.right()), I18n.text("dialog.printOptions.tooltip.rightMargin"));
         TextField bottom = field(Double.toString(restored.bottom()), I18n.text("dialog.printOptions.tooltip.bottomMargin"));
         TextField left = field(Double.toString(restored.left()), I18n.text("dialog.printOptions.tooltip.leftMargin"));
-        TextField font = field(restored.fontFamily(), I18n.text("dialog.printOptions.tooltip.font"));
+        ComboBox<String> fonts = new ComboBox<>(); fonts.getItems().setAll(javafx.scene.text.Font.getFamilies()); fonts.setEditable(true); fonts.setValue(restored.fontFamily());
+        TextField font = fonts.getEditor(); font.setText(restored.fontFamily()); font.setTooltip(new Tooltip(I18n.text("dialog.printOptions.tooltip.font")));
         TextField size = field(Double.toString(restored.fontSize()), I18n.text("dialog.printOptions.tooltip.fontSize"));
         TextField header = field(restored.header(), I18n.text("dialog.printOptions.tooltip.header"));
         TextField footer = field(restored.footer(), I18n.text("dialog.printOptions.tooltip.footer"));
@@ -79,7 +87,7 @@ public final class PrintOptionsDialog extends Dialog<PrintOptions> {
         gridAdd(grid, new Label(I18n.text("dialog.printOptions.label.rightMargin")), right, row++);
         gridAdd(grid, new Label(I18n.text("dialog.printOptions.label.bottomMargin")), bottom, row++);
         gridAdd(grid, new Label(I18n.text("dialog.printOptions.label.leftMargin")), left, row++);
-        gridAdd(grid, new Label(I18n.text("dialog.printOptions.label.font")), font, row++);
+        gridAdd(grid, new Label(I18n.text("dialog.printOptions.label.font")), fonts, row++);
         gridAdd(grid, new Label(I18n.text("dialog.printOptions.label.fontSize")), size, row++);
         gridAdd(grid, new Label(I18n.text("dialog.printOptions.label.header")), header, row++);
         gridAdd(grid, new Label(I18n.text("dialog.printOptions.label.footer")), footer, row++);
@@ -100,6 +108,8 @@ public final class PrintOptionsDialog extends Dialog<PrintOptions> {
         ((Button) getDialogPane().lookupButton(DialogButtons.CANCEL))
                 .setTooltip(new Tooltip(I18n.text("dialog.printOptions.button.cancel")));
 
+        currentOptions = () -> options(top, right, bottom, left, font, size, header, footer, numbers, scope, ranges);
+        saveCurrent = () -> savePreferences(scope, ranges, top, right, bottom, left, font, size, header, footer, numbers);
         Runnable validate = () -> {
             try {
                 if (scope.getValue() == PrintOptions.Scope.SELECTION && !hasSelection) {
@@ -107,15 +117,16 @@ public final class PrintOptionsDialog extends Dialog<PrintOptions> {
                 }
                 options(top, right, bottom, left, font, size, header, footer, numbers, scope, ranges);
                 error.setText("");
-                ok.setDisable(false);
+                ok.setDisable(false); valid.set(true);
             } catch (IllegalArgumentException failure) {
                 error.setText(failure.getMessage());
-                ok.setDisable(true);
+                ok.setDisable(true); valid.set(false);
             }
         };
         for (TextField input : java.util.List.of(ranges, top, right, bottom, left, font, size, header, footer)) {
             input.textProperty().addListener((obs, old, value) -> validate.run());
         }
+        numbers.selectedProperty().addListener((obs, old, value) -> validate.run());
         scope.valueProperty().addListener((obs, old, value) -> validate.run());
         validate.run();
         setHeaderText(I18n.text("dialog.printOptions.title"));
@@ -186,17 +197,21 @@ public final class PrintOptionsDialog extends Dialog<PrintOptions> {
     private static PrintOptions options(TextField top, TextField right, TextField bottom, TextField left,
                                         TextField font, TextField size, TextField header, TextField footer,
                                         CheckBox numbers, ComboBox<PrintOptions.Scope> scope, TextField ranges) {
+        for (TextField field : java.util.List.of(top, right, bottom, left, size)) field.setStyle("");
         try {
             return new PrintOptions(number(top), number(right), number(bottom), number(left), font.getText(),
-                    number(size), header.getText(), footer.getText(), numbers.isSelected(), scope.getValue(),
-                    ranges.getText());
-        } catch (IllegalArgumentException failure) {
+                    number(size), header.getText(), footer.getText(), numbers.isSelected(), scope.getValue(), ranges.getText());
+        } catch (NumberFormatException failure) {
             throw new IllegalArgumentException(I18n.text("dialog.printOptions.error.invalidNumbers"));
         }
     }
 
     private static double number(TextField field) {
-        return Double.parseDouble(field.getText().strip().replace(',', '.'));
+        try {
+            double value = Double.parseDouble(field.getText().strip().replace(',', '.'));
+            if (!Double.isFinite(value)) throw new NumberFormatException();
+            return value;
+        } catch (NumberFormatException invalid) { field.setStyle("-fx-border-color: #c0392b;"); throw invalid; }
     }
 
     private static TextField field(String text, String tooltip) {

@@ -482,25 +482,23 @@ public final class MenuBarFactory {
         }
 
 
+        private javafx.stage.Window dialogOwner() {
+            return window != null ? window.getDialogOwner() : editor.getControl().getScene() == null ? null : editor.getControl().getScene().getWindow();
+        }
+
         private void showLinkDialog() {
-            LinkDialog dialog = new LinkDialog();
-            if (window != null) dialog.initOwner(window.getDialogOwner());
-            dialog.showAndWait().ifPresent(editor::applyLink);
+            de.richmarkdown.ui.dialogs.InsertionDialogs.link(editor, dialogOwner());
         }
 
         private void showImageDialog() {
-            ImageDialog dialog = new ImageDialog();
-            if (window != null) dialog.initOwner(window.getDialogOwner());
-            dialog.showAndWait().ifPresent(editor::insertImage);
+            de.richmarkdown.ui.dialogs.InsertionDialogs.image(editor, dialogOwner());
         }
 
         /**
          * Öffnet den Code-Block-Dialog und fügt den eingegebenen Code-Block ein.
          */
         private void showCodeBlockDialog() {
-            CodeBlockDialog dialog = new CodeBlockDialog();
-            if (window != null) dialog.initOwner(window.getDialogOwner());
-            dialog.showAndWait().ifPresent(editor::insertCodeBlock);
+            de.richmarkdown.ui.dialogs.InsertionDialogs.code(editor, dialogOwner());
         }
 
         /**
@@ -509,7 +507,7 @@ public final class MenuBarFactory {
         private void showTableDialog() {
             TableDialog dialog = new TableDialog();
             if (window != null) dialog.initOwner(window.getDialogOwner());
-            dialog.showAndWait().ifPresent(size -> editor.insertTable(size.rows(), size.columns()));
+            dialog.showAndWait().ifPresent(size -> de.richmarkdown.features.tables.TableTools.insert(editor, dialog.getTableData()));
         }
 
         /**
@@ -522,23 +520,8 @@ public final class MenuBarFactory {
             return; // Keine nummerierte Liste an der aktuellen Position
         }
         int currentStart = current.getStartNumber();
-        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog(String.valueOf(currentStart));
-        if (window != null) {
-            dialog.initOwner(window.getDialogOwner());
-        }
-        dialog.setTitle(I18n.text("dialog.listStartNumber.title"));
-        dialog.setHeaderText(I18n.text("dialog.listStartNumber.header"));
-        dialog.setContentText(I18n.text("dialog.listStartNumber.content"));
-        dialog.showAndWait().ifPresent(input -> {
-            try {
-                int startNumber = Integer.parseInt(input.trim());
-                if (startNumber >= 1) {
-                    editor.setListStartNumber(startNumber);
-                }
-            } catch (NumberFormatException ignored) {
-                // Ungültige Eingabe ignorieren
-            }
-        });
+        de.richmarkdown.ui.dialogs.WorkflowDialogs.integer(dialogOwner(), I18n.text("dialog.listStartNumber.title"), currentStart, 1, Integer.MAX_VALUE)
+                .ifPresent(editor::setListStartNumber);
     }
 
         /**

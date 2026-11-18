@@ -53,6 +53,8 @@ public class IssueDialog extends Dialog<ButtonType> {
 
     private final Supplier<List<MarkdownIssue>> issuesSupplier;
     private final ListView<MarkdownIssue> listView = new ListView<>();
+    private final javafx.collections.ObservableList<MarkdownIssue> allIssues = FXCollections.observableArrayList();
+    private final javafx.collections.transformation.FilteredList<MarkdownIssue> filtered = new javafx.collections.transformation.FilteredList<>(allIssues);
     private final Button checkButton = new Button(I18n.text("dialog.issues.check"));
 
     /**
@@ -68,6 +70,14 @@ public class IssueDialog extends Dialog<ButtonType> {
         setTitle(I18n.text("dialog.issues.title"));
         setHeaderText(I18n.text("dialog.issues.header"));
 
+        listView.setItems(filtered); listView.setCellFactory(view -> new IssueCell());
+        javafx.scene.control.ComboBox<MarkdownIssue.Severity> severity = new javafx.scene.control.ComboBox<>();
+        severity.getItems().setAll(MarkdownIssue.Severity.values()); severity.setPromptText(WorkflowDialogs.text("filter"));
+        javafx.scene.control.TextField rule = new javafx.scene.control.TextField(); rule.setPromptText(WorkflowDialogs.text("search"));
+        Runnable filter = () -> filtered.setPredicate(issue -> (severity.getValue() == null || severity.getValue() == issue.severity())
+                && (issue.ruleId() + " " + issue.message()).toLowerCase(java.util.Locale.ROOT).contains(rule.getText().toLowerCase(java.util.Locale.ROOT)));
+        severity.valueProperty().addListener((obs, old, value) -> filter.run()); rule.textProperty().addListener((obs, old, value) -> filter.run());
+        Button reset = WorkflowDialogs.button("reset", () -> { severity.setValue(null); rule.clear(); });
         listView.getSelectionModel().selectedItemProperty().addListener((obs, old, nv) -> {
             if (nv != null && onJump != null) {
                 onJump.accept(nv.position());
@@ -83,7 +93,7 @@ public class IssueDialog extends Dialog<ButtonType> {
         HBox buttonRow = new HBox(checkButton);
         buttonRow.setPadding(new Insets(8, 0, 0, 0));
 
-        VBox content = new VBox(12, listView, buttonRow);
+        VBox content = new VBox(12, listView, buttonRow, new HBox(8, severity, rule, reset), new Label(WorkflowDialogs.text("ignoredScope")));
         content.setPadding(new Insets(4));
         VBox.setVgrow(listView, Priority.ALWAYS);
         getDialogPane().setContent(content);
@@ -106,7 +116,7 @@ public class IssueDialog extends Dialog<ButtonType> {
             button.setTooltip(new Tooltip(I18n.text("dialog.issues.tooltip.fix")));
             button.disableProperty().bind(javafx.beans.binding.Bindings.createBooleanBinding(() -> {
                 MarkdownIssue selected = listView.getSelectionModel().getSelectedItem();
-                return selected == null || !selected.message().equals("Ungeschlossener Code-Fence");
+                return selected == null || !selected.ruleId().equals("fence.unclosed");
             }, listView.getSelectionModel().selectedItemProperty()));
             button.setOnAction(event -> {
                 MarkdownIssue selected = listView.getSelectionModel().getSelectedItem();
@@ -132,9 +142,28 @@ public class IssueDialog extends Dialog<ButtonType> {
         }
     }
 
+    /** Source context is refreshed together with the current issue selection. */
+    public void configureContext(Supplier<String> source) {
+        javafx.scene.control.TextArea context = WorkflowDialogs.output(""); context.setPrefRowCount(4);
+        Runnable update = () -> {
+            MarkdownIssue issue = listView.getSelectionModel().getSelectedItem();
+            String text = source.get();
+            if (issue == null || text == null) { context.clear(); return; }
+            int position = Math.clamp(issue.position(), 0, text.length());
+            int from = Math.max(0, position - 120), to = Math.min(text.length(), position + 240);
+            context.setText(text.substring(from, to)); context.selectRange(position - from, Math.min(to - from, position - from + 1));
+        };
+        listView.getSelectionModel().selectedItemProperty().addListener((obs, old, value) -> update.run());
+        ((VBox) getDialogPane().getContent()).getChildren().add(context); update.run();
+    }
+
+    public void configureReset(Runnable reset) {
+        ((HBox) ((VBox) getDialogPane().getContent()).getChildren().get(1)).getChildren().add(WorkflowDialogs.button("restoreIgnored", () -> { reset.run(); refresh(); }));
+    }
+
     /** Liest die Issues neu ein und aktualisiert die Liste. */
     public void refresh() {
-        listView.setItems(FXCollections.observableArrayList(issuesSupplier.get()));
+        allIssues.setAll(issuesSupplier.get());
     }
 
     /**
@@ -187,14 +216,14 @@ public class IssueDialog extends Dialog<ButtonType> {
                 case WARNING -> "[W] ";
                 case HINT -> "[H] ";
             };
-            label.setText(severityTag + issue.message() + " (Zeile " + issue.line()
-                    + ", Spalte " + issue.column() + ")");
+            label.setText(severityTag + issue.message() + " (" + WorkflowDialogs.text("line") + " " + issue.line()
+                    + ", " + WorkflowDialogs.text("column") + " " + issue.column() + ") [" + issue.ruleId() + "]");
             Color color = switch (issue.severity()) {
                 case ERROR -> Color.web("#c0392b");
                 case WARNING -> Color.web("#d68910");
                 case HINT -> Color.web("#7f8c8d");
             };
-            label.setTextFill(color);
+            label.setTextFill(Boolean.parseBoolean(I18n.preference("access.contrast", "false")) ? Color.YELLOW : color);
             setGraphic(label);
             setPadding(new Insets(2, 4, 2, 4));
         }

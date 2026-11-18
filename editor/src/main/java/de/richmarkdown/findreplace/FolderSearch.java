@@ -42,23 +42,43 @@ public final class FolderSearch {
     private FolderSearch() { }
 
     public static Result search(Path directory, Query query) throws IOException {
+        return search(directory, query, List.of("*.md", "*.markdown"), java.util.Set.of(), count -> { });
+    }
+    public static Result search(Path directory, Query query, List<String> patterns, java.util.Set<String> excluded, java.util.function.IntConsumer progress) throws IOException {
+        List<java.nio.file.PathMatcher> matchers = patterns.stream().filter(value -> !value.isBlank()).map(value -> directory.getFileSystem().getPathMatcher("glob:" + value.strip().toLowerCase(Locale.ROOT))).toList();
+        if (matchers.isEmpty()) throw new IllegalArgumentException("No file patterns");
         if (!Files.isDirectory(directory, LinkOption.NOFOLLOW_LINKS)) throw new IOException("Kein reguläres Suchverzeichnis");
         Pattern pattern = query.pattern();
         List<FileMatches> results = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
         int scanned = 0, totalBytes = 0, totalMatches = 0;
-        try (var paths = Files.walk(directory, 32)) {
-            var iterator = paths.iterator();
-            while (iterator.hasNext()) {
+        List<Path> candidates = new ArrayList<>();
+        Files.walkFileTree(directory, java.util.Set.of(), 32, new java.nio.file.SimpleFileVisitor<>() {
+            private int visited;
+            @Override public java.nio.file.FileVisitResult preVisitDirectory(Path path, java.nio.file.attribute.BasicFileAttributes attributes) throws IOException {
                 cancelled();
-                Path path = iterator.next();
+                if (!path.equals(directory) && excluded.contains(java.util.Objects.toString(path.getFileName(), ""))) return java.nio.file.FileVisitResult.SKIP_SUBTREE;
+                if (++visited > 20_000) { warnings.add("Directory limit reached (20000)."); return java.nio.file.FileVisitResult.TERMINATE; }
+                return java.nio.file.FileVisitResult.CONTINUE;
+            }
+            @Override public java.nio.file.FileVisitResult visitFile(Path path, java.nio.file.attribute.BasicFileAttributes attributes) throws IOException {
+                cancelled();
+                if (++visited > 100_000) { warnings.add("Path limit reached (100000)."); return java.nio.file.FileVisitResult.TERMINATE; }
                 Path name = path.getFileName();
-                if (name == null) continue;
-                String filename = name.toString().toLowerCase(Locale.ROOT);
-                if (!(filename.endsWith(".md") || filename.endsWith(".markdown"))
-                        || !Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) continue;
+                Path relative = directory.relativize(path);
+                if (attributes.isRegularFile() && matchers.stream().anyMatch(matcher -> matcher.matches(Path.of(name.toString().toLowerCase(Locale.ROOT)))
+                        || matcher.matches(Path.of(relative.toString().toLowerCase(Locale.ROOT))))) candidates.add(path);
+                return candidates.size() > MAX_FILES ? java.nio.file.FileVisitResult.TERMINATE : java.nio.file.FileVisitResult.CONTINUE;
+            }
+            @Override public java.nio.file.FileVisitResult visitFileFailed(Path path, IOException error) {
+                warnings.add(path + ": " + error.getMessage()); return java.nio.file.FileVisitResult.CONTINUE;
+            }
+        });
+        {
+            for (Path path : candidates) {
+                cancelled();
                 if (scanned >= MAX_FILES) { warnings.add("Dateigrenze erreicht (2000)."); break; }
-                scanned++;
+                scanned++; progress.accept(scanned);
                 try {
                     if (Files.size(path) > MAX_FILE_BYTES) { warnings.add(path + ": größer als 2 MiB; übersprungen."); continue; }
                     byte[] bytes;
@@ -155,6 +175,11 @@ public final class FolderSearch {
 
     /** Preflight all selected files first; each individual replacement is atomic and gets a backup. */
     public static List<Path> apply(List<FileMatches> selected, Query query, String replacement) throws IOException {
+        return apply(selected, query, replacement, (file, backup) -> { });
+    }
+    /** Reports completed files immediately, so partial cancellation retains usable backup records. */
+    public static List<Path> apply(List<FileMatches> selected, Query query, String replacement,
+                                   java.util.function.BiConsumer<FileMatches, Path> completed) throws IOException {
         List<String> contents = new ArrayList<>();
         for (FileMatches file : selected) {
             cancelled();
@@ -178,11 +203,33 @@ public final class FolderSearch {
             try {
                 Files.copy(file.file(), temporary, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
                 Files.writeString(temporary, contents.get(i), StandardCharsets.UTF_8);
+                if (!readBounded(file.file()).equals(file.original()) || !readBounded(backup).equals(file.original())) throw new IOException("File changed during replacement: " + file.file());
                 try { Files.move(temporary, file.file(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
                 catch (AtomicMoveNotSupportedException ignored) { Files.move(temporary, file.file(), StandardCopyOption.REPLACE_EXISTING); }
             } finally { Files.deleteIfExists(temporary); }
+            completed.accept(file, backup);
         }
         return List.copyOf(backups);
+    }
+
+    /** Restore only if the document still equals the reviewed replacement; preserve both versions. */
+    public static Path restore(Path backup, FileMatches original, Query query, String substitute) throws IOException {
+        Path target = original.file().toAbsolutePath().normalize();
+        Path parent = target.getParent();
+        if (parent == null) throw new IOException("No parent directory: " + target);
+        String expected = replacement(original, query, substitute);
+        if (!readBounded(target).equals(expected) || !readBounded(backup).equals(original.original()))
+            throw new IOException("File changed since replacement: " + target);
+        Path undo = Files.createTempFile(parent, target.getFileName() + ".before-restore-", ".bak");
+        Files.copy(target, undo, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+        Path temporary = Files.createTempFile(parent, ".mardexas-restore-", ".tmp");
+        try {
+            Files.copy(backup, temporary, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+            if (!readBounded(target).equals(expected)) throw new IOException("File changed during restore: " + target);
+            try { Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
+            catch (AtomicMoveNotSupportedException unsupported) { Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING); }
+        } finally { Files.deleteIfExists(temporary); }
+        return undo;
     }
 
     private static String readBounded(Path file) throws IOException {

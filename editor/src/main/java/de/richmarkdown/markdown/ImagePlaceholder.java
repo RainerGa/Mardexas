@@ -21,23 +21,25 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
 
-record ImagePlaceholder(String url, String link, int width, int height) {
+public record ImagePlaceholder(String url, String link, int width, int height, String altText) {
+
+    public ImagePlaceholder(String url, String link, int width, int height) { this(url, link, width, height, ""); }
 
     private static final String PREFIX = "missing-image:";
     private static final String NULL_VALUE = "\u0001";
 
-    String displayText() {
+    public String displayText() {
         return "[Bild nicht gefunden: " + url + "]";
     }
 
-    String marker() {
+    public String marker() {
         String value = url + '\0' + (link == null ? NULL_VALUE : link)
-                + '\0' + width + '\0' + height;
+                + '\0' + width + '\0' + height + '\0' + altText;
         return PREFIX + Base64.getUrlEncoder().withoutPadding()
                 .encodeToString(value.getBytes(StandardCharsets.UTF_8));
     }
 
-    static Optional<ImagePlaceholder> fromMarker(String marker) {
+    public static Optional<ImagePlaceholder> fromMarker(String marker) {
         if (marker == null || !marker.startsWith(PREFIX)) {
             return Optional.empty();
         }
@@ -45,12 +47,12 @@ record ImagePlaceholder(String url, String link, int width, int height) {
             String value = new String(Base64.getUrlDecoder()
                     .decode(marker.substring(PREFIX.length())), StandardCharsets.UTF_8);
             String[] parts = value.split("\0", -1);
-            if (parts.length != 4) {
+            if (parts.length != 4 && parts.length != 5) {
                 return Optional.empty();
             }
             String link = NULL_VALUE.equals(parts[1]) ? null : parts[1];
             return Optional.of(new ImagePlaceholder(parts[0], link,
-                    Integer.parseInt(parts[2]), Integer.parseInt(parts[3])));
+                    Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), parts.length == 5 ? parts[4] : ""));
         } catch (IllegalArgumentException e) {
             return Optional.empty();
         }

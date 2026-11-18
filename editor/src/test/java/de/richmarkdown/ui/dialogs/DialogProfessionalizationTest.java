@@ -69,6 +69,8 @@ class DialogProfessionalizationTest {
             assertTrue(ok(code).isDisabled());
             link.getUrlField().setText("https://example.org");
             image.getUrlField().setText("images/a.png");
+            assertTrue(ok(image).isDisabled());
+            image.getUrlField().setText("https://example.org/a.png");
             code.getCodeArea().setText("return 1;");
             assertFalse(ok(link).isDisabled());
             assertFalse(ok(image).isDisabled());
@@ -158,7 +160,9 @@ class DialogProfessionalizationTest {
     @Test void printOptionsExposeAllFieldsAndValidateLive() {
         FxTestUtil.runAndWait(() -> {
             var dialog = new PrintOptionsDialog(null, PrintOptions.defaults(), true);
-            var fields = dialog.getDialogPane().lookupAll(".text-field").stream().map(TextField.class::cast).toList();
+            var fields = new java.util.ArrayList<>(dialog.getDialogPane().lookupAll(".text-field").stream().map(TextField.class::cast).toList());
+            dialog.getDialogPane().lookupAll(".combo-box").stream().map(javafx.scene.control.ComboBox.class::cast)
+                    .filter(javafx.scene.control.ComboBox::isEditable).map(javafx.scene.control.ComboBox::getEditor).filter(f -> !fields.contains(f)).forEach(fields::add);
             assertEquals(9, fields.size());
             TextField margin = fields.stream().filter(f -> f.getText().equals("20.0")).findFirst().orElseThrow();
             for (String invalid : List.of("NaN", "Infinity", "-1", "101", "x")) {
@@ -194,9 +198,8 @@ class DialogProfessionalizationTest {
         Files.writeString(directory.resolve("ignored.txt"), "ignored");
         Files.createDirectory(directory.resolve("directory.md"));
         I18n.setPreference("templates.directory", directory.toString());
+        var dialog = loadedTemplates();
         FxTestUtil.runAndWait(() -> {
-            var dialog = new TemplateDialog(null);
-            dialog.show();
             try {
                 var list = (ListView<?>) dialog.getDialogPane().lookup(".list-view");
                 assertEquals(6, list.getItems().size());
@@ -212,12 +215,11 @@ class DialogProfessionalizationTest {
         });
     }
 
-    @Test void invalidTemplateDirectoriesFallBackToFourBundledTemplates() {
+    @Test void invalidTemplateDirectoriesFallBackToFourBundledTemplates() throws Exception {
         for (String path : List.of("", directory.resolve("missing").toString(), "bad\u0000path", directory.toString())) {
             I18n.setPreference("templates.directory", path);
+            var dialog = loadedTemplates();
             FxTestUtil.runAndWait(() -> {
-                var dialog = new TemplateDialog(null);
-                dialog.show();
                 try {
                     var list = (ListView<?>) dialog.getDialogPane().lookup(".list-view");
                     assertEquals(4, list.getItems().size());
@@ -225,6 +227,12 @@ class DialogProfessionalizationTest {
                 } finally { dialog.close(); }
             });
         }
+    }
+
+    private TemplateDialog loadedTemplates() throws Exception {
+        var dialog = FxTestUtil.callAndWait(() -> { var created = new TemplateDialog(null); created.show(); return created; });
+        org.testfx.util.WaitForAsyncUtils.waitFor(5, java.util.concurrent.TimeUnit.SECONDS, () -> FxTestUtil.callAndWait(dialog::isTemplatesLoaded));
+        return dialog;
     }
 
     @Test void allLocalesConstructDialogsAndUseCurrentButtonLanguage() {

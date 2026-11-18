@@ -40,6 +40,11 @@ public final class FeatureUi {
         alert.setTitle(text("Aktion fehlgeschlagen", "Action failed"));
         alert.setHeaderText(null);
         alert.setContentText(exception.getMessage() == null ? exception.getClass().getSimpleName() : exception.getMessage());
+        String details = alert.getContentText();
+        alert.getDialogPane().setExpandableContent(new javafx.scene.layout.VBox(8,
+            de.richmarkdown.ui.dialogs.WorkflowDialogs.output(details),
+            de.richmarkdown.ui.dialogs.WorkflowDialogs.button("copy", () -> de.richmarkdown.ui.dialogs.WorkflowDialogs.copy(details))));
+        de.richmarkdown.ui.dialogs.DialogButtons.applyDialogStyles(alert.getDialogPane());
         alert.show();
     }
 }

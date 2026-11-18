@@ -20,12 +20,11 @@ package de.richmarkdown.markdown;
 /**
  * Markdown-Bildverweis.
  *
- * <p>Das aktuelle Rich-Text-Document-Modell stellt die Ziel-URL bereit, bildet
- * den Markdown-Alt-Text jedoch nicht ab. Beim Round-Trip kann deshalb der
- * Alt-Text nicht erhalten werden.
+ * <p>Alt-Text, Größe und Link werden auch im Rich-Text-Dokument erhalten.
  */
 public class ImageBlock extends Block {
 
+    private final String altText;
     private final String url;
     private final int width;
     private final int height;
@@ -50,6 +49,12 @@ public class ImageBlock extends Block {
      * @param link Hyperlink oder {@code null}, falls das Bild nicht verlinkt ist
      */
     public ImageBlock(String url, int width, int height, String link) {
+        this(url, width, height, link, "");
+    }
+
+    /** Creates an image including its accessible description. */
+    public ImageBlock(String url, int width, int height, String link, String altText) {
+        this.altText = altText == null ? "" : altText;
         this.url = url;
         this.width = width;
         this.height = height;
@@ -61,6 +66,8 @@ public class ImageBlock extends Block {
      *
      * @return Bild-URL oder {@code null}, falls keine hinterlegt ist
      */
+    public String getAltText() { return altText; }
+
     public String getUrl() {
         return url;
     }

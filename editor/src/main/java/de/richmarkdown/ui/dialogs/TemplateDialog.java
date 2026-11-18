@@ -65,6 +65,15 @@ public class TemplateDialog extends Dialog<String> {
     private final Label directoryStatus = new Label();
     private ListView<TemplateInfo> list;
     private TextArea preview;
+    private final javafx.collections.ObservableList<TemplateInfo> allTemplates = javafx.collections.FXCollections.observableArrayList();
+    private final javafx.scene.control.TextField filter = new javafx.scene.control.TextField();
+    private final Label origin = new Label();
+    private final Label warnings = new Label();
+    private final Map<String, String> sources = new LinkedHashMap<>();
+    private javafx.concurrent.Task<LoadedTemplates> loading;
+    private long loadRevision;
+    private record LoadedTemplates(List<TemplateInfo> templates, Map<String, String> sources, String warnings) { }
+    public boolean isTemplatesLoaded() { return templatesLoaded; }
 
     /**
      * Erstellt den Vorlagen-Dialog.
@@ -83,6 +92,9 @@ public class TemplateDialog extends Dialog<String> {
         list.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         list.setCellFactory(param -> new TemplateCell());
 
+        var filtered = new javafx.collections.transformation.FilteredList<>(allTemplates, item -> true);
+        list.setItems(filtered); filter.setPromptText(WorkflowDialogs.text("search"));
+        filter.textProperty().addListener((obs, old, value) -> { filtered.setPredicate(item -> item.label().toLowerCase(java.util.Locale.ROOT).contains(value.toLowerCase(java.util.Locale.ROOT))); list.getSelectionModel().selectFirst(); });
         preview = new TextArea();
         preview.setEditable(false);
         preview.setWrapText(true);
@@ -92,6 +104,7 @@ public class TemplateDialog extends Dialog<String> {
         list.getSelectionModel().selectedItemProperty().addListener((obs, old, sel) -> {
             if (sel != null) {
                 preview.setText(sel.content());
+                origin.setText(WorkflowDialogs.text("source") + ": " + sources.getOrDefault(sel.id(), "/templates/" + sel.id() + ".md"));
             }
         });
 
@@ -102,7 +115,15 @@ public class TemplateDialog extends Dialog<String> {
         HBox directoryBar = new HBox(8, directoryButton, directoryStatus);
         directoryBar.setId("template-directory-bar");
 
-        VBox content = new VBox(8.0, directoryBar, list, preview);
+        Button reset = WorkflowDialogs.button("reset", () -> { I18n.setPreference(DIRECTORY_KEY, ""); configuredDirectory = null; listReload(); });
+        Button reload = WorkflowDialogs.button("reload", this::listReload);
+        Button rendered = WorkflowDialogs.button("preview", () -> {
+            TemplateInfo selected = list.getSelectionModel().getSelectedItem(); if (selected == null) return;
+            javafx.scene.control.Dialog<Void> dialog = new javafx.scene.control.Dialog<>(); dialog.initOwner(getDialogPane().getScene().getWindow()); dialog.setTitle(selected.label()); dialog.setResizable(true);
+            dialog.getDialogPane().setContent(WorkflowDialogs.markdownPreview(selected.content())); dialog.getDialogPane().getButtonTypes().add(DialogButtons.CLOSE); DialogButtons.applyDialogStyles(dialog.getDialogPane()); dialog.show();
+        });
+        warnings.setWrapText(true);
+        VBox content = new VBox(8.0, directoryBar, new HBox(8, filter, reload, reset, rendered), list, origin, preview, warnings);
         content.setPrefSize(700, 500);
         VBox.setVgrow(preview, Priority.ALWAYS);
         VBox.setVgrow(list, Priority.NEVER);
@@ -123,17 +144,9 @@ public class TemplateDialog extends Dialog<String> {
             return null;
         });
 
-        setOnShowing(event -> {
-            if (!templatesLoaded) {
-                updateDirectoryStatus();
-                loadTemplates();
-                list.getItems().setAll(templates);
-                templatesLoaded = true;
-                if (!templates.isEmpty()) {
-                    list.getSelectionModel().select(0);
-                    preview.setText(templates.get(0).content());
-                }
-            }
+        setOnShowing(event -> { if (!templatesLoaded) listReload(); });
+        setOnHidden(event -> {
+            if (loading != null && !templatesLoaded) { loadRevision++; loading.cancel(true); }
         });
         setOnShown(event -> list.requestFocus());
     }
@@ -164,47 +177,70 @@ public class TemplateDialog extends Dialog<String> {
     }
 
     private void listReload() {
+        if (loading != null) loading.cancel(true);
+        long revision = ++loadRevision;
         templatesLoaded = false;
         updateDirectoryStatus();
-        loadTemplates();
-        list.getItems().setAll(templates);
-        if (!templates.isEmpty()) {
-            list.getSelectionModel().select(0);
-            preview.setText(templates.get(0).content());
-        } else {
-            preview.setText("");
-        }
-        templatesLoaded = true;
+        Path directory = configuredDirectory;
+        allTemplates.clear(); preview.clear(); origin.setText(""); warnings.setText(I18n.text("dialog.writingLibrary.status.processing"));
+        loading = new javafx.concurrent.Task<>() {
+            @Override protected LoadedTemplates call() { return loadTemplates(directory); }
+        };
+        var request = loading;
+        request.setOnSucceeded(event -> {
+            if (revision != loadRevision) return;
+            var loaded = request.getValue();
+            templates.clear(); templates.addAll(loaded.templates()); sources.clear(); sources.putAll(loaded.sources());
+            warnings.setText(loaded.warnings()); allTemplates.setAll(templates); templatesLoaded = true;
+            list.getSelectionModel().selectFirst();
+        });
+        request.setOnFailed(event -> {
+            if (revision != loadRevision) return;
+            warnings.setText(request.getException().getMessage()); templatesLoaded = true;
+        });
+        Thread.ofVirtual().name("template-loader").start(request);
     }
 
-    private void loadTemplates() {
+    private LoadedTemplates loadTemplates(Path configuredDirectory) {
+        StringBuilder warnings = new StringBuilder();
+        Map<String, String> sources = new LinkedHashMap<>();
         Map<String, TemplateInfo> byId = new LinkedHashMap<>();
         for (String name : CLASSPATH_NAMES) {
             String content = loadTemplateContent("/templates/" + name + ".md");
             if (content != null) {
                 byId.put(name, new TemplateInfo(name, labelFor(name), content));
+                sources.put(name, "/templates/" + name + ".md");
             }
         }
         if (configuredDirectory != null && Files.isDirectory(configuredDirectory)) {
             try (var stream = Files.list(configuredDirectory)) {
-                for (Path file : stream.filter(Files::isRegularFile)
-                        .filter(path -> java.util.Objects.toString(path.getFileName(), "").endsWith(".md"))
-                        .sorted(java.util.Comparator.comparing(path -> java.util.Objects.toString(path.getFileName(), ""))).toList()) {
+                for (Path file : stream.limit(1_001).filter(Files::isRegularFile)
+                        .filter(path -> java.util.Objects.toString(path.getFileName(), "").toLowerCase(java.util.Locale.ROOT).matches(".*\\.(md|markdown)$"))
+                        .limit(201).sorted(java.util.Comparator.comparing(path -> java.util.Objects.toString(path.getFileName(), ""))).toList()) {
+                    if (Thread.currentThread().isInterrupted()) throw new java.util.concurrent.CancellationException();
                     String filename = java.util.Objects.toString(file.getFileName(), "");
-                    String id = filename.substring(0, filename.length() - 3);
+                    if (byId.size() >= 204) { warnings.append("200 ").append(WorkflowDialogs.text("files")); break; }
+                    String id = filename.substring(0, filename.lastIndexOf('.'));
                     try {
-                        String content = Files.readString(file, StandardCharsets.UTF_8);
+                        String content;
+                        try (InputStream input = Files.newInputStream(file)) {
+                            byte[] bytes = input.readNBytes(262_145);
+                            if (bytes.length > 262_144) throw new IOException("256 KiB: " + file);
+                            content = StandardCharsets.UTF_8.newDecoder().decode(java.nio.ByteBuffer.wrap(bytes)).toString();
+                        }
                         byId.put(id, new TemplateInfo(id, id, content));
+                        sources.put(id, file.toString());
                     } catch (IOException | SecurityException ignored) {
+                        warnings.append(file).append(": ").append(ignored.getMessage()).append("\n");
                         // A single unreadable template must not hide the built-in templates.
                     }
                 }
             } catch (IOException | SecurityException | java.io.UncheckedIOException ignored) {
+                warnings.append(ignored.getMessage());
                 // Fall back to bundled templates if directory access fails.
             }
         }
-        templates.clear();
-        templates.addAll(byId.values());
+        return new LoadedTemplates(List.copyOf(byId.values()), Map.copyOf(sources), warnings.toString());
     }
 
     private String loadTemplateContent(String path) {

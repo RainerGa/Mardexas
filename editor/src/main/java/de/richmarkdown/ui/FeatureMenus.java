@@ -86,13 +86,7 @@ public final class FeatureMenus {
         CommandIdentity.menu(menus, "menu.extras").getItems().add(item("search.folder", FeatureUi.text("Ordner durchsuchen und ersetzen …", "Search and replace in folder …"),
                 () -> new de.richmarkdown.ui.dialogs.FolderSearchDialog(window.getDialogOwner(), path -> window.openFile(path.toFile())).show()));
         var codeAssistant = item("insert.codeAssistant", FeatureUi.text("Code-Assistent …", "Code assistant …"), () -> {
-            String initial = "";
-            var selection = editor.getControl().getSelection();
-            if (selection != null && selection.isDefined()) {
-                var buffer = ((RichTextAreaSkin) editor.getControl().getSkin()).getViewModel().getTextBuffer();
-                initial = buffer.getText(selection.getStart(), selection.getEnd());
-            }
-            new de.richmarkdown.ui.dialogs.CodeAssistantDialog(window.getDialogOwner(), initial).showAndWait().ifPresent(value -> commands.paste(value, true));
+            de.richmarkdown.ui.dialogs.InsertionDialogs.code(editor, window.getDialogOwner());
         });
         codeAssistant.disableProperty().bind(window.readOnlyProperty());
         CommandIdentity.menu(menus, "menu.insert").getItems().add(codeAssistant);

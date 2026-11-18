@@ -442,7 +442,8 @@ public class TrackChangesView extends BorderPane {
             return Objects.equals(firstImage.getUrl(), secondImage.getUrl())
                     && firstImage.getWidth() == secondImage.getWidth()
                     && firstImage.getHeight() == secondImage.getHeight()
-                    && Objects.equals(firstImage.getLink(), secondImage.getLink());
+                    && Objects.equals(firstImage.getLink(), secondImage.getLink())
+                    && de.richmarkdown.markdown.AccessibleImageDecoration.alt(firstImage).equals(de.richmarkdown.markdown.AccessibleImageDecoration.alt(secondImage));
         }
         return !(second instanceof ImageDecoration) && Objects.equals(first, second);
     }

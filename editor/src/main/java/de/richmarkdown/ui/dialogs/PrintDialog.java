@@ -51,6 +51,7 @@ public class PrintDialog extends Dialog<PrintDialogResult> {
     private static final String LAST_SIDES = "print.lastSides";
     private static final String LAST_COLOR = "print.lastColor";
 
+    private de.richmarkdown.features.printing.PrintOptionsDialog optionsPanel;
     private final ComboBox<Printer> printerBox = new ComboBox<>();
     private final Spinner<Integer> copiesSpinner = new Spinner<>();
     private final ChoiceBox<PageOrientation> orientationBox = new ChoiceBox<>();
@@ -112,6 +113,18 @@ public class PrintDialog extends Dialog<PrintDialogResult> {
         colorBox.setConverter(colorConverter());
         selectEnum(colorBox, readEnum(LAST_COLOR, PrintColor.class, PrintColor.COLOR));
 
+        Runnable capabilities = () -> {
+            Printer printer = printerBox.getValue(); if (printer == null) return;
+            var attributes = printer.getPrinterAttributes();
+            supported(orientationBox, attributes.getSupportedPageOrientations(), attributes.getDefaultPageOrientation());
+            supported(paperBox, attributes.getSupportedPapers(), attributes.getDefaultPaper());
+            supported(sidesBox, attributes.getSupportedPrintSides(), attributes.getDefaultPrintSides());
+            supported(colorBox, attributes.getSupportedPrintColors(), attributes.getDefaultPrintColor());
+            int maximum = Math.min(99, attributes.getMaxCopies());
+            copiesSpinner.setValueFactory(new IntegerSpinnerValueFactory(1, Math.max(1, maximum), Math.min(copiesSpinner.getValue(), Math.max(1, maximum))));
+        };
+        capabilities.run();
+        printerBox.valueProperty().addListener((obs, old, value) -> capabilities.run());
         GridPane grid = new GridPane();
         grid.setHgap(8);
         grid.setVgap(8);
@@ -135,20 +148,49 @@ public class PrintDialog extends Dialog<PrintDialogResult> {
             copiesSpinner.commitValue();
             savePreferences();
             return new PrintDialogResult(printerBox.getValue(), copiesSpinner.getValue(),
-                    orientationBox.getValue(), paperBox.getValue(), sidesBox.getValue(), colorBox.getValue());
+                    orientationBox.getValue(), paperBox.getValue(), sidesBox.getValue(), colorBox.getValue(), optionsPanel == null ? null : optionsPanel.commitOptions());
         });
         Label error = new Label();
         error.getStyleClass().add("rme-dialog-error");
         grid.add(error, 0, 6, 2, 1);
         Runnable validate = () -> {
-            boolean valid = DialogButtons.validInteger(copiesSpinner, 1, 99);
-            print.setDisable(!valid || printerBox.getValue() == null);
+            boolean valid = DialogButtons.validInteger(copiesSpinner, 1, printerBox.getValue() == null ? 99 : Math.min(99, printerBox.getValue().getPrinterAttributes().getMaxCopies()));
+            print.setDisable(!valid || printerBox.getValue() == null || optionsPanel != null && !optionsPanel.validProperty().get());
             error.setText(valid ? "" : I18n.text("dialog.validation.integer"));
         };
         copiesSpinner.getEditor().textProperty().addListener((obs, old, value) -> validate.run());
         printerBox.valueProperty().addListener((obs, old, value) -> validate.run());
         validate.run();
         setOnShown(event -> printerBox.requestFocus());
+    }
+
+    /** Combined device, layout and snapshot-preview workflow. The owner stays unset for X11/GTK. */
+    public PrintDialog(List<Printer> printers, Printer defaultPrinter, de.richmarkdown.features.printing.PrintOptions initial,
+                       boolean hasSelection, java.util.function.BiConsumer<PrintDialogResult, javafx.stage.Window> preview) {
+        this(printers, defaultPrinter);
+        optionsPanel = new de.richmarkdown.features.printing.PrintOptionsDialog(null, initial, hasSelection);
+        javafx.scene.Node layout = optionsPanel.getDialogPane().getContent(); optionsPanel.getDialogPane().setContent(null);
+        javafx.scene.control.Tab device = new javafx.scene.control.Tab(I18n.text("dialog.print.title"), getDialogPane().getContent()); device.setClosable(false);
+        javafx.scene.control.ScrollPane scroll = new javafx.scene.control.ScrollPane(layout); scroll.setFitToWidth(true);
+        javafx.scene.control.Tab options = new javafx.scene.control.Tab(I18n.text("dialog.printOptions.title"), scroll); options.setClosable(false);
+        Button showPreview = WorkflowDialogs.button("preview", () -> {
+            try {
+                PrintDialogResult choice = new PrintDialogResult(printerBox.getValue(), copiesSpinner.getValue(), orientationBox.getValue(), paperBox.getValue(), sidesBox.getValue(), colorBox.getValue(), optionsPanel.currentOptions());
+                preview.accept(choice, getDialogPane().getScene().getWindow());
+            } catch (RuntimeException failure) { de.richmarkdown.ui.FeatureUi.error(getDialogPane().getScene().getWindow(), failure); }
+        });
+        showPreview.disableProperty().bind(optionsPanel.validProperty().not().or(printerBox.valueProperty().isNull()));
+        getDialogPane().setContent(new javafx.scene.layout.VBox(10, new javafx.scene.control.TabPane(device, options), showPreview));
+        getDialogPane().setPrefSize(620, 670); setResizable(true);
+        Button print = (Button) getDialogPane().lookupButton(DialogButtons.PRINT);
+        Runnable validate = () -> print.setDisable(!optionsPanel.validProperty().get() || printerBox.getValue() == null || !DialogButtons.validInteger(copiesSpinner, 1, printerBox.getValue() == null ? 99 : Math.min(99, printerBox.getValue().getPrinterAttributes().getMaxCopies())));
+        optionsPanel.validProperty().addListener((obs, old, value) -> validate.run()); validate.run();
+    }
+
+    private static <T> void supported(ChoiceBox<T> box, java.util.Set<T> supported, T fallback) {
+        T selected = box.getValue();
+        box.getItems().setAll(supported.stream().sorted(Comparator.comparing(Object::toString)).toList());
+        box.setValue(supported.contains(selected) ? selected : fallback);
     }
 
     private Printer restorePrinter(List<Printer> sorted, Printer defaultPrinter) {

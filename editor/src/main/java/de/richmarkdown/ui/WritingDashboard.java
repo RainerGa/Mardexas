@@ -141,8 +141,9 @@ public final class WritingDashboard {
             revision[0]++; worker.shutdownNow(); window.removeFeatureDisposer(disposer); openDialog = null;
         });
         window.addFeatureDisposer(disposer);
-        dialog.getDialogPane().setContent(new VBox(10, scope, statistics, frequency, update, words, reset, progress, goal));
+        dialog.getDialogPane().setContent(new VBox(10, scope, statistics, frequency, update, de.richmarkdown.ui.dialogs.WorkflowDialogs.button("copy", () -> de.richmarkdown.ui.dialogs.WorkflowDialogs.copy(scope.getValue() + "\n" + statistics.getText() + "\n" + String.join("\n", frequency.getItems()) + "\n" + goal.getText())), words, reset, progress, goal));
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        de.richmarkdown.ui.dialogs.DialogButtons.applyDialogStyles(dialog.getDialogPane());
         dialog.setResizable(true); dialog.getDialogPane().setPrefSize(600, 600);
         refresh.run(); refreshGoal.run(); dialog.show();
     }

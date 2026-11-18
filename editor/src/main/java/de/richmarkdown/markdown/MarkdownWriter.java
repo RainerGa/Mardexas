@@ -37,9 +37,7 @@ import java.nio.file.Paths;
  * <p>Die Blockerkennung im Rich-Text-Document beruht auf den zentralen
  * Konventionen aus {@link MarkdownStyles} und den Decoration-Merkmalen der
  * Rich-Text-Area-Bibliothek. Das erzeugte Markdown ist auf einen stabilen
- * Parse-/Write-Round-Trip mit {@link MarkdownParser} ausgelegt; nicht im
- * Modell verfügbare Informationen (beispielsweise Bild-Alt-Texte) können
- * naturgemäß nicht rekonstruiert werden.
+ * Parse-/Write-Round-Trip mit {@link MarkdownParser} ausgelegt; Bildbeschreibungen bleiben als Dokumentmetadaten erhalten.
  *
  * <p>Kanonische Erkennungsregeln:
  * <ul>
@@ -89,7 +87,7 @@ public class MarkdownWriter {
         for (Block block : model.getBlocks()) {
             if (block instanceof ImageBlock image) {
                 blocks.add(new ImageBlock(relativeImageUrl(image, baseDirectory),
-                        image.getWidth(), image.getHeight(), image.getLink()));
+                        image.getWidth(), image.getHeight(), image.getLink(), image.getAltText()));
             } else {
                 blocks.add(block);
             }
@@ -236,7 +234,7 @@ public class MarkdownWriter {
         // Bild: ImageDecoration (kein TextDecoration!)
         if (decoration instanceof com.gluonhq.richtextarea.model.ImageDecoration imageDecoration) {
             Block image = new ImageBlock(imageDecoration.getUrl(), imageDecoration.getWidth(),
-                    imageDecoration.getHeight(), imageDecoration.getLink());
+                    imageDecoration.getHeight(), imageDecoration.getLink(), AccessibleImageDecoration.alt(imageDecoration));
             return pd != null && pd.getIndentationLevel() > 0
                     ? nestedQuote(pd.getIndentationLevel(), image) : image;
         }
@@ -565,14 +563,16 @@ public class MarkdownWriter {
     }
 
     private void renderImage(ImageBlock image, StringBuilder sb) {
-        if (image.getLink() == null && image.getWidth() < 0 && image.getHeight() < 0) {
-            sb.append("![](").append(image.getUrl()).append(")");
+        if (image.getLink() == null && image.getWidth() < 0 && image.getHeight() < 0 && !image.getUrl().matches(".*[\\s()\\\\].*")) {
+            sb.append("![").append(image.getAltText().replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+                    .replace("\n", " ").replace("\r", " ")).append("](").append(image.getUrl()).append(")");
             return;
         }
         if (image.getLink() != null) {
             sb.append("<a href=\"").append(escapeHtmlAttribute(image.getLink())).append("\">");
         }
         sb.append("<img src=\"").append(escapeHtmlAttribute(image.getUrl())).append('"');
+        if (!image.getAltText().isEmpty()) sb.append(" alt=\"").append(escapeHtmlAttribute(image.getAltText())).append('"');
         if (image.getWidth() >= 0) {
             sb.append(" width=\"").append(image.getWidth()).append("px\"");
         }
@@ -712,7 +712,7 @@ public class MarkdownWriter {
             if (placeholder != null && placeholder.displayText().equals(inline.getText())) {
                 state.closeAll(sb);
                 renderImage(new ImageBlock(placeholder.url(), placeholder.width(),
-                        placeholder.height(), placeholder.link()), sb);
+                        placeholder.height(), placeholder.link(), placeholder.altText()), sb);
                 continue;
             }
             if (inline.getUrl() != null && placeholder == null) {

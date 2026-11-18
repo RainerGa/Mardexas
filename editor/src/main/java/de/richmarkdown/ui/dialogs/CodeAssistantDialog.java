@@ -53,14 +53,15 @@ public final class CodeAssistantDialog extends Dialog<String> {
     private final Label status = new Label();
     private final TextFlow preview = new TextFlow();
 
-    public CodeAssistantDialog(Window owner, String initialCode) {
+    public CodeAssistantDialog(Window owner, String initialCode) { this(owner, initialCode, ""); }
+    public CodeAssistantDialog(Window owner, String initialCode, String initialLanguage) {
         initOwner(owner);
         setTitle(I18n.text("dialog.codeAssistant.title"));
         setHeaderText(I18n.text("dialog.codeAssistant.header"));
         setResizable(true);
         language.getItems().addAll(LANGUAGES);
         language.setEditable(true);
-        language.setValue("");
+        language.setValue(initialLanguage); language.getEditor().setText(initialLanguage);
         language.setId("code-language");
         language.setAccessibleText(I18n.text("dialog.codeAssistant.language"));
         language.setTooltip(new javafx.scene.control.Tooltip(I18n.text("dialog.codeAssistant.language")));
@@ -126,10 +127,19 @@ public final class CodeAssistantDialog extends Dialog<String> {
         setResultConverter(button -> button != null && button.getButtonData() == ButtonBar.ButtonData.OK_DONE
                 ? result() : null);
 
+        Runnable validate = () -> {
+            try { result(); ok.setDisable(false); status.setText(""); }
+            catch (IllegalArgumentException invalid) { ok.setDisable(true); status.setText(invalid.getMessage()); }
+        };
+        code.textProperty().addListener((obs, old, value) -> validate.run());
+        language.getEditor().textProperty().addListener((obs, old, value) -> validate.run());
+        validate.run();
+        WorkflowDialogs.multilineKeys(this, ok);
         setOnShown(event -> code.requestFocus());
     }
 
     private String result() {
+        if (code.getText().isBlank()) throw new IllegalArgumentException(I18n.text("dialog.validation.required"));
         return CodeEditing.fenced(code.getText(), language.getEditor().getText());
     }
 
@@ -142,7 +152,15 @@ public final class CodeAssistantDialog extends Dialog<String> {
         for (CodeEditing.Span span : CodeEditing.highlight(code.getText(), language.getEditor().getText())) {
             Text text = new Text(span.text());
             text.setFont(Font.font("monospaced", 13));
-            text.setFill(switch (span.kind()) {
+            boolean dark = Boolean.parseBoolean(I18n.preference("access.dark", "false"));
+            boolean contrast = Boolean.parseBoolean(I18n.preference("access.contrast", "false"));
+            text.setFill(contrast ? Color.YELLOW : dark ? switch (span.kind()) {
+                case "keyword" -> Color.PLUM;
+                case "string" -> Color.LIGHTGREEN;
+                case "comment" -> Color.LIGHTGRAY;
+                case "number" -> Color.LIGHTBLUE;
+                default -> Color.WHITE;
+            } : switch (span.kind()) {
                 case "keyword" -> Color.DARKVIOLET;
                 case "string" -> Color.DARKGREEN;
                 case "comment" -> Color.GRAY;

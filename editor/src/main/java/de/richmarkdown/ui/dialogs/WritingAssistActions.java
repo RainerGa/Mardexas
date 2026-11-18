@@ -61,51 +61,15 @@ public final class WritingAssistActions {
     }
 
     private static void shortcut(Window owner, Consumer<String> insert) {
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.initOwner(owner);
-        dialog.setTitle(I18n.text("dialog.shortcut.title"));
-        dialog.setHeaderText(I18n.text("dialog.shortcut.header"));
-        DialogButtons.applyDialogStyles(dialog.getDialogPane());
-        dialog.showAndWait().ifPresent(shortcut -> {
-            if (shortcut.isBlank()) return;
-            Task<List<MarkdownLibraryStore.Entry>> task = new Task<>() {
-                @Override protected List<MarkdownLibraryStore.Entry> call() throws Exception {
-                    return MarkdownLibraryStore.userLibrary(MarkdownLibraryStore.Kind.SNIPPET).list();
-                }
-            };
-            task.setOnSucceeded(event -> task.getValue().stream()
-                    .filter(entry -> entry.shortcut().equals(shortcut.strip())).findFirst()
-                    .ifPresentOrElse(entry -> TemplateFieldsDialog.resolve(owner, entry.content()).ifPresent(insert),
-                            () -> error(owner, I18n.text("dialog.shortcut.noSnippet"))));
-            task.setOnFailed(event -> error(owner, task.getException().getMessage()));
-            Thread.ofVirtual().name("snippet-lookup").start(task);
-        });
+        InsertChoiceDialogs.snippets(owner, insert);
     }
 
     private static void dateTime(Window owner, Consumer<String> insert) {
-        Clock clock = Clock.systemDefaultZone();
-        Locale locale = Locale.getDefault();
-        List<String> values = List.of(InsertionContent.date(clock, locale, false),
-                InsertionContent.date(clock, locale, true), InsertionContent.time(clock, locale, false),
-                InsertionContent.time(clock, locale, true));
-        ChoiceDialog<String> dialog = new ChoiceDialog<>(values.getFirst(), values);
-        dialog.initOwner(owner);
-        dialog.setTitle(I18n.text("dialog.dateTime.title"));
-        dialog.setHeaderText(I18n.text("dialog.dateTime.header"));
-        DialogButtons.applyDialogStyles(dialog.getDialogPane());
-        dialog.showAndWait().ifPresent(insert);
+        InsertChoiceDialogs.dateTime(owner, insert);
     }
 
     private static void specialCharacter(Window owner, Consumer<String> insert) {
-        TextInputDialog dialog = new TextInputDialog("U+00A9");
-        dialog.initOwner(owner);
-        dialog.setTitle(I18n.text("dialog.specialCharacter.title"));
-        dialog.setHeaderText(I18n.text("dialog.specialCharacter.header"));
-        DialogButtons.applyDialogStyles(dialog.getDialogPane());
-        dialog.showAndWait().ifPresent(value -> {
-            try { insert.accept(InsertionContent.codePoint(value)); }
-            catch (IllegalArgumentException error) { error(owner, error.getMessage()); }
-        });
+        InsertChoiceDialogs.characters(owner, insert);
     }
 
     private static MenuItem item(String key, Runnable action) {

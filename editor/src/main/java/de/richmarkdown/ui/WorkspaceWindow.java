@@ -269,11 +269,11 @@ public final class WorkspaceWindow extends Stage {
                 Platform.runLater(() -> {
                     if (disposed || !documents.containsValue(document)) { result.complete(false); return; }
                     if (java.util.Objects.equals(hash, diskContents.get(document))) { result.complete(true); return; }
-                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                            FeatureUi.text("Die Datei wurde extern geändert. Mit dem Editorinhalt überschreiben?",
-                                    "The file changed externally. Overwrite it with the editor contents?"), ButtonType.YES, ButtonType.CANCEL);
-                    alert.initOwner(this);
-                    alert.setOnHidden(event -> result.complete(alert.getResult() == ButtonType.YES));
+                    Alert alert = externalConflict(document, destination);
+                    alert.setOnHidden(event -> {
+                        result.complete(alert.getResult() == ButtonType.YES);
+                        Platform.runLater(() -> externalConflictAction(document, destination, alert.getResult()));
+                    });
                     alert.show();
                 });
             } catch (IOException failure) { Platform.runLater(() -> result.completeExceptionally(failure)); }
@@ -288,11 +288,30 @@ public final class WorkspaceWindow extends Stage {
             String content = Files.exists(destination.toPath()) ? fingerprint(destination.toPath()) : null;
             if (java.util.Objects.equals(content, diskContents.get(document))) return true;
         } catch (IOException failure) { FeatureUi.error(this, failure); return false; }
+        Alert alert = externalConflict(document, destination);
+        ButtonType choice = alert.showAndWait().orElse(ButtonType.CANCEL);
+        Platform.runLater(() -> externalConflictAction(document, destination, choice));
+        return choice == ButtonType.YES;
+    }
+
+    private Alert externalConflict(EditorWindow document, File destination) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
                 FeatureUi.text("Die Datei wurde extern geändert. Mit dem Editorinhalt überschreiben?",
-                        "The file changed externally. Overwrite it with the editor contents?"), ButtonType.YES, ButtonType.CANCEL);
+                        "The file changed externally. Overwrite it with the editor contents?") + "\n" + destination,
+                ButtonType.YES, ButtonType.CANCEL);
         alert.initOwner(this);
-        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.YES;
+        for (String key : java.util.List.of("compare", "reload", "saveAs"))
+            alert.getButtonTypes().add(new ButtonType(de.richmarkdown.ui.dialogs.WorkflowDialogs.text(key), javafx.scene.control.ButtonBar.ButtonData.OTHER));
+        de.richmarkdown.ui.dialogs.DialogButtons.applyDialogStyles(alert.getDialogPane());
+        return alert;
+    }
+    private void externalConflictAction(EditorWindow document, File destination, ButtonType choice) {
+        if (choice == null || disposed || !documents.containsValue(document)) return;
+        if (choice.getText().equals(de.richmarkdown.ui.dialogs.WorkflowDialogs.text("saveAs"))) document.showSaveDialog();
+        if (choice.getText().equals(de.richmarkdown.ui.dialogs.WorkflowDialogs.text("reload"))
+                && de.richmarkdown.ui.dialogs.WorkflowDialogs.discard(this)) document.openFileInPlace(destination);
+        if (choice.getText().equals(de.richmarkdown.ui.dialogs.WorkflowDialogs.text("compare")) && destination.isFile())
+            new DiffDialog(this, document.getEditor(), destination, destination, document.getEditor().getDocumentSnapshot(), document.isReadOnly(), message -> FeatureUi.error(this, new IOException(message))).show();
     }
 
     private static String fingerprint(String content) {

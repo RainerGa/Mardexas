@@ -43,6 +43,13 @@ public final class FolderSearchDialog extends Stage {
     final TextField directory = new TextField();
     final TextField query = new TextField();
     final TextField replacement = new TextField();
+    final TextField patterns = new TextField("*.md,*.markdown");
+    final TextField exclusions = new TextField(".git,node_modules,target");
+    private final java.util.Map<Path, Set<FolderSearch.Hit>> selectedHits = new java.util.HashMap<>();
+    private final ListView<FolderSearch.Hit> hits = new ListView<>();
+    private record Backup(Path path, FolderSearch.FileMatches original, FolderSearch.Query query, String replacement) { }
+    private final java.util.List<Backup> backups = new java.util.ArrayList<>();
+    private final Button restore = WorkflowDialogs.button("backup", this::restoreBackups);
     final CheckBox regex = new CheckBox(I18n.text("dialog.folderSearch.checkbox.regex"));
     final CheckBox matchCase = new CheckBox(I18n.text("dialog.folderSearch.checkbox.matchCase"));
     final CheckBox words = new CheckBox(I18n.text("dialog.folderSearch.checkbox.words"));
@@ -82,10 +89,10 @@ public final class FolderSearchDialog extends Stage {
         apply.setId("folder-search-apply");
         Button all = FeatureUi.button(I18n.text("dialog.folderSearch.button.all"),
                 I18n.text("dialog.folderSearch.tooltip.all"), () -> {
-            files.getItems().forEach(file -> selected.add(file.file())); files.refresh();
+            files.getItems().forEach(file -> { selected.add(file.file()); selectedHits.put(file.file(), new HashSet<>(file.hits())); }); files.refresh(); hits.refresh(); updatePreview();
         });
         Button none = FeatureUi.button(I18n.text("dialog.folderSearch.button.none"),
-                I18n.text("dialog.folderSearch.tooltip.none"), () -> { selected.clear(); files.refresh(); });
+                I18n.text("dialog.folderSearch.tooltip.none"), () -> { selected.clear(); selectedHits.clear(); files.refresh(); hits.refresh(); updatePreview(); });
         Button close = FeatureUi.button(I18n.text("dialog.folderSearch.button.close"),
                 I18n.text("dialog.folderSearch.tooltip.close"), this::close);
         files.setId("folder-search-files");
@@ -97,11 +104,34 @@ public final class FolderSearchDialog extends Stage {
                 check.setText(file.file() + " (" + file.hits().size() + ")");
                 check.setSelected(selected.contains(file.file()));
                 check.setTooltip(new Tooltip(I18n.text("dialog.folderSearch.tooltip.check")));
-                check.setOnAction(event -> { if (check.isSelected()) selected.add(file.file()); else selected.remove(file.file()); });
+                check.setOnAction(event -> { if (check.isSelected()) { selected.add(file.file()); selectedHits.put(file.file(), new HashSet<>(file.hits())); }
+                    else { selected.remove(file.file()); selectedHits.remove(file.file()); } hits.refresh(); updatePreview(); });
                 setGraphic(check);
             }
         });
-        files.getSelectionModel().selectedItemProperty().addListener((obs, old, value) -> updatePreview());
+        hits.setCellFactory(view -> new ListCell<>() {
+            private final CheckBox check = new CheckBox();
+            @Override protected void updateItem(FolderSearch.Hit hit, boolean empty) {
+                super.updateItem(hit, empty);
+                if (empty || hit == null) { setGraphic(null); return; }
+                var file = files.getSelectionModel().getSelectedItem();
+                check.setText(WorkflowDialogs.text("line") + " " + hit.line() + ": " + hit.context());
+                check.setSelected(file != null && selected.contains(file.file()) && selectedHits.getOrDefault(file.file(), Set.of()).contains(hit));
+                check.setOnAction(event -> {
+                    if (file == null) return;
+                    var choices = selectedHits.computeIfAbsent(file.file(), path -> new HashSet<>());
+                    if (check.isSelected()) choices.add(hit); else choices.remove(hit);
+                    if (choices.isEmpty()) selected.remove(file.file()); else selected.add(file.file());
+                    files.refresh(); updatePreview();
+                }); setGraphic(check);
+            }
+        });
+        hits.getSelectionModel().selectedItemProperty().addListener((obs, old, value) -> {
+            if (value != null) { preview.requestFocus(); } // The full before/after preview remains available below.
+        });
+        files.getSelectionModel().selectedItemProperty().addListener((obs, old, value) -> {
+            hits.getItems().setAll(value == null ? List.of() : value.hits()); updatePreview();
+        });
         files.setOnMouseClicked(event -> {
             var file = files.getSelectionModel().getSelectedItem();
             if (event.getClickCount() == 2 && file != null && opener != null) opener.accept(file.file());
@@ -116,13 +146,15 @@ public final class FolderSearchDialog extends Stage {
         };
         query.textProperty().addListener(invalidate); directory.textProperty().addListener(invalidate);
         regex.selectedProperty().addListener(invalidate); matchCase.selectedProperty().addListener(invalidate);
-        words.selectedProperty().addListener(invalidate);
+        words.selectedProperty().addListener(invalidate); patterns.textProperty().addListener(invalidate); exclusions.textProperty().addListener(invalidate);
         preview.setEditable(false); preview.setWrapText(false); preview.setId("folder-search-preview");
         status.setWrapText(true);
-        SplitPane split = new SplitPane(files, preview); split.setDividerPositions(.40);
+        patterns.setPromptText(WorkflowDialogs.text("patterns")); exclusions.setPromptText(WorkflowDialogs.text("exclusions"));
+        patterns.setAccessibleText(patterns.getPromptText()); exclusions.setAccessibleText(exclusions.getPromptText());
+        SplitPane split = new SplitPane(files, new VBox(8, hits, preview)); split.setDividerPositions(.40);
         VBox body = new VBox(8, new HBox(8, directory, choose), new HBox(8, query, replacement),
-                new HBox(12, regex, matchCase, words), new HBox(8, search, cancel, all, none), split, status,
-                new HBox(8, apply, close));
+                new HBox(12, regex, matchCase, words), new HBox(8, new Label(WorkflowDialogs.text("patterns")), patterns), new HBox(8, new Label(WorkflowDialogs.text("exclusions")), exclusions), new HBox(8, search, cancel, all, none), split, status,
+                new HBox(8, apply, restore, close));
         HBox.setHgrow(directory, Priority.ALWAYS); HBox.setHgrow(query, Priority.ALWAYS); HBox.setHgrow(replacement, Priority.ALWAYS);
         VBox.setVgrow(split, Priority.ALWAYS); body.setPadding(new Insets(12));
         Scene scene = new Scene(body, 1050, 620);
@@ -150,15 +182,20 @@ public final class FolderSearchDialog extends Stage {
             Path root = Path.of(directory.getText());
             FolderSearch.Query request = new FolderSearch.Query(query.getText(), regex.isSelected(), matchCase.isSelected(), words.isSelected());
             request.pattern();
+            List<String> requestedPatterns = java.util.Arrays.stream(patterns.getText().split(",")).map(String::strip).filter(value -> !value.isEmpty()).toList();
+            Set<String> excluded = new HashSet<>(java.util.Arrays.stream(exclusions.getText().split(",")).map(String::strip).filter(value -> !value.isEmpty()).toList());
+            for (String pattern : requestedPatterns) root.getFileSystem().getPathMatcher("glob:" + pattern);
             long token = ++revision;
             setBusy(true); status.setText(I18n.text("dialog.folderSearch.status.searching"));
             running = worker.submit(() -> {
                 try {
-                    var result = FolderSearch.search(root, request);
+                    var result = FolderSearch.search(root, request, requestedPatterns, excluded, count -> {
+                        if (count % 20 == 0) Platform.runLater(() -> { if (token == revision) status.setText(WorkflowDialogs.text("files") + ": " + count); });
+                    });
                     Platform.runLater(() -> {
                         if (token != revision) return;
-                        resultQuery = request; files.getItems().setAll(result.files()); selected.clear();
-                        result.files().forEach(file -> selected.add(file.file())); files.refresh();
+                        resultQuery = request; files.getItems().setAll(result.files()); selected.clear(); selectedHits.clear();
+                        result.files().forEach(file -> { selected.add(file.file()); selectedHits.put(file.file(), new HashSet<>(file.hits())); }); files.refresh();
                         status.setText(result.matches() + I18n.text("dialog.folderSearch.status.matchesIn")
                                 + result.files().size() + I18n.text("dialog.folderSearch.status.files")
                                 + String.join("\n", result.warnings()));
@@ -179,9 +216,10 @@ public final class FolderSearchDialog extends Stage {
         FolderSearch.Query request = resultQuery;
         long token = ++revision;
         if (running != null) running.cancel(true);
+        var selection = selectedFile(file);
         running = worker.submit(() -> {
             try {
-                String after = FolderSearch.replacement(file, request, substitute);
+                String after = FolderSearch.replacement(selection, request, substitute);
                 String beforeExcerpt = file.original().substring(0, Math.min(16_000, file.original().length()));
                 String afterExcerpt = after.substring(0, Math.min(16_000, after.length()));
                 String result = I18n.text("dialog.folderSearch.preview.original") + "\n" + beforeExcerpt
@@ -193,7 +231,7 @@ public final class FolderSearchDialog extends Stage {
 
     private void confirmApply() {
         if (busy || resultQuery == null) return;
-        var chosen = files.getItems().stream().filter(file -> selected.contains(file.file())).toList();
+        var chosen = files.getItems().stream().filter(file -> selected.contains(file.file())).map(this::selectedFile).filter(file -> !file.hits().isEmpty()).toList();
         if (chosen.isEmpty()) { status.setText(I18n.text("dialog.folderSearch.status.noFiles")); return; }
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
                 chosen.size() + I18n.text("dialog.folderSearch.confirm.apply.message"),
@@ -209,13 +247,39 @@ public final class FolderSearchDialog extends Stage {
         setBusy(true);
         running = worker.submit(() -> {
             try {
-                var backups = FolderSearch.apply(chosen, request, substitute);
+                var backups = FolderSearch.apply(chosen, request, substitute, (file, backup) ->
+                        Platform.runLater(() -> { this.backups.add(new Backup(backup, file, request, substitute)); restore.setDisable(busy); }));
                 Platform.runLater(() -> {
                     if (token != revision) return;
                     status.setText(I18n.text("dialog.folderSearch.status.replaced") + backups.stream().map(Path::toString).collect(java.util.stream.Collectors.joining("\n")));
                     files.getItems().clear(); selected.clear(); preview.clear(); resultQuery = null; setBusy(false);
                 });
             } catch (Exception error) { failed(token, error); }
+        });
+    }
+    private FolderSearch.FileMatches selectedFile(FolderSearch.FileMatches file) {
+        Set<FolderSearch.Hit> choices = selectedHits.getOrDefault(file.file(), Set.of());
+        return new FolderSearch.FileMatches(file.file(), file.original(), file.hits().stream().filter(choices::contains).toList());
+    }
+    private void restoreBackups() {
+        if (busy || backups.isEmpty()) return;
+        ListView<Backup> list = new ListView<>(); list.getItems().setAll(backups);
+        list.setCellFactory(view -> new ListCell<>() { @Override protected void updateItem(Backup backup, boolean empty) {
+            super.updateItem(backup, empty); setText(empty || backup == null ? null : backup.original().file() + " ← " + backup.path());
+        }});
+        Dialog<Backup> dialog = new Dialog<>(); dialog.initOwner(this); dialog.setTitle(WorkflowDialogs.text("backup")); dialog.setResizable(true);
+        dialog.getDialogPane().setContent(list); dialog.getDialogPane().getButtonTypes().addAll(DialogButtons.OK, DialogButtons.CANCEL);
+        DialogButtons.applyDialogStyles(dialog.getDialogPane());
+        dialog.getDialogPane().lookupButton(DialogButtons.OK).disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
+        dialog.setResultConverter(type -> type == DialogButtons.OK ? list.getSelectionModel().getSelectedItem() : null);
+        dialog.showAndWait().ifPresent(backup -> {
+            long token = ++revision; setBusy(true);
+            running = worker.submit(() -> {
+                try {
+                    Path undo = FolderSearch.restore(backup.path(), backup.original(), backup.query(), backup.replacement());
+                    Platform.runLater(() -> { if (token != revision) return; backups.remove(backup); status.setText(backup.original().file() + " ← " + backup.path() + "\n" + WorkflowDialogs.text("backup") + ": " + undo); resultQuery = null; files.getItems().clear(); selectedHits.clear(); selected.clear(); preview.clear(); setBusy(false); });
+                } catch (Exception failure) { failed(token, failure); }
+            });
         });
     }
     private void failed(long token, Exception error) {
@@ -230,6 +294,7 @@ public final class FolderSearchDialog extends Stage {
     }
     private void setBusy(boolean value) {
         busy = value; search.setDisable(value); apply.setDisable(value || resultQuery == null); cancel.setDisable(!value);
+        patterns.setDisable(value); exclusions.setDisable(value); hits.setDisable(value); files.setDisable(value); restore.setDisable(value || backups.isEmpty());
         directory.setDisable(value); query.setDisable(value); replacement.setDisable(value);
         regex.setDisable(value); matchCase.setDisable(value); words.setDisable(value);
     }

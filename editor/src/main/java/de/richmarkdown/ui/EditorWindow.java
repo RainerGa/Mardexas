@@ -33,6 +33,7 @@ import javafx.print.PrinterJob;
 import javafx.scene.Scene;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -757,6 +758,7 @@ public class EditorWindow extends Stage {
                         new DiffDialog(getDialogOwner(), editor, file, file, editor.getDocumentSnapshot(), isReadOnly(), this::showError).show();
                     }
                 }));
+        notice.getChildren().add(de.richmarkdown.ui.dialogs.WorkflowDialogs.button("saveAs", this::showSaveDialog));
         notice.getChildren().add(FeatureUi.button(FeatureUi.text("Ausblenden", "Dismiss"),
                 FeatureUi.text("Hinweis ausblenden; Überschreibschutz bleibt aktiv", "Hide the notice; overwrite protection remains active"), () -> editorRoot.setTop(chrome)));
         editorRoot.setTop(new VBox(chrome, notice));
@@ -870,11 +872,6 @@ public class EditorWindow extends Stage {
      */
     public void showDiffDialog() {
         File current = editor.getCurrentFile().orElse(null);
-        if (current == null) {
-            lastError = I18n.text("dialog.diff.noFile");
-            showError(lastError);
-            return;
-        }
         try {
             File other = chooseFileToOpen();
             if (other == null) return;
@@ -912,15 +909,14 @@ public class EditorWindow extends Stage {
     }
 
     public void configurePrint() {
-        var prefs = java.util.prefs.Preferences.userNodeForPackage(EditorWindow.class).node("printing");
-        var selection = editor.getControl().getSelection();
-        var dialog = new de.richmarkdown.features.printing.PrintOptionsDialog(getDialogOwner(),
-                de.richmarkdown.features.printing.PrintOptions.load(prefs), selection != null && selection.isDefined());
-        dialog.showAndWait().ifPresent(options -> { options.save(prefs); print(options); });
+        print();
     }
+    private record PrintSetup(com.gluonhq.richtextarea.model.Document source, int caret, int start, int end,
+                              de.richmarkdown.features.printing.PrintOptions initial) { }
+    private final ThreadLocal<PrintSetup> printSetup = new ThreadLocal<>();
 
     private void print(de.richmarkdown.features.printing.PrintOptions options) {
-        PrintRequest request;
+        PrintSetup setup;
         try {
             editorRoot.applyCss();
             var snapshot = editor.getDocumentSnapshot();
@@ -931,8 +927,7 @@ public class EditorWindow extends Stage {
                 start = buffer.getText(0, selection.getStart()).length(); end = buffer.getText(0, selection.getEnd()).length();
             }
             int caret = Math.max(0, editor.getControl().getCaretPosition());
-            request = new PrintRequest(de.richmarkdown.features.printing.PrintDocuments.prepare(snapshot, options,
-                    caret, start, end), options);
+            setup = new PrintSetup(snapshot, caret, start, end, options);
         } catch (RuntimeException failure) { FeatureUi.error(getDialogOwner(), failure); return; }
         Thread thread = new Thread(() -> {
             List<Printer> printers;
@@ -952,7 +947,8 @@ public class EditorWindow extends Stage {
             }
             PrintDialogResult choice;
             try {
-                choice = showPrintDialog(printers);
+                printSetup.set(setup);
+                try { choice = showPrintDialog(printers); } finally { printSetup.remove(); }
             } catch (Throwable t) {
                 Platform.runLater(() -> {
                     showPrintUnavailableMessage();
@@ -978,12 +974,15 @@ public class EditorWindow extends Stage {
                 return;
             }
             try {
+                var chosenOptions = choice.options() == null ? options : choice.options();
+                PrintRequest request = new PrintRequest(de.richmarkdown.features.printing.PrintDocuments.prepare(setup.source(), chosenOptions, setup.caret(), setup.start(), setup.end()), chosenOptions);
+                chosenOptions.save(java.util.prefs.Preferences.userNodeForPackage(EditorWindow.class).node("printing"));
                 applyPrintChoice(job, choice);
                 PageLayout chosenLayout = choice.printer().createPageLayout(choice.paper(), choice.orientation(),
-                        de.richmarkdown.features.printing.PrintOptions.points(options.left()),
-                        de.richmarkdown.features.printing.PrintOptions.points(options.right()),
-                        de.richmarkdown.features.printing.PrintOptions.points(options.top()),
-                        de.richmarkdown.features.printing.PrintOptions.points(options.bottom()));
+                        de.richmarkdown.features.printing.PrintOptions.points(chosenOptions.left()),
+                        de.richmarkdown.features.printing.PrintOptions.points(chosenOptions.right()),
+                        de.richmarkdown.features.printing.PrintOptions.points(chosenOptions.top()),
+                        de.richmarkdown.features.printing.PrintOptions.points(chosenOptions.bottom()));
                 job.getJobSettings().setPageLayout(chosenLayout);
                 printRequests.put(job, request);
                 Platform.runLater(() -> printDocument(job));
@@ -1029,8 +1028,9 @@ public class EditorWindow extends Stage {
      * @return Dialogergebnis oder {@code null} bei Abbruch
      */
     protected PrintDialogResult showPrintDialog(List<Printer> printers) {
+        PrintSetup setup = printSetup.get();
         if (Platform.isFxApplicationThread()) {
-            PrintDialog dialog = new PrintDialog(printers, cachedPrinter);
+            PrintDialog dialog = createPrintDialog(printers, setup);
             return dialog.showAndWait().orElse(null);
         }
         java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
@@ -1040,7 +1040,7 @@ public class EditorWindow extends Stage {
                 new java.util.concurrent.atomic.AtomicReference<>();
         Platform.runLater(() -> {
             try {
-                PrintDialog dialog = new PrintDialog(printers, cachedPrinter);
+                PrintDialog dialog = createPrintDialog(printers, setup);
                 result.set(dialog.showAndWait().orElse(null));
             } catch (Throwable t) {
                 error.set(t);
@@ -1065,6 +1065,14 @@ public class EditorWindow extends Stage {
             throw new IllegalStateException(failure);
         }
         return result.get();
+    }
+
+    private PrintDialog createPrintDialog(List<Printer> printers, PrintSetup setup) {
+        if (setup == null) return new PrintDialog(printers, cachedPrinter);
+        return new PrintDialog(printers, cachedPrinter, setup.initial(), setup.end() > setup.start(), (choice, owner) -> {
+            var document = de.richmarkdown.features.printing.PrintDocuments.prepare(setup.source(), choice.options(), setup.caret(), setup.start(), setup.end());
+            PrintPreview.show(owner, editor, document, choice);
+        });
     }
 
     /**
@@ -1303,11 +1311,29 @@ public class EditorWindow extends Stage {
         alert.initOwner(getDialogOwner());
         alert.setTitle(I18n.text("confirm.discard.title"));
         alert.setHeaderText(null);
-        alert.setContentText(I18n.text("confirm.discard"));
-        alert.getButtonTypes().setAll(DialogButtons.DISCARD, DialogButtons.KEEP);
-        return alert.showAndWait()
-                .map(response -> response == DialogButtons.DISCARD)
-                .orElse(false);
+        alert.setContentText(editor.getCurrentFile().map(File::getName).orElse(I18n.text("app.untitled")) + "\n" + I18n.text("confirm.discard"));
+        ButtonType save = new ButtonType(de.richmarkdown.ui.dialogs.WorkflowDialogs.text("save"), javafx.scene.control.ButtonBar.ButtonData.YES);
+        alert.getButtonTypes().setAll(save, DialogButtons.DISCARD, DialogButtons.CANCEL);
+        DialogButtons.applyDialogStyles(alert.getDialogPane());
+        ButtonType result = alert.showAndWait().orElse(DialogButtons.CANCEL);
+        if (result == DialogButtons.DISCARD) return true;
+        if (result != save) return false;
+        File destination = editor.getCurrentFile().orElseGet(this::chooseFileToSave);
+        if (destination == null) return false;
+        javafx.scene.control.Dialog<Void> progress = new javafx.scene.control.Dialog<>();
+        progress.initOwner(getDialogOwner()); progress.setTitle(de.richmarkdown.ui.dialogs.WorkflowDialogs.text("save"));
+        progress.getDialogPane().setContent(new javafx.scene.control.ProgressIndicator());
+        progress.getDialogPane().getButtonTypes().add(DialogButtons.CANCEL);
+        progress.getDialogPane().lookupButton(DialogButtons.CANCEL).setDisable(true);
+        DialogButtons.applyDialogStyles(progress.getDialogPane());
+        java.util.concurrent.atomic.AtomicBoolean completed = new java.util.concurrent.atomic.AtomicBoolean();
+        progress.setOnCloseRequest(event -> { if (!completed.get()) event.consume(); });
+        progress.setOnShown(event -> {
+            saveToFile(destination);
+            pendingFileOperation.whenComplete((value, failure) -> Platform.runLater(() -> { completed.set(true); progress.close(); }));
+        });
+        progress.showAndWait();
+        return !editor.isModified() && lastError == null;
     }
 
     /**
@@ -1322,6 +1348,10 @@ public class EditorWindow extends Stage {
         alert.setTitle(I18n.text("error.title"));
         alert.setHeaderText(null);
         alert.setContentText(message);
+        javafx.scene.control.TextArea details = de.richmarkdown.ui.dialogs.WorkflowDialogs.output(message);
+        alert.getDialogPane().setExpandableContent(new VBox(8, details,
+                de.richmarkdown.ui.dialogs.WorkflowDialogs.button("copy", () -> de.richmarkdown.ui.dialogs.WorkflowDialogs.copy(message))));
+        DialogButtons.applyDialogStyles(alert.getDialogPane());
         alert.getDialogPane().getButtonTypes().forEach(type -> {
             if (alert.getDialogPane().lookupButton(type) instanceof javafx.scene.control.Button button) {
                 button.setTooltip(new javafx.scene.control.Tooltip(type.getText()));
@@ -1346,7 +1376,10 @@ public class EditorWindow extends Stage {
         chooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter(I18n.text("file.filter"),
                         "*.md", "*.markdown", "*.txt"));
-        return chooser.showOpenDialog(getDialogOwner());
+        initialDirectory(chooser);
+        File chosen = chooser.showOpenDialog(getDialogOwner());
+        if (chosen != null && chosen.getParent() != null) I18n.setPreference("files.directory", chosen.getParent());
+        return chosen;
     }
 
     /**
@@ -1354,11 +1387,33 @@ public class EditorWindow extends Stage {
      *
      * @return ausgewählte Zieldatei oder {@code null}, wenn der Dialog abgebrochen wurde
      */
+    private void initialDirectory(FileChooser chooser) {
+        String saved = I18n.preference("files.directory", "");
+        File directory = editor.getCurrentFile().map(File::getAbsoluteFile).map(File::getParentFile).orElse(saved.isBlank() ? null : new File(saved));
+        if (directory != null && directory.isDirectory()) chooser.setInitialDirectory(directory);
+    }
+
     protected File chooseFileToSave() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle(I18n.text("file.save.title"));
         chooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter(I18n.text("file.filter"), "*.md"));
-        return chooser.showSaveDialog(getDialogOwner());
+        initialDirectory(chooser);
+        chooser.setInitialFileName(editor.getCurrentFile().map(File::getName).orElse("document.md"));
+        File chosen = chooser.showSaveDialog(getDialogOwner());
+        if (chosen != null) {
+            String name = chosen.getName();
+            if (!name.toLowerCase(java.util.Locale.ROOT).matches(".*\\.(md|markdown)$")) {
+                chosen = new File(chosen.getParentFile(), name + ".md");
+                if (chosen.exists()) {
+                    Alert overwrite = new Alert(Alert.AlertType.CONFIRMATION, chosen.getAbsolutePath(), de.richmarkdown.ui.dialogs.DialogButtons.OK, de.richmarkdown.ui.dialogs.DialogButtons.CANCEL);
+                    overwrite.initOwner(getDialogOwner()); overwrite.setHeaderText(I18n.text("file.save.title"));
+                    de.richmarkdown.ui.dialogs.DialogButtons.applyDialogStyles(overwrite.getDialogPane());
+                    if (overwrite.showAndWait().orElse(de.richmarkdown.ui.dialogs.DialogButtons.CANCEL) != de.richmarkdown.ui.dialogs.DialogButtons.OK) return null;
+                }
+            }
+            if (chosen.getParent() != null) I18n.setPreference("files.directory", chosen.getParent());
+        }
+        return chosen;
     }
 }

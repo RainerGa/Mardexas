@@ -88,8 +88,8 @@ class WritingAssistDialogsTest {
                     var window = javafx.stage.Window.getWindows().stream().filter(candidate -> candidate != stage
                             && candidate.getScene().getRoot() instanceof javafx.scene.control.DialogPane).findFirst().orElseThrow();
                     var pane = (javafx.scene.control.DialogPane) window.getScene().getRoot();
-                    ((TextField) pane.lookup(".text-field")).setText("U+002A");
-                    ((Button) pane.lookupButton(ButtonType.OK)).fire();
+                    ((TextField) pane.lookup("#character-code")).setText("U+002A");
+                    ((Button) pane.lookupButton(DialogButtons.OK)).fire();
                 });
                 menu.getItems().getLast().fire();
             });

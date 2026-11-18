@@ -1,93 +1,56 @@
-/*
- * Copyright (C) 2026 Rainer Garbotz
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 package de.richmarkdown.ui.dialogs;
 
 import de.richmarkdown.i18n.I18n;
-import javafx.scene.control.Button;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
+import java.nio.file.Path;
+import java.util.List;
 
-/**
- * Erfasst die Ziel-URL, die auf die aktuelle Textauswahl angewendet werden soll.
- *
- * <p>Der Dialog validiert das URL-Schema nicht. Die Ausgabe sollte über die
- * Sicherheitsprüfung in {@link de.richmarkdown.editor.MarkdownEditor}
- * beziehungsweise die Link-Callback-Allowlist verarbeitet werden.
- */
+/** Complete link editor. The historic String result remains the destination. */
 public class LinkDialog extends Dialog<String> {
-
     private final TextField urlField = new TextField();
-    private final Label error = new Label();
-
-    /** Erstellt den lokalisierten Dialog zur Eingabe einer Link-URL. */
-    public LinkDialog() {
-        setTitle(I18n.text("dialog.link.title"));
-        setHeaderText(I18n.text("dialog.link.header"));
-
-        urlField.setPromptText(I18n.text("dialog.link.url"));
-        urlField.setAccessibleText(I18n.text("dialog.link.url"));
-        urlField.setId("link-url");
-
-        error.getStyleClass().add("rme-dialog-error");
-        error.setWrapText(true);
-        error.setVisible(false);
-        error.setManaged(false);
-
-        GridPane grid = new GridPane();
-        grid.setHgap(8);
-        grid.setVgap(8);
-        grid.add(new Label(I18n.text("dialog.link.url")), 0, 0);
-        grid.add(urlField, 1, 0);
-
-        VBox content = new VBox(8, grid, error);
-        content.setId("link-dialog-content");
-        getDialogPane().setContent(content);
-
-        DialogButtons.applyDialogStyles(getDialogPane());
-        getDialogPane().getButtonTypes().addAll(DialogButtons.OK, DialogButtons.CANCEL);
-
-        Button ok = (Button) getDialogPane().lookupButton(DialogButtons.OK);
-        ok.setDefaultButton(true);
-        ok.setDisable(true);
-
-        urlField.textProperty().addListener((observable, oldValue, newValue) -> {
-            boolean valid = newValue != null && !newValue.isBlank();
-            ok.setDisable(!valid);
-            error.setVisible(!valid);
-            error.setManaged(!valid);
-            error.setText(valid ? "" : I18n.text("dialog.validation.required"));
+    private final TextField textField = new TextField();
+    public LinkDialog() { this("", "", List.of(), null); }
+    public LinkDialog(String label, String target, List<String> anchors, Path directory) {
+        setTitle(I18n.text("dialog.link.title")); setHeaderText(I18n.text("dialog.link.header")); setResizable(true);
+        urlField.setId("link-url"); textField.setId("link-text");
+        urlField.setText(target == null ? "" : target); textField.setText(label == null ? "" : label);
+        urlField.setAccessibleText(I18n.text("dialog.link.url")); textField.setAccessibleText(WorkflowDialogs.text("linkText"));
+        GridPane fields = new GridPane(8, 8);
+        Button browse = WorkflowDialogs.button("browse", () -> {
+            FileChooser chooser = new FileChooser(); if (directory != null && java.nio.file.Files.isDirectory(directory)) chooser.setInitialDirectory(directory.toFile());
+            var file = chooser.showOpenDialog(getDialogPane().getScene().getWindow());
+            if (file != null) urlField.setText(file.toURI().toASCIIString());
         });
-
-        setResultConverter(buttonType ->
-                buttonType == DialogButtons.OK ? urlField.getText() : null);
-
+        ComboBox<String> headings = new ComboBox<>(); headings.getItems().setAll(anchors);
+        headings.setPromptText(WorkflowDialogs.text("heading"));
+        headings.setOnAction(event -> { if (headings.getValue() != null) urlField.setText(headings.getValue()); });
+        Button remove = WorkflowDialogs.button("removeLink", () -> { setResult(""); close(); }); remove.setDisable(target == null || target.isEmpty());
+        fields.addRow(0, new Label(WorkflowDialogs.text("linkText")), textField);
+        fields.addRow(1, new Label(I18n.text("dialog.link.url")), urlField, browse);
+        fields.addRow(2, new Label(WorkflowDialogs.text("heading")), headings);
+        Label error = new Label(); error.getStyleClass().add("rme-dialog-error"); error.setWrapText(true);
+        getDialogPane().setContent(new VBox(10, fields, remove, error));
+        DialogButtons.applyDialogStyles(getDialogPane()); getDialogPane().getButtonTypes().addAll(DialogButtons.OK, DialogButtons.CANCEL);
+        Button ok = (Button) getDialogPane().lookupButton(DialogButtons.OK); ok.setText(WorkflowDialogs.text("apply"));
+        Runnable validate = () -> {
+            boolean valid = validTarget(urlField.getText()); ok.setDisable(!valid);
+            error.setText(valid ? "" : I18n.text(urlField.getText().isBlank() ? "dialog.validation.required" : "dialog.workflow.invalidTarget"));
+        };
+        urlField.textProperty().addListener((obs, old, value) -> validate.run()); validate.run();
+        setResultConverter(button -> button == DialogButtons.OK ? urlField.getText().strip() : null);
         setOnShown(event -> urlField.requestFocus());
     }
-
-    /**
-     * Liefert das Eingabefeld der Link-URL.
-     *
-     * @return einzeiliges URL-Eingabefeld
-     */
-    public TextField getUrlField() {
-        return urlField;
+    public static boolean validTarget(String value) {
+        if (value == null || value.isBlank() || value.chars().anyMatch(Character::isISOControl)) return false;
+        try {
+            var uri = java.net.URI.create(value.strip());
+            String scheme = uri.getScheme();
+            if (scheme != null && !java.util.Set.of("http", "https", "mailto", "file").contains(scheme.toLowerCase(java.util.Locale.ROOT))) return false;
+            return scheme == null || !(scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https")) || uri.getHost() != null;
+        } catch (IllegalArgumentException failure) { return false; }
     }
+    public TextField getUrlField() { return urlField; }
+    public TextField getTextField() { return textField; }
 }

@@ -89,7 +89,11 @@ public class StatisticsDialog extends Dialog<ButtonType> {
         updateButton.setDefaultButton(false);
         updateButton.setOnAction(event -> refresh());
 
-        HBox buttonRow = new HBox(updateButton);
+        HBox buttonRow = new HBox(8, updateButton, WorkflowDialogs.button("copy", () -> {
+            StringBuilder text = new StringBuilder();
+            valueLabels.forEach((key, value) -> text.append(I18n.text(key)).append(": ").append(value.getText()).append("\n"));
+            WorkflowDialogs.copy(text.toString());
+        }));
         buttonRow.setPadding(new Insets(8, 0, 0, 0));
 
         VBox content = new VBox(12, grid, buttonRow);

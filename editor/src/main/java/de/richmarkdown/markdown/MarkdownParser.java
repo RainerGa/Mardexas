@@ -62,7 +62,7 @@ public class MarkdownParser {
     private static final Pattern LIST_ITEM = Pattern.compile("^(\\s*)([-*+]|\\d+[.)])(?:\\s+(.*))?$");
     private static final Pattern CODE_FENCE = Pattern.compile("^ {0,3}(`{3,}|~{3,})[^\\r\\n]*$");
     private static final Pattern IMAGE_LINE =
-            Pattern.compile("^\\s*!\\[[^\\]]*\\]\\(([^)]*)\\)\\s*$");
+            Pattern.compile("^\\s*!\\[((?:\\\\.|[^\\\\\\]])*)\\]\\(([^)]*)\\)\\s*$");
     private static final Pattern HTML_LINKED_IMAGE_LINE = Pattern.compile(
             "^\\s*<a\\b((?:[^>\"']|\"[^\"]*\"|'[^']*')*)>\\s*"
                     + "<img\\b((?:[^>\"']|\"[^\"]*\"|'[^']*')*)/?>\\s*</a>\\s*$",
@@ -164,7 +164,7 @@ public class MarkdownParser {
 
     /** Resolves image metadata in an editor snapshot without re-parsing its text. */
     public Document normalizeComparisonImages(Document document, Path imageBaseDirectory) {
-        Path baseDirectory = imageBaseDirectory.toAbsolutePath().normalize();
+        Path baseDirectory = imageBaseDirectory == null ? Path.of("").toAbsolutePath() : imageBaseDirectory.toAbsolutePath().normalize();
         String source = document.getText();
         StringBuilder text = new StringBuilder();
         List<DecorationModel> runs = new ArrayList<>();
@@ -185,7 +185,7 @@ public class MarkdownParser {
                 if (placeholder != null && (segment.equals(placeholder.displayText())
                         || segment.equals(placeholder.displayText() + "\n"))) {
                     ImagePlaceholder resolved = new ImagePlaceholder(resolveImageUrl(placeholder.url(), baseDirectory),
-                            placeholder.link(), placeholder.width(), placeholder.height());
+                            placeholder.link(), placeholder.width(), placeholder.height(), placeholder.altText());
                     segment = resolved.displayText() + segment.substring(placeholder.displayText().length());
                     style = TextDecoration.builder().fromDecoration(td).background(resolved.marker()).build();
                 }
@@ -193,11 +193,11 @@ public class MarkdownParser {
                 String url = resolveImageUrl(image.getUrl(), baseDirectory);
                 if (url.startsWith("//")) url = "https:" + url;
                 if (isUnsupportedComparisonImage(url) || isMissingLocalImage(url)) {
-                    ImagePlaceholder placeholder = new ImagePlaceholder(url, image.getLink(), image.getWidth(), image.getHeight());
+                    ImagePlaceholder placeholder = new ImagePlaceholder(url, image.getLink(), image.getWidth(), image.getHeight(), AccessibleImageDecoration.alt(image));
                     segment = placeholder.displayText() + segment.substring(Math.min(1, segment.length()));
                     style = textDecorationFor(Inline.builder(placeholder.displayText()).url(placeholder.marker()).build(), null);
                 } else {
-                    style = new ImageDecoration(url, image.getWidth(), image.getHeight(), image.getLink());
+                    style = new AccessibleImageDecoration(url, image.getWidth(), image.getHeight(), image.getLink(), AccessibleImageDecoration.alt(image));
                 }
             }
             runs.add(new DecorationModel(text.length(), segment.length(), style, run.getParagraphDecoration()));
@@ -234,10 +234,10 @@ public class MarkdownParser {
         if (!preserveImagePaths && resolvedUrl.startsWith("//")) resolvedUrl = "https:" + resolvedUrl;
         if ((!preserveImagePaths && isUnsupportedComparisonImage(resolvedUrl)) || isMissingLocalImage(resolvedUrl)) {
             ImagePlaceholder placeholder = new ImagePlaceholder(preserveImagePaths ? image.getUrl() : resolvedUrl,
-                    image.getLink(), image.getWidth(), image.getHeight());
+                    image.getLink(), image.getWidth(), image.getHeight(), image.getAltText());
             return new ParagraphBlock(List.of(Inline.builder(placeholder.displayText()).url(placeholder.marker()).build()));
         }
-        return new ImageBlock(resolvedUrl, image.getWidth(), image.getHeight(), image.getLink());
+        return new ImageBlock(resolvedUrl, image.getWidth(), image.getHeight(), image.getLink(), image.getAltText());
     }
 
     private String resolveImageUrl(String url, Path baseDirectory) {
@@ -571,9 +571,9 @@ public class MarkdownParser {
     private Block parseImageLine(String line) {
         Matcher matcher = IMAGE_LINE.matcher(line);
         matcher.matches();
-        String url = matcher.group(1).trim();
+        String url = matcher.group(2).trim();
         if (url.isEmpty() || isImageUrl(url)) {
-            return new ImageBlock(url);
+            return new ImageBlock(url, -1, -1, null, matcher.group(1).replaceAll("\\\\(.)", "$1"));
         }
         int imageStart = line.indexOf("![");
         return new ParagraphBlock(parseInlines(line.substring(imageStart + 1)));
@@ -598,7 +598,7 @@ public class MarkdownParser {
         String url = decodeHtmlEntities(htmlAttribute(matcher.group(2), "src"));
         int width = parseHtmlDimension(htmlAttribute(matcher.group(2), "width"));
         int height = parseHtmlDimension(htmlAttribute(matcher.group(2), "height"));
-        return new ImageBlock(url, width, height, link);
+        return new ImageBlock(url, width, height, link, decodeHtmlEntities(java.util.Objects.toString(htmlAttribute(matcher.group(2), "alt"), "")));
     }
 
     private Block parseHtmlImage(String line) {
@@ -607,7 +607,7 @@ public class MarkdownParser {
         String url = decodeHtmlEntities(htmlAttribute(matcher.group(1), "src"));
         int width = parseHtmlDimension(htmlAttribute(matcher.group(1), "width"));
         int height = parseHtmlDimension(htmlAttribute(matcher.group(1), "height"));
-        return new ImageBlock(url, width, height, null);
+        return new ImageBlock(url, width, height, null, decodeHtmlEntities(java.util.Objects.toString(htmlAttribute(matcher.group(1), "alt"), "")));
     }
 
     private boolean isHtmlImageLine(String line) {
@@ -629,7 +629,7 @@ public class MarkdownParser {
         return href != null && !href.isBlank() && src != null && !src.isBlank();
     }
 
-    private static final java.util.Map<String, Pattern> HTML_ATTRIBUTES = java.util.stream.Stream.of("href", "src", "width", "height")
+    private static final java.util.Map<String, Pattern> HTML_ATTRIBUTES = java.util.stream.Stream.of("href", "src", "width", "height", "alt")
             .collect(java.util.stream.Collectors.toUnmodifiableMap(name -> name, name -> Pattern.compile(
                     "(?:^|\\s)" + Pattern.quote(name) + "\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))", Pattern.CASE_INSENSITIVE)));
 
@@ -1151,13 +1151,13 @@ public class MarkdownParser {
         } else if (block instanceof TableBlock table) {
             specs.add(tableSpec(table));
         } else if (block instanceof ImageBlock image && image.getUrl().isBlank()) {
-            ImagePlaceholder placeholder = new ImagePlaceholder(image.getUrl(), image.getLink(), image.getWidth(), image.getHeight());
+            ImagePlaceholder placeholder = new ImagePlaceholder(image.getUrl(), image.getLink(), image.getWidth(), image.getHeight(), image.getAltText());
             specs.add(new ParagraphSpec(List.of(Inline.builder(placeholder.displayText()).url(placeholder.marker()).build()),
                     paragraphDecoration(quoteDepth), null));
         } else if (block instanceof ImageBlock image) {
             specs.add(new ParagraphSpec(List.of(Inline.text(IMAGE_PLACEHOLDER)),
-                    paragraphDecoration(quoteDepth), new ImageDecoration(image.getUrl(),
-                            image.getWidth(), image.getHeight(), image.getLink())));
+                    paragraphDecoration(quoteDepth), new AccessibleImageDecoration(image.getUrl(),
+                            image.getWidth(), image.getHeight(), image.getLink(), image.getAltText())));
         } else if (block instanceof QuoteBlock quote) {
             for (Block child : quote.getChildren()) {
                 collectParagraphs(child, specs, quoteDepth + 1);

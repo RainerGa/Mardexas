@@ -45,6 +45,10 @@ public class TableDialog extends Dialog<TableSize> {
     private static final String LAST_ROWS_KEY = "table.lastRows";
     private static final String LAST_COLUMNS_KEY = "table.lastColumns";
 
+    private final java.util.List<javafx.scene.control.TextField> headings = new java.util.ArrayList<>();
+    private final java.util.List<javafx.scene.control.ComboBox<javafx.scene.text.TextAlignment>> alignments = new java.util.ArrayList<>();
+    private final javafx.scene.layout.VBox columns = new javafx.scene.layout.VBox(5);
+    private final javafx.scene.control.TextArea preview = WorkflowDialogs.output("");
     private final Spinner<Integer> rowsSpinner = new Spinner<>();
     private final Spinner<Integer> columnsSpinner = new Spinner<>();
 
@@ -65,7 +69,13 @@ public class TableDialog extends Dialog<TableSize> {
         grid.addRow(0, new Label(I18n.text("dialog.table.rows")), rowsSpinner);
         grid.addRow(1, new Label(I18n.text("dialog.table.columns")), columnsSpinner);
 
-        getDialogPane().setContent(grid);
+        preview.setPrefRowCount(5); preview.setWrapText(false);
+        javafx.scene.control.ScrollPane scroll = new javafx.scene.control.ScrollPane(this.columns); scroll.setFitToWidth(true); scroll.setPrefViewportHeight(160);
+        getDialogPane().setContent(new javafx.scene.layout.VBox(8, grid, new Label(WorkflowDialogs.text("headerRow")), scroll, preview));
+        getDialogPane().setPrefWidth(600); setResizable(true);
+        columnsSpinner.valueProperty().addListener((obs, old, value) -> updateColumns());
+        rowsSpinner.valueProperty().addListener((obs, old, value) -> updatePreview());
+        updateColumns();
         DialogButtons.applyDialogStyles(getDialogPane());
         getDialogPane().getButtonTypes().addAll(DialogButtons.OK, DialogButtons.CANCEL);
 
@@ -114,6 +124,32 @@ public class TableDialog extends Dialog<TableSize> {
      */
     public Spinner<Integer> getColumnsSpinner() {
         return columnsSpinner;
+    }
+
+    private void updateColumns() {
+        int count = columnsSpinner.getValue(); columns.getChildren().clear();
+        while (headings.size() < count) {
+            var heading = new javafx.scene.control.TextField(); heading.setId("table-heading-" + headings.size()); headings.add(heading);
+            heading.setPromptText(WorkflowDialogs.text("column") + " " + headings.size());
+            var alignment = new javafx.scene.control.ComboBox<javafx.scene.text.TextAlignment>();
+            alignment.getItems().setAll(javafx.scene.text.TextAlignment.LEFT, javafx.scene.text.TextAlignment.CENTER, javafx.scene.text.TextAlignment.RIGHT);
+            alignment.setId("table-alignment-" + alignments.size()); alignment.setValue(javafx.scene.text.TextAlignment.LEFT); alignments.add(alignment);
+            heading.textProperty().addListener((obs, old, value) -> updatePreview()); alignment.valueProperty().addListener((obs, old, value) -> updatePreview());
+        }
+        for (int c = 0; c < count; c++) columns.getChildren().add(new javafx.scene.layout.HBox(8, headings.get(c), alignments.get(c)));
+        updatePreview();
+    }
+    private void updatePreview() {
+        preview.setText(de.richmarkdown.features.tables.DelimitedTables.write(getTableData(), '\t'));
+    }
+    public de.richmarkdown.features.tables.TableData getTableData() {
+        java.util.List<java.util.List<de.richmarkdown.features.tables.TableData.Cell>> cells = new java.util.ArrayList<>();
+        for (int r = 0; r < rowsSpinner.getValue(); r++) {
+            java.util.List<de.richmarkdown.features.tables.TableData.Cell> line = new java.util.ArrayList<>();
+            for (int c = 0; c < columnsSpinner.getValue(); c++) line.add(new de.richmarkdown.features.tables.TableData.Cell(r == 0 ? headings.get(c).getText() : "", java.util.List.of(), alignments.get(c).getValue()));
+            cells.add(line);
+        }
+        return new de.richmarkdown.features.tables.TableData(cells);
     }
 
     private void configureSpinner(Spinner<Integer> spinner, int initialValue, int maxValue) {

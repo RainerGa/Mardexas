@@ -27,7 +27,25 @@ package de.richmarkdown.markdown;
  * @param line      Zeile des Verstoßes (1-basiert)
  * @param column    Spalte des Verstoßes (1-basiert)
  */
-public record MarkdownIssue(Severity severity, String message, int position, int line, int column) {
+public record MarkdownIssue(Severity severity, String message, int position, int line, int column, String ruleId) {
+
+    /** Existing callers keep their constructor; new checkers should supply a stable rule id. */
+    public MarkdownIssue(Severity severity, String message, int position, int line, int column) {
+        this(severity, message, position, line, column, legacyRule(message));
+    }
+    public MarkdownIssue(String ruleId, Severity severity, String message, int position, int line, int column) {
+        this(severity, message, position, line, column, ruleId);
+    }
+    private static String legacyRule(String message) {
+        if (message == null) return "custom";
+        if (message.equals("Ungeschlossener Code-Fence")) return "fence.unclosed";
+        if (message.startsWith("Leerer Link-Text")) return "link.empty";
+        if (message.startsWith("Bild ohne Alt-Text")) return "image.description";
+        if (message.startsWith("Tabelle mit ungleicher")) return "table.columns";
+        if (message.startsWith("Unbalanced emphasis")) return "emphasis.unbalanced";
+        if (message.startsWith("Überschriften-Sprung")) return "heading.jump";
+        return "custom:" + message;
+    }
 
     /** Schweregrad eines formatierungsbezogenen Verstoßes. */
     public enum Severity {
@@ -40,6 +58,7 @@ public record MarkdownIssue(Severity severity, String message, int position, int
     }
 
     public MarkdownIssue {
+        if (ruleId == null || ruleId.isBlank()) throw new IllegalArgumentException("Rule id required");
         if (severity == null) {
             throw new NullPointerException("Schweregrad darf nicht null sein");
         }

@@ -75,7 +75,7 @@ public final class DiffDialog extends Dialog<ButtonType> {
                       com.gluonhq.richtextarea.model.Document originalContents,
                       boolean readOnly, Consumer<String> onError) {
         this.editor = editor;
-        originalName = original.getAbsolutePath();
+        originalName = original == null ? I18n.text("app.untitled") : original.getAbsolutePath();
         revisedName = revised.getAbsolutePath();
         this.onError = onError;
         initOwner(owner);
@@ -151,7 +151,7 @@ public final class DiffDialog extends Dialog<ButtonType> {
         load.setOnSucceeded(event -> {
             if (!isShowing()) return;
             try {
-                view.setSourceLabels(original.getAbsolutePath(), revised.getAbsolutePath());
+                view.setSourceLabels(originalName, revisedName);
                 view.loadComparison(load.getValue());
                 content.setCenter(view);
                 ready = true;
@@ -171,7 +171,7 @@ public final class DiffDialog extends Dialog<ButtonType> {
     }
 
     private static Path directory(File file) {
-        return file.toPath().toAbsolutePath().normalize().getParent();
+        return file == null ? null : file.toPath().toAbsolutePath().normalize().getParent();
     }
 
     private Button button(ButtonType type, String tooltip) {

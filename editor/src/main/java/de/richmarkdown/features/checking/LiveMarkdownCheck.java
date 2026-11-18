@@ -39,7 +39,7 @@ public final class LiveMarkdownCheck implements AutoCloseable {
         }, directory, consumer, true);
     }
     public void request() { if (!closed) { revision++; debounce.playFromStart(); if (pending != null) pending.cancel(true); } }
-    public void ignore(MarkdownIssue issue) { ignored.add(issue.message()); request(); }
+    public void ignore(MarkdownIssue issue) { ignored.add(issue.ruleId()); request(); }
     public void clearIgnored() { ignored.clear(); request(); }
     public void checkNow() {
         if (closed) return; debounce.stop(); long requested = ++revision; if (pending != null) pending.cancel(true);
@@ -50,13 +50,13 @@ public final class LiveMarkdownCheck implements AutoCloseable {
         try {
             WORKERS.purge(); pending = WORKERS.submit(() -> {
                 List<MarkdownIssue> issues;
-                try { issues = AdvancedMarkdownCheck.check(text.get(), path).stream().filter(issue -> !exclusions.contains(issue.message())).toList(); }
+                try { issues = AdvancedMarkdownCheck.check(text.get(), path).stream().filter(issue -> !exclusions.contains(issue.ruleId())).toList(); }
                 catch (CancellationException interrupted) { return; }
                 catch (RuntimeException failure) { issues = List.of(failed(failure)); }
                 if (Thread.currentThread().isInterrupted()) return;
                 List<MarkdownIssue> complete = issues; Platform.runLater(() -> { if (!closed && requested == revision) consumer.accept(complete); });
             });
-        } catch (RejectedExecutionException busy) { consumer.accept(List.of(new MarkdownIssue(MarkdownIssue.Severity.HINT, "Markdown-Prüfung ausgelastet. Bitte erneut prüfen.", 0, 1, 1))); }
+        } catch (RejectedExecutionException busy) { consumer.accept(List.of(new MarkdownIssue("check.busy", MarkdownIssue.Severity.HINT, "Markdown-Prüfung ausgelastet. Bitte erneut prüfen.", 0, 1, 1))); }
     }
     private static MarkdownIssue failed(RuntimeException failure) { return new MarkdownIssue(MarkdownIssue.Severity.ERROR, "Markdown-Prüfung fehlgeschlagen: " + failure.getMessage(), 0, 1, 1); }
     @Override public void close() { closed = true; revision++; debounce.stop(); if (pending != null) pending.cancel(true); WORKERS.purge(); }

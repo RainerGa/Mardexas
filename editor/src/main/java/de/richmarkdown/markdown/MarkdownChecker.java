@@ -89,7 +89,7 @@ public final class MarkdownChecker {
         checkHeadingJumps(lines, lineStarts, markdown, issues);
 
         List<MarkdownIssue> positioned = new ArrayList<>();
-        for (MarkdownIssue issue : issues) { int found = java.util.Arrays.binarySearch(lineStarts, issue.position()); int line = found >= 0 ? found : -found - 2; positioned.add(new MarkdownIssue(issue.severity(), issue.message(), issue.position(), line + 1, issue.position() - lineStarts[line] + 1)); }
+        for (MarkdownIssue issue : issues) { int found = java.util.Arrays.binarySearch(lineStarts, issue.position()); int line = found >= 0 ? found : -found - 2; positioned.add(new MarkdownIssue(issue.severity(), issue.message(), issue.position(), line + 1, issue.position() - lineStarts[line] + 1, issue.ruleId())); }
         return List.copyOf(positioned);
     }
 
@@ -103,7 +103,7 @@ public final class MarkdownChecker {
             if (fence == 0 && (marker == '`' || marker == '~') && end - at >= 3) { fence = marker; length = end - at; fenceStart = i; }
             else if (marker == fence && end - at >= length && line.substring(end).isBlank()) fence = 0;
         }
-        if (fence != 0) { int position = lineStarts[fenceStart]; issues.add(new MarkdownIssue(MarkdownIssue.Severity.ERROR, "Ungeschlossener Code-Fence", position, fenceStart + 1, 1)); }
+        if (fence != 0) { int position = lineStarts[fenceStart]; issues.add(new MarkdownIssue("fence.unclosed", MarkdownIssue.Severity.ERROR, "Ungeschlossener Code-Fence", position, fenceStart + 1, 1)); }
     }
 
     private static void checkLinks(String line, int lineStart, List<MarkdownIssue> issues) {
@@ -119,8 +119,7 @@ public final class MarkdownChecker {
             if (text.isBlank() || url.isBlank()) {
                 int position = lineStart + lm.start();
                 int[] lc = toLineColumn(line, position - lineStart);
-                issues.add(new MarkdownIssue(MarkdownIssue.Severity.ERROR,
-                        "Leerer Link-Text oder leere URL", position, lc[0], lc[1]));
+                issues.add(new MarkdownIssue("link.empty", MarkdownIssue.Severity.ERROR, "Leerer Link-Text oder leere URL", position, lc[0], lc[1]));
             }
         }
     }
@@ -133,8 +132,7 @@ public final class MarkdownChecker {
             if (alt.isBlank() || url.isBlank()) {
                 int position = lineStart + im.start();
                 int[] lc = toLineColumn(line, position - lineStart);
-                issues.add(new MarkdownIssue(MarkdownIssue.Severity.WARNING,
-                        "Bild ohne Alt-Text oder ohne URL", position, lc[0], lc[1]));
+                issues.add(new MarkdownIssue("image.description", MarkdownIssue.Severity.WARNING, "Bild ohne Alt-Text oder ohne URL", position, lc[0], lc[1]));
             }
         }
     }
@@ -156,8 +154,7 @@ public final class MarkdownChecker {
                     } else if (cols != headerCols) {
                         int position = lineStarts[r];
                         int[] lc = toLineColumn(markdown, position);
-                        issues.add(new MarkdownIssue(MarkdownIssue.Severity.WARNING,
-                                "Tabelle mit ungleicher Spaltenanzahl", position, lc[0], lc[1]));
+                        issues.add(new MarkdownIssue("table.columns", MarkdownIssue.Severity.WARNING, "Tabelle mit ungleicher Spaltenanzahl", position, lc[0], lc[1]));
                     }
                 }
             } else {
@@ -185,8 +182,7 @@ public final class MarkdownChecker {
                     if (starCount % 2 != 0) {
                         int position = lineStarts[paraStart];
                         int[] lc = toLineColumn(markdown, position);
-                        issues.add(new MarkdownIssue(MarkdownIssue.Severity.WARNING,
-                                "Unbalanced emphasis (ungerade Anzahl '*' im Absatz)",
+                        issues.add(new MarkdownIssue("emphasis.unbalanced", MarkdownIssue.Severity.WARNING, "Unbalanced emphasis (ungerade Anzahl '*' im Absatz)",
                                 position, lc[0], lc[1]));
                     }
                 }
@@ -205,8 +201,7 @@ public final class MarkdownChecker {
                 if (prevLevel != null && level - prevLevel > 1) {
                     int position = lineStarts[i];
                     int[] lc = toLineColumn(markdown, position);
-                    issues.add(new MarkdownIssue(MarkdownIssue.Severity.HINT,
-                            "Überschriften-Sprung von H" + prevLevel + " zu H" + level,
+                    issues.add(new MarkdownIssue("heading.jump", MarkdownIssue.Severity.HINT, "Überschriften-Sprung von H" + prevLevel + " zu H" + level,
                             position, lc[0], lc[1]));
                 }
                 prevLevel = level;

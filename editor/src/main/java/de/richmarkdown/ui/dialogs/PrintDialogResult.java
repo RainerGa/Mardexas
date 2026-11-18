@@ -41,5 +41,8 @@ public record PrintDialogResult(
         PageOrientation orientation,
         Paper paper,
         PrintSides sides,
-        PrintColor color) {
+        PrintColor color, de.richmarkdown.features.printing.PrintOptions options) {
+    public PrintDialogResult(Printer printer, int copies, PageOrientation orientation, Paper paper, PrintSides sides, PrintColor color) {
+        this(printer, copies, orientation, paper, sides, color, null);
+    }
 }

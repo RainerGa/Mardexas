@@ -39,6 +39,23 @@ public record TableData(List<List<Cell>> rows) {
         if (descending) comparator = comparator.reversed();
         List<List<Cell>> result = new ArrayList<>(rows); result.subList(1, result.size()).sort(comparator); return new TableData(result);
     }
+    public record SortKey(int column, boolean numeric, boolean descending) { }
+    /** Stable multi-key sorting, with an independent direction and type for each key. */
+    public TableData sortBy(List<SortKey> keys) {
+        if (keys.isEmpty() || keys.size() > width() || keys.stream().map(SortKey::column).distinct().count() != keys.size())
+            throw new IllegalArgumentException("Duplicate or missing sort columns");
+        Comparator<List<Cell>> comparator = (a, b) -> 0;
+        for (SortKey key : keys) {
+            checkColumn(key.column());
+            if (key.numeric()) for (int r = 1; r < rows.size(); r++) number(rows.get(r).get(key.column()));
+            Comparator<List<Cell>> next = key.numeric()
+                    ? Comparator.comparing(r -> number(r.get(key.column())))
+                    : Comparator.comparing(r -> r.get(key.column()).text(), String.CASE_INSENSITIVE_ORDER);
+            comparator = comparator.thenComparing(key.descending() ? next.reversed() : next);
+        }
+        List<List<Cell>> sorted = new ArrayList<>(rows); sorted.subList(1, sorted.size()).sort(comparator);
+        return new TableData(sorted);
+    }
     public TableData region(int firstRow, int firstColumn, int lastRow, int lastColumn) {
         Objects.checkFromToIndex(firstRow, lastRow + 1, rows.size()); Objects.checkFromToIndex(firstColumn, lastColumn + 1, width());
         return new TableData(rows.subList(firstRow, lastRow + 1).stream().map(row -> row.subList(firstColumn, lastColumn + 1)).toList());
